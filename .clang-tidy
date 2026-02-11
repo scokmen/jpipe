@@ -1,0 +1,19 @@
+---
+Checks: >
+  -*,
+  bugprone-*,
+  performance-*,
+  portability-*,
+  readability-uppercase-literal-type,
+  readability-redundant-control-flow,
+  clang-analyzer-*,
+  -clang-analyzer-security.insecurehostent.LogicalIPv6Hostent,
+  -bugprone-easily-swappable-parameters
+
+WarningsAsErrors: 'bugprone-*,performance-*,clang-analyzer-*'
+HeaderFilterRegex: 'include/.*'
+CheckOptions:
+  - key:             readability-identifier-naming.VariableCase
+    value:           lower_case
+  - key:             readability-identifier-naming.FunctionCase
+    value:           snake_case

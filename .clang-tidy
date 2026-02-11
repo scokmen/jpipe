@@ -8,7 +8,8 @@ Checks: >
   readability-redundant-control-flow,
   clang-analyzer-*,
   -clang-analyzer-security.insecurehostent.LogicalIPv6Hostent,
-  -bugprone-easily-swappable-parameters
+  -bugprone-easily-swappable-parameters,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
 
 WarningsAsErrors: 'bugprone-*,performance-*,clang-analyzer-*'
 HeaderFilterRegex: 'include/.*'

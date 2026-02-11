@@ -55,6 +55,7 @@ dkms.conf
 *.dwo
 
 # CMake build
+build/
 cmake-build-debug/
 
 # Clion

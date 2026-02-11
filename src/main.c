@@ -1,6 +1,6 @@
-#include <stdio.h>
+#include <j_options.h>
 
-int main(void) {
-    printf("Hello, JPipe!\n");
-    return 0;
+int main(int argc, char *argv[]) {
+    jp_options_t opt = { };
+    return jp_options_init(argc, argv, &opt);
 }

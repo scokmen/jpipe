@@ -59,18 +59,11 @@ find_program(LCOV_BINARY NAMES "lcov")
 find_program(GCOVR_BINARY NAMES "gcovr")
 if(GCOVR_BINARY)
     add_custom_target(coverage
-            COMMAND ${LCOV_BINARY} 
-                --capture --directory . 
-                --output-file coverage.info 
-                --ignore-errors gcov,gcov
-            COMMAND ${LCOV_BINARY} 
-                --remove coverage.info '*/test/*'
-                --output-file coverage_filtered.info 
-                --ignore-errors gcov,gcov
-            COMMAND ${GCOVR_BINARY} -r ${CMAKE_SOURCE_DIR} . 
-                --object-directory .
-                --exclude '.*/test/.*'
-                --print-summary
+            COMMAND ${LCOV_BINARY} --capture --initial --directory . --output-file base.info --ignore-errors gcov,gcov
+            COMMAND ${LCOV_BINARY} --capture --directory . --output-file test.info --ignore-errors gcov,gcov
+            COMMAND ${LCOV_BINARY} --add-tracefile base.info --add-tracefile test.info --output-file total.info
+            COMMAND ${LCOV_BINARY} --remove total.info '*/test/*' --output-file coverage_filtered.info --ignore-errors gcov,gcov
+            COMMAND ${GCOVR_BINARY} -r ${CMAKE_SOURCE_DIR} . --object-directory . --exclude '.*/test/.*' --print-summary
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
 endif()

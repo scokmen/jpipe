@@ -39,5 +39,5 @@ jobs:
       uses: coverallsapp/github-action@v2
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        file: build/coverage_filtered.info
+        file: ${{github.workspace}}/build/coverage_filtered.info
         format: lcov

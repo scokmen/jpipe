@@ -55,14 +55,22 @@ foreach(test_source ${TEST_FILES})
     add_test(NAME ${test_name} COMMAND ${test_name})
 endforeach()
 
+find_program(LCOV_BINARY NAMES "lcov")
 find_program(GCOVR_BINARY NAMES "gcovr")
 if(GCOVR_BINARY)
     add_custom_target(coverage
+            COMMAND ${LCOV_BINARY} 
+                --capture --directory . 
+                --output-file coverage.info 
+                --ignore-errors gcov,gcov
+            COMMAND ${LCOV_BINARY} 
+                --remove coverage.info '*/test/*'
+                --output-file coverage_filtered.info 
+                --ignore-errors gcov,gcov
             COMMAND ${GCOVR_BINARY} -r ${CMAKE_SOURCE_DIR} . 
-            --object-directory .
-            --exclude '.*/test/.*'
-            --exclude '.*/build/.*'
-            --print-summary
+                --object-directory .
+                --exclude '.*/test/.*'
+                --print-summary
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
 endif()

@@ -68,11 +68,11 @@ endforeach()
 if(ENABLE_COVERAGE)
     find_program(LCOV_BINARY NAMES "lcov")
     find_program(GCOVR_BINARY NAMES "gcovr")
-
+    
     if(LCOV_BINARY AND GCOVR_BINARY)
         add_custom_target(coverage
                 COMMAND ${LCOV_BINARY} --capture --initial --directory . --output-file base.info
-                COMMAND ${LCOV_BINARY} --capture --directory . --output-file test.info
+                COMMAND ${LCOV_BINARY} -capture --directory . --output-file test.info
                 COMMAND ${LCOV_BINARY} --add-tracefile base.info --add-tracefile test.info --output-file total.info
                 COMMAND ${LCOV_BINARY} --remove total.info '*/test/*' --output-file coverage_filtered.info
                 COMMAND ${GCOVR_BINARY} -r ${CMAKE_SOURCE_DIR} . --exclude '.*/test/.*' --print-summary

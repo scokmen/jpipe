@@ -23,7 +23,7 @@ jobs:
     - name: Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang gcc lcov gcovr
+        sudo apt-get install -y clang gcc lcov gcovr llvm
 
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_ASAN=ON -DENABLE_COVERAGE=ON -DCMAKE_C_COMPILER=${{ matrix.compiler }}
@@ -36,8 +36,8 @@ jobs:
       run: ctest --output-on-failure
 
     - name: Coverage
-      run: |
-        cmake --build build --target coverage
+      if: matrix.compiler == 'gcc'
+      run: cmake --build build --target coverage
         
     - name: Reporting
       if: matrix.compiler == 'gcc'

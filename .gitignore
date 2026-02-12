@@ -57,6 +57,10 @@ dkms.conf
 # CMake build
 build/
 cmake-build-debug/
+Testing/
 
 # Clion
 .idea
+
+# Local tools
+/scripts

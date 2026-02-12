@@ -5,7 +5,7 @@
 #include <j_errno.h>
 #include <j_options.h>
 
-int read_chunk_size(const char *arg, size_t *size) {
+int set_chunk_size(const char *arg, jp_options_t *opt) {
     char *end_ptr;
     size_t chunk_size = 1;
     unsigned long long param = 0;
@@ -30,11 +30,11 @@ int read_chunk_size(const char *arg, size_t *size) {
     if (chunk_size < J_CHUNK_SIZE_MIN || chunk_size > J_CHUNK_SIZE_MAX) {
         return J_ECHUNK_SIZE;
     }
-    *size = (size_t) chunk_size;
+    opt->chunk_size = (size_t) chunk_size;
     return 0;
 }
 
-int read_backlog_len(const char *arg, size_t *size) {
+int set_backlog_len(const char *arg, jp_options_t *opt) {
     char *end_ptr;
     unsigned long long param = 0;
 
@@ -45,24 +45,24 @@ int read_backlog_len(const char *arg, size_t *size) {
         return J_EBACKLOG_LENGTH;
     }
 
-    *size = (size_t) param;
+    opt->backlog_len = (size_t) param;
     return 0;
 }
 
-int read_out_dir(const char *arg, const char **dir) {
+int set_out_dir(const char *arg, jp_options_t *opt) {
     if (arg == NULL || strlen(arg) == 0) {
         return J_EOUT_DIR;
     }
-    *dir = strdup(arg);
+    opt->out_dir = strdup(arg);
     return 0;
 }
 
 int jp_options_init(int argc, char *argv[], jp_options_t *opts) {
     int opt;
-    opts->backlog_len = J_BACKLOG_LEN_DEF;
     opts->chunk_size = J_CHUNK_SIZE_DEF;
-    opts->out_dir = J_OUTDIR_DEF;
-
+    opts->backlog_len = J_BACKLOG_LEN_DEF;
+    opts->out_dir = NULL;
+    
     static struct option long_options[] = {
             {"chunk-size", required_argument, 0, 'c'},
             {"backlog",    required_argument, 0, 'b'},
@@ -73,18 +73,24 @@ int jp_options_init(int argc, char *argv[], jp_options_t *opts) {
     while ((opt = getopt_long(argc, argv, "c:b:o:", long_options, NULL)) != -1) {
         switch (opt) {
             case 'c':
-                EXPLAIN_IF_FAILS(read_chunk_size(optarg, &opts->chunk_size), optarg);
+                EXPLAIN_IF_FAILS(set_chunk_size(optarg, opts), optarg);
                 break;
             case 'b':
-                EXPLAIN_IF_FAILS(read_backlog_len(optarg, &opts->backlog_len), optarg);
+                EXPLAIN_IF_FAILS(set_backlog_len(optarg, opts), optarg);
                 break;
             case 'o':
-                EXPLAIN_IF_FAILS(read_out_dir(optarg, &opts->out_dir), optarg);
+                FREE_IF_ALLOC(opts->out_dir);
+                EXPLAIN_IF_FAILS(set_out_dir(optarg, opts), optarg);
                 break;    
             default: {
 
             }
         }
     }
+    
+    if (opts->out_dir == NULL) {
+        opts->out_dir = strdup(J_OUTDIR_DEF);
+    }
+    
     return 0;
 }

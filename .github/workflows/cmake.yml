@@ -36,6 +36,7 @@ jobs:
       run: ctest --output-on-failure
 
     - name: Coverage
+      if: matrix.compiler == 'gcc'
       run: cmake --build build --target coverage
         
     - name: Reporting

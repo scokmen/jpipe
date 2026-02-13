@@ -1,0 +1,70 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <jp_command.h>
+#include <jp_test.h>
+
+#define MOCK_RETURN_CODE 99
+
+typedef struct {
+    int expected;
+    int argc;
+    char *argv[4];
+} test_case_t;
+
+typedef struct {
+    int argc;
+    char **argv;
+} test_ctx_t;
+
+int mock_command() {
+    return MOCK_RETURN_CODE;
+}
+
+int cmd_help_adapter(void *ctx) {
+    test_ctx_t *c = (test_ctx_t *) ctx;
+    return jp_cmd_help(c->argc, c->argv);
+}
+
+int cmd_version_adapter(void *ctx) {
+    test_ctx_t *c = (test_ctx_t *) ctx;
+    return jp_cmd_version(c->argc, c->argv);
+}
+
+void test_jp_cmd_help() {
+    test_ctx_t ctx = {.argc = 0, .argv = NULL};
+    int status = jp_test_compare_stdout(cmd_help_adapter, &ctx, "global_help_command.tmpl");
+    JP_ASSERT_EQ(0, status);
+}
+
+void test_jp_cmd_version() {
+    test_ctx_t ctx = {.argc = 0, .argv = NULL};
+    int status = jp_test_compare_stdout(cmd_version_adapter, &ctx, "global_version_command.tmpl");
+    JP_ASSERT_EQ(0, status);
+}
+
+void test_jp_cmd_exec() {
+    jp_cmd_t commands[] = {
+            {.code = "-c", .name = "--command", .handler = mock_command},
+    };
+
+    test_case_t cases[] = {
+            {.argc = 1, .argv = {"jpipe", NULL}, .expected=JP_EMISSING_CMD},
+            {.argc = 2, .argv = {"jpipe", "-u", NULL}, .expected=JP_EUNKNOWN_CMD},
+            {.argc = 2, .argv = {"jpipe", "--unknown", NULL}, .expected=JP_EUNKNOWN_CMD},
+            {.argc = 3, .argv = {"jpipe", "-c", NULL}, .expected=MOCK_RETURN_CODE},
+            {.argc = 3, .argv = {"jpipe", "--command", NULL}, .expected=MOCK_RETURN_CODE},
+    };
+
+    int len = (sizeof(cases) / sizeof(cases[0]));
+    for (int i = 0; i < len; i++) {
+        int err = jp_cmd_exec(commands, 1, cases[i].argc, cases[i].argv);
+        JP_ASSERT_EQ(cases[i].expected, err);
+    }
+}
+
+int main(int argc, char *argv[]) {
+    test_jp_cmd_exec();
+    test_jp_cmd_help();
+    test_jp_cmd_version();
+    return EXIT_SUCCESS;
+}

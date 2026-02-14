@@ -33,10 +33,10 @@ int jp_cmd_help(int argc, char *argv[]) {
 }
 
 int jp_cmd_version(int argc, char *argv[]) {
-    JP_LOG_OUT("v%.16s\n", JP_VERSION);
+    JP_LOG_OUT("v%.16s", JP_VERSION);
     return 0;
 }
 
 void jp_cmd_invalid(const char *cmd) {
-    JP_LOG_ERR("Error: Invalid or incomplete argument: '%s'", cmd);
+    JP_LOG_ERR("Error: Invalid or incomplete command: '%s'", cmd);
 }

@@ -141,11 +141,35 @@ void test_jp_wrk_exec_args_out_dir() {
     }
 }
 
+void test_jp_wrk_exec_args_inv_cmd() {
+    test_case_t cases[] = {
+            {.argc = 1, .argv = {"jpipe", NULL}, .expected=0},
+            {.argc = 2, .argv = {"jpipe", "-x",  NULL}, .expected=JP_EUNKNOWN_RUN_CMD},
+            {.argc = 2, .argv = {"jpipe", "--xx", NULL}, .expected= JP_EUNKNOWN_RUN_CMD},
+            {.argc = 4, .argv = {"jpipe", "-b", "100","-x", NULL}, .expected= JP_EUNKNOWN_RUN_CMD},
+            {.argc = 4, .argv = {"jpipe", "-b", "100","100", NULL}, .expected= JP_EUNKNOWN_RUN_CMD},
+    };
+
+    int len = (sizeof(cases) / sizeof(cases[0]));
+    for (int i = 0; i < len; i++) {
+        int err = 0;
+
+        optind = 1;
+        optarg = NULL;
+        opterr = 0;
+
+        err = jp_wrk_exec(cases[i].argc, cases[i].argv);
+
+        JP_ASSERT_EQ(cases[i].expected, err);
+    }
+}
+
 int main(int argc, char *argv[]) {
     test_jp_wrk_exec_help_short();
     test_jp_wrk_exec_help_long();
     test_jp_wrk_exec_args_chunk_size();
     test_jp_wrk_exec_args_backlog_length();
-    test_jp_wrk_exec_args_backlog_length();
+    test_jp_wrk_exec_args_out_dir();
+    test_jp_wrk_exec_args_inv_cmd();
     return EXIT_SUCCESS;
 }

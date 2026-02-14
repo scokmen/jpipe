@@ -62,7 +62,8 @@ static int set_backlog_len(const char *arg, jp_worker_args_t *args) {
     errno = 0;
     param = strtoull(arg, &end_ptr, 10);
 
-    if (end_ptr == arg || *end_ptr != '\0' || errno == ERANGE || param < JP_WRK_BACKLOG_LEN_MIN || param > JP_WRK_BACKLOG_LEN_MAX) {
+    if (end_ptr == arg || *end_ptr != '\0' || errno == ERANGE || param < JP_WRK_BACKLOG_LEN_MIN ||
+        param > JP_WRK_BACKLOG_LEN_MAX) {
         return JP_EBACKLOG_LENGTH;
     }
 
@@ -72,7 +73,7 @@ static int set_backlog_len(const char *arg, jp_worker_args_t *args) {
 
 static int handle_unknown_argument(const char *cmd) {
     jp_cmd_invalid(cmd);
-    return JP_EUNKNOWN_CMD;
+    return JP_EUNKNOWN_RUN_CMD;
 }
 
 static int set_arguments(int argc, char *argv[], jp_worker_args_t *args) {
@@ -87,10 +88,11 @@ static int set_arguments(int argc, char *argv[], jp_worker_args_t *args) {
             {"chunk-size", required_argument, 0, 'c'},
             {"backlog",    required_argument, 0, 'b'},
             {"out-dir",    required_argument, 0, 'o'},
+            {"help",       no_argument,       0, 'h'},
             {0, 0,                            0, 0}
     };
 
-    while ((option = getopt_long(argc, argv, ":c:b:o:", long_options, NULL)) != -1) {
+    while ((option = getopt_long(argc, argv, ":c:b:o:h", long_options, NULL)) != -1) {
         switch (option) {
             case 'c':
                 JP_ERROR_GUARD(set_chunk_size(optarg, args));
@@ -100,6 +102,8 @@ static int set_arguments(int argc, char *argv[], jp_worker_args_t *args) {
                 break;
             case 'o':
                 JP_ERROR_GUARD(set_out_dir(optarg, args));
+                break;
+            case 'h':
                 break;
             case ':':
             case '?':
@@ -128,7 +132,7 @@ int jp_wrk_exec(int argc, char *argv[]) {
     }
     int err = 0;
     jp_worker_args_t args = {};
-    
+
     err = set_arguments(argc, argv, &args);
     if (err) {
         JP_FREE_IF_ALLOC(args.out_dir);

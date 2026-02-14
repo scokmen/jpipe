@@ -24,7 +24,7 @@ do {                                   \
     }                                  \
 } while (0)
 
-#define JP_ERROR_GUARD(stm, option)    \
+#define JP_ERROR_GUARD(stm)            \
 do {                                   \
     jp_errno_t __err_val = (stm);      \
     if (__err_val) {                   \
@@ -32,5 +32,13 @@ do {                                   \
        return __err_val;               \
    }                                   \
 } while (0)
+
+#define JP_LOG_OUT(fmt, ...) \
+fprintf(stdout, fmt "\n", ##__VA_ARGS__)
+
+#define JP_LOG_ERR(fmt, ...) \
+fprintf(stderr, "[jpipe]: " fmt "\n", ##__VA_ARGS__)
+
+
 
 #endif //JPIPE_JP_COMMON_H

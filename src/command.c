@@ -16,23 +16,27 @@ int jp_cmd_exec(jp_cmd_t *cmds, int cmdc, int argc, char *argv[]) {
         }
     }
 
+    jp_cmd_invalid(argv[1]);
     jp_errno_log(JP_EUNKNOWN_CMD);
     return JP_EUNKNOWN_CMD;
 }
 
 int jp_cmd_help(int argc, char *argv[]) {
-    fprintf(stdout, "Usage: jpipe <command> [options]\n\n");
-    fprintf(stdout, "A lightweight C pipe-to-JSON logger designed for high-performance stream capture and extensible metadata injection.\n\n");
-    fprintf(stdout, "Commands:\n");
-    fprintf(stdout, "  run        Process data with configurable chunking and backlog\n");
-    fprintf(stdout, "  version    Display version information\n");
-    fprintf(stdout, "  help       Show this help message\n\n");
-    fprintf(stdout, "Use 'jpipe <command> --help' for more information on a specific command.\n");
+    JP_LOG_OUT("Usage: jpipe <command> [options]\n");
+    JP_LOG_OUT("A lightweight C pipe-to-JSON logger designed for high-performance stream capture and extensible metadata injection.\n");
+    JP_LOG_OUT("Commands:");
+    JP_LOG_OUT("  run        Process data with configurable chunking and backlog");
+    JP_LOG_OUT("  version    Display version information");
+    JP_LOG_OUT("  help       Show this help message\n");
+    JP_LOG_OUT("Use 'jpipe <command> --help' for more information on a specific command.");
     return 0;
 }
 
 int jp_cmd_version(int argc, char *argv[]) {
-    fprintf(stdout, "v%.16s\n", JP_VERSION);
+    JP_LOG_OUT("v%.16s\n", JP_VERSION);
     return 0;
 }
 
+void jp_cmd_invalid(const char *cmd) {
+    JP_LOG_ERR("Error: Invalid or incomplete argument: '%s'", cmd);
+}

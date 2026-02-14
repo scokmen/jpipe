@@ -8,12 +8,10 @@ void jp_errno_log(jp_errno_t err) {
         return;
     }
     int err_code = errno;
-    const char *errno_msg = jp_errno_explain(err);
-    if (err_code == 0) {
-        fprintf(stderr, "[jpipe]: %.256s\n", errno_msg);
-        return;
+    if (err_code > 0) {
+        JP_LOG_ERR("Error: %.256s", strerror(err_code));
     }
-    fprintf(stderr, "[jpipe]: %.256s. Error: %.256s\n", errno_msg, strerror(err_code));
+    JP_LOG_ERR("%.256s", jp_errno_explain(err));
     errno = 0;
 }
 

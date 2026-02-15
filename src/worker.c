@@ -88,11 +88,12 @@ static int set_arguments(int argc, char *argv[], jp_worker_args_t *args) {
             {"chunk-size", required_argument, 0, 'c'},
             {"backlog",    required_argument, 0, 'b'},
             {"out-dir",    required_argument, 0, 'o'},
+            {"dry-run",    required_argument, 0, 'n'},
             {"help",       no_argument,       0, 'h'},
             {0, 0,                            0, 0}
     };
 
-    while ((option = getopt_long(argc, argv, ":c:b:o:h", long_options, NULL)) != -1) {
+    while ((option = getopt_long(argc, argv, ":c:b:o:hn", long_options, NULL)) != -1) {
         switch (option) {
             case 'c':
                 JP_ERROR_GUARD(set_chunk_size(optarg, args));
@@ -103,6 +104,9 @@ static int set_arguments(int argc, char *argv[], jp_worker_args_t *args) {
             case 'o':
                 JP_ERROR_GUARD(set_out_dir(optarg, args));
                 break;
+            case 'n':
+                args->dry_run = true;
+                break;    
             case 'h':
                 break;
             case ':':

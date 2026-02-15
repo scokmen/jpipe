@@ -39,6 +39,4 @@ fprintf(stdout, fmt "\n", ##__VA_ARGS__)
 #define JP_LOG_ERR(fmt, ...) \
 fprintf(stderr, "[jpipe]: " fmt "\n", ##__VA_ARGS__)
 
-
-
 #endif //JPIPE_JP_COMMON_H

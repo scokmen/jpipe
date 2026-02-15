@@ -1,6 +1,8 @@
 #ifndef JPIPE_JP_WORKER_H
 #define JPIPE_JP_WORKER_H
 
+#include <stdbool.h>
+
 #define BYTES_IN_KB            1024      // 1KB
 #define BYTES_IN_MB            1048576   // 1MB
 #define JP_WRK_CHUNK_SIZE_MIN  1024      // 1KB
@@ -14,6 +16,7 @@
 typedef struct {
     size_t chunk_size;
     size_t backlog_len;
+    bool dry_run;
     const char *out_dir;
 } jp_worker_args_t;
 

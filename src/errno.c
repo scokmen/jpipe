@@ -9,7 +9,7 @@ void jp_errno_log(jp_errno_t err) {
     }
     int err_code = errno;
     if (err_code > 0) {
-        JP_LOG_ERR("Error: %.256s", strerror(err_code));
+        JP_LOG_ERR("Error: %.256s (E%d)", strerror(err_code), err_code);
     }
     JP_LOG_ERR("%.256s", jp_errno_explain(err));
     errno = 0;

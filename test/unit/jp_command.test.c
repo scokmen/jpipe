@@ -16,33 +16,33 @@ typedef struct {
     char **argv;
 } test_ctx_t;
 
-int mock_command() {
+int mock_command(int argc, char *argv[]) {
     return MOCK_RETURN_CODE;
 }
 
-int cmd_help_adapter(void *ctx) {
+int help_command_adapter(void *ctx) {
     test_ctx_t *c = (test_ctx_t *) ctx;
     return jp_cmd_help(c->argc, c->argv);
 }
 
-int cmd_version_adapter(void *ctx) {
+int version_command_adapter(void *ctx) {
     test_ctx_t *c = (test_ctx_t *) ctx;
     return jp_cmd_version(c->argc, c->argv);
 }
 
-void test_jp_cmd_help() {
+void test_jp_cmd_help(void) {
     test_ctx_t ctx = {.argc = 0, .argv = NULL};
-    int status = jp_test_compare_stdout(cmd_help_adapter, &ctx, "global_help_command.tmpl");
+    int status = jp_test_compare_stdout(help_command_adapter, &ctx, "help_command_out.tmpl");
     JP_ASSERT_EQ(0, status);
 }
 
-void test_jp_cmd_version() {
+void test_jp_cmd_version(void) {
     test_ctx_t ctx = {.argc = 0, .argv = NULL};
-    int status = jp_test_compare_stdout(cmd_version_adapter, &ctx, "global_version_command.tmpl");
+    int status = jp_test_compare_stdout(version_command_adapter, &ctx, "version_command_out.tmpl");
     JP_ASSERT_EQ(0, status);
 }
 
-void test_jp_cmd_exec() {
+void test_jp_cmd_exec(void) {
     jp_cmd_t commands[] = {
             {.code = "-c", .name = "--command", .handler = mock_command},
     };

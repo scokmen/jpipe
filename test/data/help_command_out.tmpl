@@ -8,3 +8,10 @@ Commands:
   help       Show this help message
 
 Use 'jpipe <command> --help' for more information on a specific command.
+
+Examples:
+  # Capture stream with 1MB chunks to a specific directory
+  cat data.log | jpipe run -c 1mb -o /tmp/output
+
+  # High-throughput capture with a larger backlog
+  tail -f /var/log/syslog | jpipe run -b 128 -c 64kb

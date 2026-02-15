@@ -28,7 +28,12 @@ int jp_cmd_help(int argc, char *argv[]) {
     JP_LOG_OUT("  run        Process data with configurable chunking and backlog");
     JP_LOG_OUT("  version    Display version information");
     JP_LOG_OUT("  help       Show this help message\n");
-    JP_LOG_OUT("Use 'jpipe <command> --help' for more information on a specific command.");
+    JP_LOG_OUT("Use 'jpipe <command> --help' for more information on a specific command.\n");
+    JP_LOG_OUT("Examples:");
+    JP_LOG_OUT("  # Capture stream with 1MB chunks to a specific directory");
+    JP_LOG_OUT("  cat data.log | jpipe run -c 1mb -o /tmp/output\n");
+    JP_LOG_OUT("  # High-throughput capture with a larger backlog");
+    JP_LOG_OUT("  tail -f /var/log/syslog | jpipe run -b 128 -c 64kb");
     return 0;
 }
 

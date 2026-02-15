@@ -4,13 +4,14 @@
 #include <unistd.h>
 #include <jp_test.h>
 #include <jp_config.h>
+#include <jp_common.h>
 
 int jp_test_compare_stdout(jp_test_fn printer, void *ctx, const char *template_file) {
-    int fd, stdout_cache;
-    char cmd[CMD_MAX], actual_file[PATH_MAX];
+    int fd, stdout_cache, status;
+    char cmd[CMD_MAX] = {0}, actual_file[JP_PATH_MAX] = {0};
     char tmp_file[] = "/tmp/tmp_stdout_dest_XXXXXXXX";
 
-    snprintf(actual_file, PATH_MAX, "%s/%s", JP_TEST_DATA_DIR, template_file);
+    snprintf(actual_file, JP_PATH_MAX, "%s/%s", JP_TEST_DATA_DIR, template_file);
     
     stdout_cache = dup(STDOUT_FILENO);
     if (stdout_cache < 0) {
@@ -30,9 +31,8 @@ int jp_test_compare_stdout(jp_test_fn printer, void *ctx, const char *template_f
     snprintf(cmd, sizeof(cmd),
              "sed 's|__APP_VERSION__|%s|g' %s | diff -u -bB --strip-trailing-cr - %s",
              JP_VERSION, actual_file, tmp_file);
-
-    int status = system(cmd);
     
+    status = system(cmd);
     dup2(stdout_cache, STDOUT_FILENO);
     close(fd);
     close(stdout_cache);

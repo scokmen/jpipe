@@ -20,6 +20,4 @@ int jp_cmd_help(int argc, char *argv[]);
 
 int jp_cmd_version(int argc, char *argv[]);
 
-void jp_cmd_invalid(const char *cmd);
-
 #endif //JPIPE_JP_COMMAND_H

@@ -6,13 +6,29 @@
 #include <jp_config.h>
 #include <jp_common.h>
 
+static const char *jp_test_os_tmp_dir() {
+    const char *env = NULL;
+    const char *envs[3] = {"TMPDIR", "TMP", "TEMP"};
+    for (int i = 0; i < 3; i++) {
+        env = getenv(envs[i]);
+        if (env != NULL && strlen(env) > 0) {
+            return env;
+        }
+    }
+    return "/tmp";
+}
+
+void jp_test_get_sandbox(char *buffer, size_t size) {
+    snprintf(buffer, size, "%s/jpipe_test_%d", jp_test_os_tmp_dir(), getpid());
+}
+
 int jp_test_compare_stdout(jp_test_fn printer, void *ctx, const char *template_file) {
     int fd, stdout_cache, status;
-    char cmd[CMD_MAX] = {0}, actual_file[JP_PATH_MAX] = {0};
+    char cmd[CMD_MAX], actual_file[JP_PATH_MAX];
     char tmp_file[] = "/tmp/tmp_stdout_dest_XXXXXXXX";
 
     snprintf(actual_file, JP_PATH_MAX, "%s/%s", JP_TEST_DATA_DIR, template_file);
-    
+
     stdout_cache = dup(STDOUT_FILENO);
     if (stdout_cache < 0) {
         exit(EXIT_FAILURE);
@@ -22,21 +38,21 @@ int jp_test_compare_stdout(jp_test_fn printer, void *ctx, const char *template_f
     if (fd < 0) {
         exit(EXIT_FAILURE);
     }
-    
+
     dup2(fd, STDOUT_FILENO);
-    
+
     printer(ctx);
     fflush(stdout);
 
     snprintf(cmd, sizeof(cmd),
              "sed 's|__APP_VERSION__|%s|g' %s | diff -u -bB --strip-trailing-cr - %s",
              JP_VERSION, actual_file, tmp_file);
-    
+
     status = system(cmd);
     dup2(stdout_cache, STDOUT_FILENO);
     close(fd);
     close(stdout_cache);
     unlink(tmp_file);
-    
+
     return status;
 }

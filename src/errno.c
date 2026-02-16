@@ -1,20 +1,49 @@
-#include <jp_errno.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <stdarg.h>
+#include <jp_errno.h>
 
-void jp_errno_log(jp_errno_t err) {
-    if (!err) {
-        return;
-    }
-    int err_code = errno;
-    const char *msg = jp_errno_explain(err);
-    if (err_code == 0) {
-        JP_LOG_ERR("%.256s", msg);
-        return;
-    }
-    JP_LOG_ERR("%.256s Error: %.256s (E%d)", msg, strerror(err_code), err_code);
+jp_errno_t jp_errno_log_err(jp_errno_t err) {
+    int err_code;
+    const char *msg;
+
+    err_code = errno;
     errno = 0;
+    msg = jp_errno_explain(err);
+
+    fprintf(stderr, "[jpipe]: An error occurred.\n");
+    fprintf(stderr, "\t└─ Caused By: %.256s\n", msg);
+    if (err_code > 0) {
+        fprintf(stderr, "\t\t└─ Caused By: System Error (E%d): %.256s\n", err_code, strerror(err_code));
+    }
+    fflush(stderr);
+    return err;
+}
+
+jp_errno_t jp_errno_log_err_format(jp_errno_t err, const char *fmt, ...) {
+    int err_code;
+    const char *msg;
+    va_list args;
+
+    err_code = errno;
+    errno = 0;
+    msg = jp_errno_explain(err);
+
+    fprintf(stderr, "[jpipe]: An error occurred.\n");
+    fprintf(stderr, "\t└─ Caused By: %.256s\n", msg);
+    fprintf(stderr, "\t\t└─ Caused By: ");
+
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+    fprintf(stderr, "\n");
+
+    if (err_code > 0) {
+        fprintf(stderr, "\t\t\t└─ Caused By: System Error (E%d): %.256s\n", err_code, strerror(err_code));
+    }
+    fflush(stderr);
+    return err;
 }
 
 const char *jp_errno_explain(jp_errno_t err) {

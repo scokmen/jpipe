@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <jp_worker.h>
 #include <jp_command.h>
 
@@ -22,11 +23,17 @@ static int set_out_dir(const char *arg, jp_worker_args_t *args) {
     size_t len = 0;
     JP_FREE_IF_ALLOC(args->out_dir);
     if (arg == NULL) {
-        return JP_EOUT_DIR;
+        return jp_errno_log_err_format(JP_EMISSING_CMD,
+                                       "Output path is empty.");
     }
     len = strlen(arg);
-    if (len == 0 || len > JP_PATH_MAX) {
-        return JP_EOUT_DIR;
+    if (len == 0) {
+        return jp_errno_log_err_format(JP_EMISSING_CMD,
+                                       "Output path is empty.");
+    }
+    if (len > JP_PATH_MAX) {
+        return jp_errno_log_err_format(JP_EMISSING_CMD,
+                                       "Output path is too long. Maximum allowed path size is %d.", JP_PATH_MAX);
     }
     JP_ALLOC_GUARD(args->out_dir, strdup(arg));
     return 0;
@@ -34,28 +41,36 @@ static int set_out_dir(const char *arg, jp_worker_args_t *args) {
 
 static int set_chunk_size(const char *arg, jp_worker_args_t *args) {
     char *end_ptr;
-    size_t chunk_size = 1;
+    size_t chunk_size = 0;
     unsigned long long param = 0;
 
     errno = 0;
     param = strtoull(arg, &end_ptr, 10);
 
-    if (end_ptr == arg || errno == ERANGE) {
-        return JP_ECHUNK_SIZE;
+    if (errno == ERANGE) {
+        return jp_errno_log_err_format(JP_ECHUNK_SIZE,
+                                       "Chunk size format is incorrect: '%.32s'.", arg);
+    }
+
+    if (end_ptr == arg) {
+        return jp_errno_log_err_format(JP_ECHUNK_SIZE,
+                                       "Chunk size is empty: '%.32s'.", arg);
     }
 
     if (*end_ptr != '\0') {
         if (!strcmp(end_ptr, "kb") && param <= (JP_WRK_CHUNK_SIZE_MAX / BYTES_IN_KB)) {
-            chunk_size = (param * BYTES_IN_KB);
+            chunk_size += (param * BYTES_IN_KB);
         } else if (!strcmp(end_ptr, "mb") && param <= (JP_WRK_CHUNK_SIZE_MAX / BYTES_IN_MB)) {
-            chunk_size = (param * BYTES_IN_MB);
+            chunk_size += (param * BYTES_IN_MB);
         } else {
-            return JP_ECHUNK_SIZE;
+            return jp_errno_log_err_format(JP_ECHUNK_SIZE,
+                                           "Chunk size value is invalid: '%.32s'.", arg);
         }
     }
 
     if (chunk_size < JP_WRK_CHUNK_SIZE_MIN || chunk_size > JP_WRK_CHUNK_SIZE_MAX) {
-        return JP_ECHUNK_SIZE;
+        return jp_errno_log_err_format(JP_ECHUNK_SIZE,
+                                       "Chunk size value is invalid: '%.32s'.", arg);
     }
     args->chunk_size = (size_t) chunk_size;
     return 0;
@@ -68,9 +83,14 @@ static int set_backlog_len(const char *arg, jp_worker_args_t *args) {
     errno = 0;
     param = strtoull(arg, &end_ptr, 10);
 
-    if (end_ptr == arg || *end_ptr != '\0' || errno == ERANGE || param < JP_WRK_BACKLOG_LEN_MIN ||
-        param > JP_WRK_BACKLOG_LEN_MAX) {
-        return JP_EBACKLOG_LENGTH;
+    if (errno == ERANGE || end_ptr == arg || *end_ptr != '\0') {
+        return jp_errno_log_err_format(JP_EBACKLOG_LENGTH,
+                                       "Backlog length format is incorrect: '%.32s'.", arg);
+    }
+
+    if (param < JP_WRK_BACKLOG_LEN_MIN || param > JP_WRK_BACKLOG_LEN_MAX) {
+        return jp_errno_log_err_format(JP_EBACKLOG_LENGTH,
+                                       "Backlog length format invalid: '%.32s'.", arg);
     }
 
     args->backlog_len = (size_t) param;
@@ -78,8 +98,8 @@ static int set_backlog_len(const char *arg, jp_worker_args_t *args) {
 }
 
 static int handle_unknown_argument(const char *cmd) {
-    jp_cmd_invalid(cmd);
-    return JP_EUNKNOWN_RUN_CMD;
+    return jp_errno_log_err_format(JP_EUNKNOWN_RUN_CMD,
+                                   "Invalid or incomplete 'run' command: '%.32s'.", cmd);
 }
 
 static int set_arguments(int argc, char *argv[], jp_worker_args_t *args) {
@@ -112,7 +132,7 @@ static int set_arguments(int argc, char *argv[], jp_worker_args_t *args) {
                 break;
             case 'n':
                 args->dry_run = true;
-                break;    
+                break;
             case 'h':
                 break;
             case ':':
@@ -137,51 +157,51 @@ static int set_arguments(int argc, char *argv[], jp_worker_args_t *args) {
 }
 
 static int verify_out_dir(jp_worker_args_t *args) {
-    char tmp[JP_PATH_MAX];
-    char absolute_path[JP_PATH_MAX];
+    char tmp[JP_PATH_MAX] = {0};
+    char absolute_path[JP_PATH_MAX] = {0};
     char *p = NULL;
     struct stat st;
-    
+
     size_t path_len = strlen(args->out_dir);
     strncpy(tmp, args->out_dir, sizeof(tmp));
-    
+
     while (path_len > 1 && tmp[path_len - 1] == '/') {
         tmp[path_len - 1] = '\0';
         path_len--;
     }
-    
+
     for (p = tmp + 1; *p; p++) {
         if (*p == '/') {
             *p = '\0';
             if (mkdir(tmp, 0755) != 0 && errno != EEXIST) {
-                JP_LOG_ERR("Could not create the output directory '%s'.", tmp);
-                return JP_EOUT_DIR;
+                return jp_errno_log_err_format(JP_EOUT_DIR,
+                                               "Could not create the output directory: '%s'", tmp);
             }
             *p = '/';
         }
     }
-    
+
     if (mkdir(tmp, 0755) != 0 && errno != EEXIST) {
-        JP_LOG_ERR("Could not create the output directory '%s'.", tmp);
-        return JP_EOUT_DIR;
+        return jp_errno_log_err_format(JP_EOUT_DIR,
+                                       "Could not create the output directory: '%s'.", tmp);
     }
 
-    
+
     if (stat(tmp, &st) != 0 || !S_ISDIR(st.st_mode)) {
-        JP_LOG_ERR("The target path '%s' is not a directory.", tmp);
-        return JP_EOUT_DIR;
+        return jp_errno_log_err_format(JP_EOUT_DIR,
+                                       "The target path is not a directory: '%s'.", tmp);
     }
 
     if (access(tmp, W_OK) != 0) {
-        JP_LOG_ERR("The target path '%s' is inaccessible.", tmp);
-        return JP_EOUT_DIR;
+        return jp_errno_log_err_format(JP_EOUT_DIR,
+                                       "The target path is inaccessible: '%s'.", tmp);
     }
-    
+
     if (realpath(tmp, absolute_path) == NULL) {
-        JP_LOG_ERR("Could not resolve absolute path for '%s'.", tmp);
-        return JP_EOUT_DIR;
+        return jp_errno_log_err_format(JP_EOUT_DIR,
+                                       "Could not resolve absolute path: '%s'.", tmp);
     }
-    
+
     JP_FREE_IF_ALLOC(args->out_dir);
     JP_ALLOC_GUARD(args->out_dir, strdup(absolute_path));
     return 0;
@@ -204,7 +224,7 @@ int jp_wrk_exec(int argc, char *argv[]) {
         JP_FREE_IF_ALLOC(args.out_dir);
         return err;
     }
-    
+
     err = verify_arguments(&args);
     if (err) {
         JP_FREE_IF_ALLOC(args.out_dir);

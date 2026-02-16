@@ -33,13 +33,13 @@ int version_command_adapter(void *ctx) {
 void test_jp_cmd_help(void) {
     test_ctx_t ctx = {.argc = 0, .argv = NULL};
     int status = jp_test_compare_stdout(help_command_adapter, &ctx, "help_command_out.tmpl");
-    JP_ASSERT_EQ(0, status);
+    JP_ASSERT_OK(status);
 }
 
 void test_jp_cmd_version(void) {
     test_ctx_t ctx = {.argc = 0, .argv = NULL};
     int status = jp_test_compare_stdout(version_command_adapter, &ctx, "version_command_out.tmpl");
-    JP_ASSERT_EQ(0, status);
+    JP_ASSERT_OK(status);
 }
 
 void test_jp_cmd_exec(void) {

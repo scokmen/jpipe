@@ -3,9 +3,9 @@ Usage: jpipe <command> [options]
 A lightweight C pipe-to-JSON logger designed for high-performance stream capture and extensible metadata injection.
 
 Commands:
-  run        Process data with configurable chunking and backlog
-  version    Display version information
-  help       Show this help message
+  run        Process data with configurable options.
+  version    Display version information.
+  help       Show this help message.
 
 Use 'jpipe <command> --help' for more information on a specific command.
 
@@ -13,5 +13,5 @@ Examples:
   # Capture stream with 1MB chunks to a specific directory
   cat data.log | jpipe run -c 1mb -o /tmp/output
 
-  # High-throughput capture with a larger backlog
+  # High-throughput capture with a larger buffer
   tail -f /var/log/syslog | jpipe run -b 128 -c 64kb

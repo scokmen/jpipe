@@ -67,23 +67,23 @@ void test_jp_wrk_exec_help_command_long(void) {
     JP_ASSERT_OK(status);
 }
 
-void test_jp_wrk_exec_backlog_length(void) {
+void test_jp_wrk_exec_buffer_size(void) {
     test_case_t cases[] = {
             {.argc = 1, .argv = {"jpipe", NULL}, .expected=0},
-            {.argc = 3, .argv = {"jpipe", "-b", "-1", NULL}, .expected=JP_EBACKLOG_LENGTH},
-            {.argc = 3, .argv = {"jpipe", "-b", "", NULL}, .expected=JP_EBACKLOG_LENGTH},
-            {.argc = 3, .argv = {"jpipe", "-b", "A", NULL}, .expected=JP_EBACKLOG_LENGTH},
-            {.argc = 3, .argv = {"jpipe", "-b", "1025", NULL}, .expected=JP_EBACKLOG_LENGTH},
-            {.argc = 3, .argv = {"jpipe", "-b", "0", NULL}, .expected=JP_EBACKLOG_LENGTH},
+            {.argc = 3, .argv = {"jpipe", "-b", "-1", NULL}, .expected=JP_EBUFFER_SIZE},
+            {.argc = 3, .argv = {"jpipe", "-b", "", NULL}, .expected=JP_EBUFFER_SIZE},
+            {.argc = 3, .argv = {"jpipe", "-b", "A", NULL}, .expected=JP_EBUFFER_SIZE},
+            {.argc = 3, .argv = {"jpipe", "-b", "1025", NULL}, .expected=JP_EBUFFER_SIZE},
+            {.argc = 3, .argv = {"jpipe", "-b", "0", NULL}, .expected=JP_EBUFFER_SIZE},
             {.argc = 3, .argv = {"jpipe", "-b", "1", NULL}, .expected=0,},
-            {.argc = 3, .argv = {"jpipe", "--backlog", "1024", NULL}, .expected=0},
-            {.argc = 3, .argv = {"jpipe", "--backlog", "-1", NULL}, .expected=JP_EBACKLOG_LENGTH},
-            {.argc = 3, .argv = {"jpipe", "--backlog", "", NULL}, .expected=JP_EBACKLOG_LENGTH},
-            {.argc = 3, .argv = {"jpipe", "--backlog", "A", NULL}, .expected=JP_EBACKLOG_LENGTH},
-            {.argc = 3, .argv = {"jpipe", "--backlog", "1025", NULL}, .expected=JP_EBACKLOG_LENGTH},
-            {.argc = 3, .argv = {"jpipe", "--backlog", "0", NULL}, .expected=JP_EBACKLOG_LENGTH},
-            {.argc = 3, .argv = {"jpipe", "--backlog", "1", NULL}, .expected=0},
-            {.argc = 3, .argv = {"jpipe", "--backlog", "1024", NULL}, .expected=0},
+            {.argc = 3, .argv = {"jpipe", "--buffer-size", "1024", NULL}, .expected=0},
+            {.argc = 3, .argv = {"jpipe", "--buffer-size", "-1", NULL}, .expected=JP_EBUFFER_SIZE},
+            {.argc = 3, .argv = {"jpipe", "--buffer-size", "", NULL}, .expected=JP_EBUFFER_SIZE},
+            {.argc = 3, .argv = {"jpipe", "--buffer-size", "A", NULL}, .expected=JP_EBUFFER_SIZE},
+            {.argc = 3, .argv = {"jpipe", "--buffer-size", "1025", NULL}, .expected=JP_EBUFFER_SIZE},
+            {.argc = 3, .argv = {"jpipe", "--buffer-size", "0", NULL}, .expected=JP_EBUFFER_SIZE},
+            {.argc = 3, .argv = {"jpipe", "--buffer-size", "1", NULL}, .expected=0},
+            {.argc = 3, .argv = {"jpipe", "--buffer-size", "1024", NULL}, .expected=0},
     };
 
     int len = (sizeof(cases) / sizeof(cases[0]));
@@ -288,11 +288,11 @@ void test_jp_wrk_exec_no_err(void) {
     JP_ASSERT_OK(err);
 }
 
-int main(int argc, char *argv[]) {
+int main() {
     test_jp_wrk_exec_help_command_short();
     test_jp_wrk_exec_help_command_long();
     test_jp_wrk_exec_chunk_size();
-    test_jp_wrk_exec_backlog_length();
+    test_jp_wrk_exec_buffer_size();
     test_jp_wrk_exec_out_dir();
     test_jp_wrk_exec_invalid_command();
     test_jp_wrk_exec_out_dir_enotdir();

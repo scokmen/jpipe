@@ -1,14 +1,6 @@
 #ifndef JPIPE_JP_TEST_H
 #define JPIPE_JP_TEST_H
 
-#define CMD_MAX  4096
-
-#define JP_TEST_LOG (msg, ...)                                                           \
-do {                                                                                     \
-    fprintf(stdout, "[LOG]: " msg "\n", ##__VA_ARGS__);                                  \
-    exit(EXIT_FAILURE);                                                                  \
-} while (0)
-
 #define JP_TEST_FAIL(msg, ...)                                                           \
 do {                                                                                     \
     fprintf(stderr, "[FAIL]:  %s:%d\n  " msg "\n\n", __FILE__, __LINE__, ##__VA_ARGS__); \

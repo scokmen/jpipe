@@ -12,10 +12,10 @@ static int display_help(void) {
     JP_LOG_OUT("Usage: jpipe run [options]\n");
     JP_LOG_OUT("Execute the data processing engine with the following configurations:\n");
     JP_LOG_OUT("Options:");
-    JP_LOG_OUT("  -c, --chunk-size <size>    Buffer size (e.g., 512kb, 16mb). Range: 1kb-64mb  (default: 1kb)");
-    JP_LOG_OUT("  -b, --backlog    <count>   Max pending operations. Range: 1-1024 (default: 1)");
-    JP_LOG_OUT("  -o, --out-dir    <path>    Output directory.");
-    JP_LOG_OUT("  -h, --help                 Show this help message.");
+    JP_LOG_OUT("  -c, --chunk-size  <size>    Chunk size (e.g., 512kb, 16mb). Range: 1kb-64mb  (default: 1kb).");
+    JP_LOG_OUT("  -b, --buffer-size <count>   Max pending operations. Range: 1-1024 (default: 64).");
+    JP_LOG_OUT("  -o, --out-dir     <path>    Output directory (default: current dir)");
+    JP_LOG_OUT("  -h, --help                  Show this help message.");
     return 0;
 }
 
@@ -33,7 +33,7 @@ static int set_out_dir(const char *arg, jp_worker_args_t *args) {
     }
     if (len > JP_PATH_MAX) {
         return jp_errno_log_err_format(JP_EMISSING_CMD,
-                                       "Output path is too long. Maximum allowed path size is %d.", JP_PATH_MAX);
+                                       "Output path is too long. Maximum allowed path size: %d.", JP_PATH_MAX);
     }
     JP_ALLOC_GUARD(args->out_dir, strdup(arg));
     return 0;
@@ -76,7 +76,7 @@ static int set_chunk_size(const char *arg, jp_worker_args_t *args) {
     return 0;
 }
 
-static int set_backlog_len(const char *arg, jp_worker_args_t *args) {
+static int set_buffer_size(const char *arg, jp_worker_args_t *args) {
     char *end_ptr;
     unsigned long long param = 0;
 
@@ -84,22 +84,22 @@ static int set_backlog_len(const char *arg, jp_worker_args_t *args) {
     param = strtoull(arg, &end_ptr, 10);
 
     if (errno == ERANGE || end_ptr == arg || *end_ptr != '\0') {
-        return jp_errno_log_err_format(JP_EBACKLOG_LENGTH,
-                                       "Backlog length format is incorrect: '%.32s'.", arg);
+        return jp_errno_log_err_format(JP_EBUFFER_SIZE,
+                                       "Buffer size format is incorrect: '%.32s'.", arg);
     }
 
-    if (param < JP_WRK_BACKLOG_LEN_MIN || param > JP_WRK_BACKLOG_LEN_MAX) {
-        return jp_errno_log_err_format(JP_EBACKLOG_LENGTH,
-                                       "Backlog length format invalid: '%.32s'.", arg);
+    if (param < JP_WRK_BUFFER_SIZE_MIN || param > JP_WRK_BUFFER_SIZE_MAX) {
+        return jp_errno_log_err_format(JP_EBUFFER_SIZE,
+                                       "Buffer size format invalid: '%.32s'.", arg);
     }
 
-    args->backlog_len = (size_t) param;
+    args->buffer_size = (size_t) param;
     return 0;
 }
 
 static int handle_unknown_argument(const char *cmd) {
     return jp_errno_log_err_format(JP_EUNKNOWN_RUN_CMD,
-                                   "Invalid or incomplete 'run' command: '%.32s'.", cmd);
+                                   "Invalid or incomplete [run] command: '%.32s'.", cmd);
 }
 
 static int set_arguments(int argc, char *argv[], jp_worker_args_t *args) {
@@ -107,16 +107,16 @@ static int set_arguments(int argc, char *argv[], jp_worker_args_t *args) {
     opterr = 0;
     optind = 1;
     args->chunk_size = JP_WRK_CHUNK_SIZE_DEF;
-    args->backlog_len = JP_WRK_BACKLOG_LEN_DEF;
+    args->buffer_size = JP_WRK_BUFFER_SIZE_DEF;
     args->out_dir = NULL;
 
     static struct option long_options[] = {
-            {"chunk-size", required_argument, 0, 'c'},
-            {"backlog",    required_argument, 0, 'b'},
-            {"out-dir",    required_argument, 0, 'o'},
-            {"dry-run",    required_argument, 0, 'n'},
-            {"help",       no_argument,       0, 'h'},
-            {0, 0,                            0, 0}
+            {"chunk-size" , required_argument, 0, 'c'},
+            {"buffer-size", required_argument, 0, 'b'},
+            {"out-dir"    , required_argument, 0, 'o'},
+            {"dry-run"    , required_argument, 0, 'n'},
+            {"help"       , no_argument      , 0, 'h'},
+            {0            , 0                , 0, 0  }
     };
 
     while ((option = getopt_long(argc, argv, ":c:b:o:hn", long_options, NULL)) != -1) {
@@ -125,7 +125,7 @@ static int set_arguments(int argc, char *argv[], jp_worker_args_t *args) {
                 JP_ERROR_GUARD(set_chunk_size(optarg, args));
                 break;
             case 'b':
-                JP_ERROR_GUARD(set_backlog_len(optarg, args));
+                JP_ERROR_GUARD(set_buffer_size(optarg, args));
                 break;
             case 'o':
                 JP_ERROR_GUARD(set_out_dir(optarg, args));

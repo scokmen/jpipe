@@ -24,7 +24,7 @@ void jp_test_get_sandbox(char *buffer, size_t size) {
 
 int jp_test_compare_stdout(jp_test_fn printer, void *ctx, const char *template_file) {
     int fd, stdout_cache, status;
-    char cmd[CMD_MAX], actual_file[JP_PATH_MAX];
+    char cmd[JP_PATH_MAX * 3], actual_file[JP_PATH_MAX];
     char tmp_file[] = "/tmp/tmp_stdout_dest_XXXXXXXX";
 
     snprintf(actual_file, JP_PATH_MAX, "%s/%s", JP_TEST_DATA_DIR, template_file);

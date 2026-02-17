@@ -4,11 +4,13 @@
 #include <limits.h>
 
 #if defined(__GNUC__) || defined(__clang__)
-#define JP_CONST_FUNC __attribute__((const))
-#define JP_PRINT_FUNC(fmt) __attribute__((format(printf, fmt, (fmt) + 1)))
+#define JP_CONST_FUNC       __attribute__((const))
+#define JP_PRINT_FUNC(fmt)  __attribute__((format(printf, fmt, (fmt) + 1)))
+#define JP_UNUSED           __attribute__((unused))
 #else
 #define JP_CONST_FUNC
 #define JP_PRINTF(fmt)
+#define JP_UNUSED
 #endif
 
 #ifdef PATH_MAX

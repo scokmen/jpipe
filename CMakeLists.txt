@@ -20,7 +20,16 @@ option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(ENABLE_COVERAGE "Enable Coverage" OFF)
 
 ###############################################
-# JPipe: Sanitizer / Coverage Flags
+# JPipe: Clang-Tidy
+###############################################
+find_program(CLANG_TIDY_BINARY NAMES "clang-tidy")
+if (CLANG_TIDY_BINARY)
+    message(STATUS "[clang-tidy]: ${CLANG_TIDY_BINARY}")
+    set(CMAKE_C_CLANG_TIDY ${CLANG_TIDY_BINARY} -config-file=${CMAKE_SOURCE_DIR}/.clang-tidy)
+endif ()
+
+###############################################
+# JPipe: Sanitizer
 ###############################################
 if (ENABLE_ASAN)
     message(STATUS "[address-sanitizer]: enabled")
@@ -28,10 +37,26 @@ if (ENABLE_ASAN)
     add_link_options(-fsanitize=address)
 endif ()
 
+###############################################
+# JPipe: Coverage
+###############################################
 if (ENABLE_COVERAGE)
     message(STATUS "[coverage]: enabled")
     add_compile_options(--coverage)
     add_link_options(--coverage)
+
+    find_program(LCOV_BINARY NAMES "lcov")
+    find_program(GCOVR_BINARY NAMES "gcovr")
+    if (LCOV_BINARY AND GCOVR_BINARY)
+        add_custom_target(coverage
+                COMMAND ${LCOV_BINARY} --capture --initial --directory . --output-file base.info
+                COMMAND ${LCOV_BINARY} -capture --directory . --output-file test.info
+                COMMAND ${LCOV_BINARY} --add-tracefile base.info --add-tracefile test.info --output-file total.info
+                COMMAND ${LCOV_BINARY} --remove total.info '*/test/*' --output-file coverage_filtered.info
+                COMMAND ${GCOVR_BINARY} -r ${CMAKE_SOURCE_DIR} . --exclude '.*/test/.*' --print-summary
+                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        )
+    endif ()
 endif ()
 
 ###############################################
@@ -47,6 +72,7 @@ target_include_directories(jpipe_core
         PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
         PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/generated"
 )
+
 ###############################################
 # JPipe: Executable
 ###############################################
@@ -72,31 +98,3 @@ foreach (test_source ${TEST_FILES})
     target_link_libraries(${test_name} PRIVATE jpipe_test_utils)
     add_test(NAME ${test_name} COMMAND ${test_name})
 endforeach ()
-
-###############################################
-# JPipe: Coverage
-###############################################
-if (ENABLE_COVERAGE)
-    find_program(LCOV_BINARY NAMES "lcov")
-    find_program(GCOVR_BINARY NAMES "gcovr")
-
-    if (LCOV_BINARY AND GCOVR_BINARY)
-        add_custom_target(coverage
-                COMMAND ${LCOV_BINARY} --capture --initial --directory . --output-file base.info
-                COMMAND ${LCOV_BINARY} -capture --directory . --output-file test.info
-                COMMAND ${LCOV_BINARY} --add-tracefile base.info --add-tracefile test.info --output-file total.info
-                COMMAND ${LCOV_BINARY} --remove total.info '*/test/*' --output-file coverage_filtered.info
-                COMMAND ${GCOVR_BINARY} -r ${CMAKE_SOURCE_DIR} . --exclude '.*/test/.*' --print-summary
-                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        )
-    endif ()
-endif ()
-
-###############################################
-# JPipe: Clang-Tidy
-###############################################
-find_program(CLANG_TIDY_BINARY NAMES "clang-tidy")
-if (CLANG_TIDY_BINARY)
-    message(STATUS "[clang-tidy]: ${CLANG_TIDY_BINARY}")
-    set_target_properties(jpipe PROPERTIES C_CLANG_TIDY "${CLANG_TIDY_BINARY}")
-endif ()

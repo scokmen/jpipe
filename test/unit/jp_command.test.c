@@ -16,7 +16,7 @@ typedef struct {
     char **argv;
 } test_ctx_t;
 
-int mock_command(int argc, char *argv[]) {
+int mock_command() {
     return MOCK_RETURN_CODE;
 }
 
@@ -62,7 +62,7 @@ void test_jp_cmd_exec(void) {
     }
 }
 
-int main(int argc, char *argv[]) {
+int main() {
     test_jp_cmd_exec();
     test_jp_cmd_help();
     test_jp_cmd_version();

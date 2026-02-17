@@ -4,17 +4,26 @@ Checks: >
   bugprone-*,
   performance-*,
   portability-*,
+  clang-analyzer-*,
+  clang-analyzer-optin.performance.Padding,
   readability-uppercase-literal-type,
   readability-redundant-control-flow,
-  clang-analyzer-*,
   -clang-analyzer-security.insecurehostent.LogicalIPv6Hostent,
   -bugprone-easily-swappable-parameters,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
 
-WarningsAsErrors: 'bugprone-*,performance-*,clang-analyzer-*'
+WarningsAsErrors: 'bugprone-*,performance-*,clang-analyzer-*,portability-*'
 HeaderFilterRegex: 'include/.*'
+
 CheckOptions:
+  - key:             clang-analyzer-optin.performance.Padding.Threshold
+    value:           '4'
   - key:             readability-identifier-naming.VariableCase
     value:           lower_case
   - key:             readability-identifier-naming.FunctionCase
     value:           snake_case
+  - key:             readability-identifier-naming.ParameterCase
+    value:           lower_case
+  - key:             readability-identifier-naming.StructCase
+    value:           snake_case
+  

@@ -20,7 +20,7 @@ jobs:
         compiler: [ gcc, clang ]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       
     # Install required os level dependencies.  
     - name: Dependencies
@@ -31,7 +31,7 @@ jobs:
     # Initialize CodeQL tool for only GCC.
     - name: Initialize CodeQL
       if: matrix.compiler == 'gcc'
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: c-cpp
         config-file: .github/codeql/codeql-config.yml
@@ -57,7 +57,7 @@ jobs:
     # Start CodeQL Analysis for only GCC.
     - name: Perform CodeQL Analysis
       if: matrix.compiler == 'gcc'
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v4
       with:
         category: "/language:c-cpp"
     

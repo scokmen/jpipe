@@ -40,11 +40,16 @@ jobs:
     # Configure CMake.
     # Build    : Debug
     # Coverage : On
-    # ASAN     : On
-    # Compiler : Gcc|Clang
+    # Compiler : Gcc      | Clang
+    # ASAN     : Off(Gcc) | On(Clang)
     - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_ASAN=ON -DENABLE_COVERAGE=ON -DCMAKE_C_COMPILER=${{ matrix.compiler }}
-
+      run: |
+        if [ "${{ matrix.compiler }}" = "gcc" ]; then
+          cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_ASAN=OFF -DENABLE_COVERAGE=ON -DCMAKE_C_COMPILER=gcc
+        else
+          cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_ASAN=ON -DENABLE_COVERAGE=OFF -DCMAKE_C_COMPILER=clang
+        fi
+        
     # Build Cmake.
     - name: Build
       run: cmake --build build

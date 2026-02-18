@@ -1,0 +1,7 @@
+name: "JPipe - CodeQL Workflow"
+
+paths-ignore:
+  - '**/test/**'
+
+queries:
+  - uses: security-extended

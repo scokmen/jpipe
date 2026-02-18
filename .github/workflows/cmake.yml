@@ -12,6 +12,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
     
     strategy:
       matrix:
@@ -20,25 +22,53 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       
+    # Install required os level dependencies.  
     - name: Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y clang gcc lcov gcovr llvm
 
+    # Initialize CodeQL tool for only GCC.
+    - name: Initialize CodeQL
+      if: matrix.compiler == 'gcc'
+      uses: github/codeql-action/init@v3
+      with:
+        languages: c-cpp
+        config-file: .github/codeql/codeql-config.yml
+        build-mode: manual
+
+    # Configure CMake.
+    # Build    : Debug
+    # Coverage : On
+    # ASAN     : On
+    # Compiler : Gcc|Clang
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_ASAN=ON -DENABLE_COVERAGE=ON -DCMAKE_C_COMPILER=${{ matrix.compiler }}
 
+    # Build Cmake.
     - name: Build
       run: cmake --build build
 
+    # Start CodeQL Analysis for only GCC.
+    - name: Perform CodeQL Analysis
+      if: matrix.compiler == 'gcc'
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:c-cpp"
+    
+    # Run unit tests.
     - name: Test
       working-directory: build
+      env:
+        ASAN_OPTIONS: "detect_leaks=1:exitcode=1"
       run: ctest --output-on-failure
-
+      
+    # Calculate coverage for only GCC.
     - name: Coverage
       if: matrix.compiler == 'gcc'
       run: cmake --build build --target coverage
-        
+      
+    # Report coverage for only GCC.    
     - name: Reporting
       if: matrix.compiler == 'gcc'
       uses: coverallsapp/github-action@v2

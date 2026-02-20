@@ -20,7 +20,7 @@ static int display_help(void) {
     JP_LOG_OUT("Field Options:");
     JP_LOG_OUT("  -f, --field \"key=value\"   Add a field to the JSON output.\n");
     JP_LOG_OUT("  Key Rules:");
-    JP_LOG_OUT("    - Must contain only: a-z, A-Z, 0-9, _, -, .");
+    JP_LOG_OUT("    - Must contain only: 'a-z', 'A-Z', '0-9', '_' and '-'.");
     JP_LOG_OUT("    - Maximum length: 64 characters.\n");
     JP_LOG_OUT("  Value Type Inference:");
     JP_LOG_OUT("    - key=123        -> Number  (no quotes in JSON).");

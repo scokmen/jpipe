@@ -11,6 +11,7 @@
   XX(ECHUNK_SIZE      , "Chunk size must be between 1kb (1024B) and 64mb (67108864B)")                      \
   XX(EBUFFER_SIZE     , "Buffer size must be between 1 and 1024.")                                          \
   XX(EOUT_DIR         , "Output directory is invalid, inaccessible or path too long.")                      \
+  XX(ETOO_MANY_FIELD  , "Too many fields. Maximum allowed field number is 32.")                             \
   XX(ENOMEM           , "Could not allocate memory.")
 
 typedef enum {

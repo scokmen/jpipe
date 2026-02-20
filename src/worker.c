@@ -12,10 +12,28 @@ static int display_help(void) {
     JP_LOG_OUT("Usage: jpipe run [options]\n");
     JP_LOG_OUT("Execute the data processing engine with the following configurations:\n");
     JP_LOG_OUT("Options:");
-    JP_LOG_OUT("  -c, --chunk-size  <size>    Chunk size (e.g., 512kb, 16mb). Range: 1kb-64mb  (default: 1kb).");
-    JP_LOG_OUT("  -b, --buffer-size <count>   Max pending operations. Range: 1-1024 (default: 64).");
-    JP_LOG_OUT("  -o, --out-dir     <path>    Output directory (default: current dir)");
-    JP_LOG_OUT("  -h, --help                  Show this help message.");
+    JP_LOG_OUT("  -c, --chunk-size  <size>     Chunk size (e.g., 512kb, 16mb). Range: 1kb-64mb  (default: 1kb).");
+    JP_LOG_OUT("  -b, --buffer-size <count>    Max pending operations. Range: 1-1024 (default: 64).");
+    JP_LOG_OUT("  -o, --out-dir     <path>     Output directory (default: current dir).");
+    JP_LOG_OUT("  -f, --field       key=value  Additional field to the JSON output. Can be used multiple times.");
+    JP_LOG_OUT("  -h, --help                   Show this help message.\n");
+    JP_LOG_OUT("Field Options:");
+    JP_LOG_OUT("  -f, --field \"key=value\"   Add a field to the JSON output.\n");
+    JP_LOG_OUT("  Key Rules:");
+    JP_LOG_OUT("    - Must contain only: a-z, A-Z, 0-9, _, -, .");
+    JP_LOG_OUT("    - Maximum length: 64 characters.\n");
+    JP_LOG_OUT("  Value Type Inference:");
+    JP_LOG_OUT("    - key=123        -> Number  (no quotes in JSON).");
+    JP_LOG_OUT("    - key=true|false -> Boolean (no quotes in JSON).");
+    JP_LOG_OUT("    - key=string     -> String.");
+    JP_LOG_OUT("    - key=\"string\"   -> String.");
+    JP_LOG_OUT("    - key=\"123\"      -> Forced string.");
+    JP_LOG_OUT("    - key=\"true\"     -> Forced string.");
+    JP_LOG_OUT("    - key=\"str=ng\"   -> String.");
+    JP_LOG_OUT("    - key=str=ng     -> Invalid field.\n");
+    JP_LOG_OUT("  Example:");
+    JP_LOG_OUT("    Input : jpipe -f \"id=101\" -f \"name=app\" -f \"active=true\" -f \"ver=1.2.0\"");
+    JP_LOG_OUT("    Output: {\"id\": 101, \"name\": \"app\", \"active\": true, \"ver\": \"1.2.0\"}");
     return 0;
 }
 
@@ -102,7 +120,27 @@ static int handle_unknown_argument(const char *cmd) {
                                    "Invalid or incomplete [run] command: '%.32s'.", cmd);
 }
 
-static int set_arguments(int argc, char *argv[], jp_worker_args_t *args) {
+static int get_field_args_count(int argc, char *argv[]) {
+    int c = 0;
+    for (int i = 0; i < argc; i++) {
+        if (JP_CMD_EQ(argv[i], "-f", "--field")) {
+            c++;
+        }
+    }
+    return c;
+}
+
+static int init_worker_args(int argc, char *argv[], jp_worker_args_t *args) {
+    int fields = get_field_args_count(argc, argv);
+    if (fields > JP_WRK_FIELDS_MAX) {
+        return jp_errno_log_err_format(JP_ETOO_MANY_FIELD,
+                                       "Too many 'fields' specified: '%d'", fields);
+    }
+    JP_ALLOC_GUARD(args->fields, jp_field_set_new(fields));
+    return 0;
+}
+
+static int collect_cli_args(int argc, char *argv[], jp_worker_args_t *args) {
     int option;
     opterr = 0;
     optind = 1;
@@ -113,13 +151,14 @@ static int set_arguments(int argc, char *argv[], jp_worker_args_t *args) {
     static struct option long_options[] = {
             {"chunk-size" , required_argument, 0, 'c'},
             {"buffer-size", required_argument, 0, 'b'},
+            {"field"      , required_argument, 0, 'f'},
             {"out-dir"    , required_argument, 0, 'o'},
             {"dry-run"    , required_argument, 0, 'n'},
             {"help"       , no_argument      , 0, 'h'},
             {0            , 0                , 0, 0  }
     };
 
-    while ((option = getopt_long(argc, argv, ":c:b:o:hn", long_options, NULL)) != -1) {
+    while ((option = getopt_long(argc, argv, ":c:b:o:f:hn", long_options, NULL)) != -1) {
         switch (option) {
             case 'c':
                 JP_ERROR_GUARD(set_chunk_size(optarg, args));
@@ -156,7 +195,7 @@ static int set_arguments(int argc, char *argv[], jp_worker_args_t *args) {
     return 0;
 }
 
-static int verify_out_dir(jp_worker_args_t *args) {
+static int create_and_normalize_out_dir(jp_worker_args_t *args) {
     char tmp[JP_PATH_MAX] = {0};
     char absolute_path[JP_PATH_MAX] = {0};
     char *p = NULL;
@@ -207,29 +246,31 @@ static int verify_out_dir(jp_worker_args_t *args) {
     return 0;
 }
 
-static int verify_arguments(jp_worker_args_t *args) {
-    JP_ERROR_GUARD(verify_out_dir(args));
-    return 0;
-}
-
 int jp_wrk_exec(int argc, char *argv[]) {
     if (argc == 2 && JP_CMD_EQ(argv[1], "-h", "--help")) {
         return display_help();
     }
     int err = 0;
     jp_worker_args_t args = {};
-
-    err = set_arguments(argc, argv, &args);
+    
+    err = init_worker_args(argc, argv, &args);
     if (err) {
         JP_FREE_IF_ALLOC(args.out_dir);
         return err;
     }
 
-    err = verify_arguments(&args);
+    err = collect_cli_args(argc, argv, &args);
     if (err) {
         JP_FREE_IF_ALLOC(args.out_dir);
         return err;
     }
+
+    err = create_and_normalize_out_dir(&args);
+    if (err) {
+        JP_FREE_IF_ALLOC(args.out_dir);
+        return err;
+    }
+    
     JP_FREE_IF_ALLOC(args.out_dir);
     return 0;
 }

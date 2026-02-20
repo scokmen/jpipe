@@ -7,15 +7,22 @@ do {                                                                            
     exit(EXIT_FAILURE);                                                                  \
 } while (0)
 
-#define JP_ASSERT_EQ(expected, actual)                                      \
-do {                                                                        \
-    if ((expected) != (actual)) {                                           \
-        JP_TEST_FAIL("Expected: %d\n  Actual  : %d", (expected), (actual)); \
-    }                                                                       \
+#define JP_ASSERT_EQ(expected, actual)                                     \
+do {                                                                       \
+    if ((expected) != (actual)) {                                          \
+        JP_TEST_FAIL("Expected: %llu\n  Actual  : %llu",                   \
+            (unsigned long long)(expected), (unsigned long long)(actual)); \
+    }                                                                      \
  } while (0)
 
-#define JP_ASSERT_OK(actual)                                                \
-JP_ASSERT_EQ(0, actual)
+#define JP_ASSERT_OK(actual) JP_ASSERT_EQ(0, actual)
+
+#define JP_ASSERT_NONNULL(actual)                           \
+do {                                                        \
+    if ((actual) == NULL) {                                 \
+        JP_TEST_FAIL("Expected NONNULL\n  Actual  : NULL"); \
+    }                                                       \
+ } while (0)
 
 typedef int (*jp_test_fn)(void *ctx);
 

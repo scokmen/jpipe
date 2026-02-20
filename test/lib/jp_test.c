@@ -6,20 +6,21 @@
 #include <jp_config.h>
 #include <jp_common.h>
 
-static const char *jp_test_os_tmp_dir() {
+void jp_test_get_sandbox(char *buffer, size_t size) {
     const char *env = NULL;
+    const char *tmp = NULL;
     const char *envs[3] = {"TMPDIR", "TMP", "TEMP"};
     for (int i = 0; i < 3; i++) {
         env = getenv(envs[i]);
         if (env != NULL && strlen(env) > 0) {
-            return env;
+            tmp = env;
+            break;
         }
     }
-    return "/tmp";
-}
-
-void jp_test_get_sandbox(char *buffer, size_t size) {
-    snprintf(buffer, size, "%s/jpipe_test_%d", jp_test_os_tmp_dir(), getpid());
+    if (tmp == NULL) {
+        tmp = "/tmp";
+    }
+    snprintf(buffer, size, "%s/jpipe_test_%d", tmp, getpid());
 }
 
 int jp_test_compare_stdout(jp_test_fn printer, void *ctx, const char *template_file) {

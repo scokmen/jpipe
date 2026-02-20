@@ -66,6 +66,7 @@ add_library(jpipe_core STATIC
         src/errno.c
         src/command.c
         src/worker.c
+        src/field.c
 )
 
 target_include_directories(jpipe_core

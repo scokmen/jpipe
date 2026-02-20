@@ -2,6 +2,7 @@
 #define JPIPE_JP_WORKER_H
 
 #include <stdbool.h>
+#include <jp_field.h>
 
 #define BYTES_IN_KB            1024      // 1KB
 #define BYTES_IN_MB            1048576   // 1MB
@@ -12,12 +13,14 @@
 #define JP_WRK_BUFFER_SIZE_DEF 64
 #define JP_WRK_BUFFER_SIZE_MAX 1024
 #define JP_WRK_OUTDIR_DEF      "."
+#define JP_WRK_FIELDS_MAX      32
 
 typedef struct {
     size_t chunk_size;
     size_t buffer_size;
     bool dry_run;
     const char *out_dir;
+    jp_field_set_t *fields;
 } jp_worker_args_t;
 
 int jp_wrk_exec(int argc, char *argv[]);

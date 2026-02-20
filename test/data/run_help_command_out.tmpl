@@ -3,7 +3,29 @@ Usage: jpipe run [options]
 Execute the data processing engine with the following configurations:
 
 Options:
-  -c, --chunk-size  <size>    Chunk size (e.g., 512kb, 16mb). Range: 1kb-64mb  (default: 1kb).
-  -b, --buffer-size <count>   Max pending operations. Range: 1-1024 (default: 64).
-  -o, --out-dir     <path>    Output directory (default: current dir)
-  -h, --help                  Show this help message.
+  -c, --chunk-size  <size>     Chunk size (e.g., 512kb, 16mb). Range: 1kb-64mb  (default: 1kb).
+  -b, --buffer-size <count>    Max pending operations. Range: 1-1024 (default: 64).
+  -o, --out-dir     <path>     Output directory (default: current dir).
+  -f, --field       key=value  Additional field to the JSON output. Can be used multiple times.
+  -h, --help                   Show this help message.
+
+Field Options:
+  -f, --field "key=value"   Add a field to the JSON output.
+  
+  Key Rules:
+    - Must contain only: a-z, A-Z, 0-9, _, -, .
+    - Maximum length: 64 characters.
+
+  Value Type Inference:
+    - key=123        -> Number  (no quotes in JSON).
+    - key=true|false -> Boolean (no quotes in JSON).
+    - key=string     -> String.
+    - key="string"   -> String.
+    - key="123"      -> Forced string.
+    - key="true"     -> Forced string.
+    - key="str=ng"   -> String.
+    - key=str=ng     -> Invalid field.
+
+  Example:
+    Input : jpipe -f "id=101" -f "name=app" -f "active=true" -f "ver=1.2.0"
+    Output: {"id": 101, "name": "app", "active": true, "ver": "1.2.0"}

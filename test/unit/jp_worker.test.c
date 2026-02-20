@@ -10,7 +10,7 @@
 typedef struct {
     int argc;
     int expected;
-    char *argv[10];
+    char *argv[128];
 } test_case_t;
 
 typedef struct {
@@ -44,10 +44,6 @@ void tear_up_test_dir(const char *base_path) {
     // CASE 4: READONLY
     snprintf(os_sub_path, sizeof(os_sub_path), "%s/c4_read_only", base_path);
     JP_ASSERT_OK(mkdir(os_sub_path, 0555));
-}
-
-void tear_down_test_dir(void) {
-
 }
 
 int command_adapter(void *ctx) {
@@ -174,6 +170,52 @@ void test_jp_wrk_exec_out_dir(void) {
     }
 }
 
+void test_jp_wrk_exec_fields(void) {
+    test_case_t cases[] = {
+            {
+                    .argc = 65,
+                    .argv = {"jpipe",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             NULL},
+                    .expected=0
+            },
+            {
+                    .argc = 66,
+                    .argv = {"jpipe",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
+                             "-f", "k=v", NULL},
+                    .expected= JP_ETOO_MANY_FIELD
+            },
+    };
+
+    int len = (sizeof(cases) / sizeof(cases[0]));
+    for (int i = 0; i < len; i++) {
+        int err = 0;
+
+        optind = 1;
+        optarg = NULL;
+        opterr = 0;
+
+        err = jp_wrk_exec(cases[i].argc, cases[i].argv);
+
+        JP_ASSERT_EQ(cases[i].expected, err);
+    }
+}
+
 void test_jp_wrk_exec_invalid_command(void) {
     test_case_t cases[] = {
             {.argc = 1, .argv = {"jpipe", NULL}, .expected=0},
@@ -209,7 +251,6 @@ void test_jp_wrk_exec_out_dir_enotdir(void) {
 
     tear_up_test_dir(tmp_dir);
     err = jp_wrk_exec(3, args);
-    tear_down_test_dir();
 
     JP_ASSERT_EQ(JP_EOUT_DIR, err);
 }
@@ -226,7 +267,6 @@ void test_jp_wrk_exec_out_dir_eacces(void) {
 
     tear_up_test_dir(tmp_dir);
     err = jp_wrk_exec(3, args);
-    tear_down_test_dir();
 
     JP_ASSERT_EQ(getuid() == 0 ? 0 : JP_EOUT_DIR, err);
 }
@@ -243,7 +283,6 @@ void test_jp_wrk_exec_out_dir_target_enotdir(void) {
 
     tear_up_test_dir(tmp_dir);
     err = jp_wrk_exec(3, args);
-    tear_down_test_dir();
 
     JP_ASSERT_EQ(JP_EOUT_DIR, err);
 }
@@ -260,7 +299,6 @@ void test_jp_wrk_exec_out_dir_target_readonly(void) {
 
     tear_up_test_dir(tmp_dir);
     err = jp_wrk_exec(3, args);
-    tear_down_test_dir();
 
     JP_ASSERT_EQ(getuid() == 0 ? 0 : JP_EOUT_DIR, err);
 }
@@ -283,7 +321,6 @@ void test_jp_wrk_exec_no_err(void) {
 
     tear_up_test_dir(tmp_dir);
     err = jp_wrk_exec(7, args);
-    tear_down_test_dir();
 
     JP_ASSERT_OK(err);
 }
@@ -294,6 +331,7 @@ int main() {
     test_jp_wrk_exec_chunk_size();
     test_jp_wrk_exec_buffer_size();
     test_jp_wrk_exec_out_dir();
+    test_jp_wrk_exec_fields();
     test_jp_wrk_exec_invalid_command();
     test_jp_wrk_exec_out_dir_enotdir();
     test_jp_wrk_exec_out_dir_eacces();

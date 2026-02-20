@@ -5,6 +5,10 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if (CMAKE_C_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wno-gnu-zero-variadic-macro-arguments)
+endif ()
+
 ###############################################
 # JPipe: Config
 ###############################################
@@ -92,7 +96,6 @@ target_include_directories(jpipe_test_utils PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/
 target_compile_definitions(jpipe_test_utils PUBLIC JP_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/test/data")
 
 file(GLOB TEST_FILES CONFIGURE_DEPENDS "test/unit/*.test.c")
-
 foreach (test_source ${TEST_FILES})
     get_filename_component(test_name ${test_source} NAME_WE)
     add_executable(${test_name} ${test_source})

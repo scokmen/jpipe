@@ -140,6 +140,11 @@ static int init_worker_args(int argc, char *argv[], jp_worker_args_t *args) {
     return 0;
 }
 
+static void free_worker_args(jp_worker_args_t *args) {
+    JP_FREE_IF_ALLOC(args->out_dir);
+    jp_field_set_free(args->fields);
+}
+
 static int collect_cli_args(int argc, char *argv[], jp_worker_args_t *args) {
     int option;
     opterr = 0;
@@ -255,22 +260,22 @@ int jp_wrk_exec(int argc, char *argv[]) {
     
     err = init_worker_args(argc, argv, &args);
     if (err) {
-        JP_FREE_IF_ALLOC(args.out_dir);
+        free_worker_args(&args);
         return err;
     }
 
     err = collect_cli_args(argc, argv, &args);
     if (err) {
-        JP_FREE_IF_ALLOC(args.out_dir);
+        free_worker_args(&args);
         return err;
     }
 
     err = create_and_normalize_out_dir(&args);
     if (err) {
-        JP_FREE_IF_ALLOC(args.out_dir);
+        free_worker_args(&args);
         return err;
     }
-    
-    JP_FREE_IF_ALLOC(args.out_dir);
+
+    free_worker_args(&args);
     return 0;
 }

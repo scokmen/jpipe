@@ -63,6 +63,7 @@ static int set_field(const char *arg, jp_worker_args_t *args) {
         return jp_errno_log_err_format(JP_EINV_FIELD_KEY,
                                        "Field key/value is empty");
     }
+    
     JP_ASSUME(args->fields != NULL);
     err = jp_field_set_add(args->fields, arg);
     if (err) {

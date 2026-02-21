@@ -11,7 +11,11 @@
 #define JP_MALLOC            __attribute__((malloc)) __attribute__((warn_unused_result))
 #define JP_LIKELY(x)         __builtin_expect(!!(x), 1)
 #define JP_UNLIKELY(x)       __builtin_expect(!!(x), 0)
+#if defined(__clang__)
 #define JP_ASSUME(cond)      __builtin_assume(cond)
+#else
+#define JP_ASSUME(cond)
+#endif
 #else
 #error "Unsupported Compiler!"
 #endif

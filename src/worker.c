@@ -57,6 +57,21 @@ static int set_out_dir(const char *arg, jp_worker_args_t *args) {
     return 0;
 }
 
+static int set_field(const char *arg, jp_worker_args_t *args) {
+    int err;
+    if (arg == NULL) {
+        return jp_errno_log_err_format(JP_EINV_FIELD_KEY,
+                                       "Field key/value is empty");
+    }
+    JP_ASSUME(args->fields != NULL);
+    err = jp_field_set_add(args->fields, arg);
+    if (err) {
+        return jp_errno_log_err_format(err,
+                                       "Field key/value is invalid: '%s'", arg);
+    }
+    return 0;
+}
+
 static int set_chunk_size(const char *arg, jp_worker_args_t *args) {
     char *end_ptr;
     size_t chunk_size = 0;
@@ -154,13 +169,13 @@ static int collect_cli_args(int argc, char *argv[], jp_worker_args_t *args) {
     args->out_dir = NULL;
 
     static struct option long_options[] = {
-            {"chunk-size" , required_argument, 0, 'c'},
+            {"chunk-size",  required_argument, 0, 'c'},
             {"buffer-size", required_argument, 0, 'b'},
-            {"field"      , required_argument, 0, 'f'},
-            {"out-dir"    , required_argument, 0, 'o'},
-            {"dry-run"    , required_argument, 0, 'n'},
-            {"help"       , no_argument      , 0, 'h'},
-            {0            , 0                , 0, 0  }
+            {"field",       required_argument, 0, 'f'},
+            {"out-dir",     required_argument, 0, 'o'},
+            {"dry-run",     required_argument, 0, 'n'},
+            {"help",        no_argument,       0, 'h'},
+            {0, 0,                             0, 0}
     };
 
     while ((option = getopt_long(argc, argv, ":c:b:o:f:hn", long_options, NULL)) != -1) {
@@ -176,6 +191,9 @@ static int collect_cli_args(int argc, char *argv[], jp_worker_args_t *args) {
                 break;
             case 'n':
                 args->dry_run = true;
+                break;
+            case 'f':
+                JP_ERROR_GUARD(set_field(optarg, args));
                 break;
             case 'h':
                 break;
@@ -257,7 +275,7 @@ int jp_wrk_exec(int argc, char *argv[]) {
     }
     int err = 0;
     jp_worker_args_t args = {};
-    
+
     err = init_worker_args(argc, argv, &args);
     if (err) {
         free_worker_args(&args);

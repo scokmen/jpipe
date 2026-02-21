@@ -4,6 +4,12 @@
 #include <stdarg.h>
 #include <jp_errno.h>
 
+#define R_RED     "\x1b[31m"
+#define R_YEL     "\x1b[33m"
+#define R_CYN     "\x1b[36m"
+#define R_BOLD    "\x1b[1m"
+#define R_RST     "\x1b[0m"
+
 jp_errno_t jp_errno_log_err(jp_errno_t err) {
     int err_code;
     const char *msg;
@@ -11,11 +17,11 @@ jp_errno_t jp_errno_log_err(jp_errno_t err) {
     err_code = errno;
     errno = 0;
     msg = jp_errno_explain(err);
-
-    fprintf(stderr, "[jpipe]: An error occurred.\n");
-    fprintf(stderr, "\t└─ Caused By: %.256s\n", msg);
+    
+    fprintf(stderr, R_BOLD R_CYN "[jpipe]" R_RST ": " R_RED "An error occurred.\n" R_RST);
+    fprintf(stderr, "  " R_YEL "└─ Caused By: " R_RST "%.256s\n", msg);
     if (err_code > 0) {
-        fprintf(stderr, "\t\t└─ Caused By: System Error (E%d): %.256s\n", err_code, strerror(err_code));
+        fprintf(stderr, "  " R_YEL "└─ Caused By: " R_RST "System Error (E%d): %.256s\n", err_code, strerror(err_code));
     }
     fflush(stderr);
     return err;
@@ -30,9 +36,9 @@ jp_errno_t jp_errno_log_err_format(jp_errno_t err, const char *fmt, ...) {
     errno = 0;
     msg = jp_errno_explain(err);
 
-    fprintf(stderr, "[jpipe]: An error occurred.\n");
-    fprintf(stderr, "\t└─ Caused By: %.256s\n", msg);
-    fprintf(stderr, "\t\t└─ Caused By: ");
+    fprintf(stderr, R_BOLD R_CYN "[jpipe]" R_RST ": " R_RED "An error occurred.\n" R_RST);
+    fprintf(stderr, "  " R_YEL "└─ Caused By: " R_RST "%.256s\n", msg);
+    fprintf(stderr, "  " R_YEL "└─ Caused By: " R_RST);
 
     va_start(args, fmt);
     vfprintf(stderr, fmt, args);
@@ -40,7 +46,7 @@ jp_errno_t jp_errno_log_err_format(jp_errno_t err, const char *fmt, ...) {
     fprintf(stderr, "\n");
 
     if (err_code > 0) {
-        fprintf(stderr, "\t\t\t└─ Caused By: System Error (E%d): %.256s\n", err_code, strerror(err_code));
+        fprintf(stderr, "    " R_YEL "└─ Caused By: " R_RST "System Error (E%d): %.256s\n", err_code, strerror(err_code));
     }
     fflush(stderr);
     return err;

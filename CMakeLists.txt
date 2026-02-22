@@ -59,7 +59,11 @@ endif ()
 if (ENABLE_ASAN)
     message(STATUS "[address-sanitizer]: enabled")
     add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g)
-    add_link_options(-fsanitize=address)
+    if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+        add_link_options(-fsanitize=address -static-libasan)
+    else()
+        add_link_options(-fsanitize=address)
+    endif()
 endif ()
 
 ###############################################

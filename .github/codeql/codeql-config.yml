@@ -6,7 +6,7 @@ paths-ignore:
 
 queries:
   - uses: security-extended
-    
+
 query-filters:
   - exclude:
       filepath:

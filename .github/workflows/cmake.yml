@@ -36,9 +36,19 @@ jobs:
     - name: Configure CMake
       run: |
         if [ "${{ matrix.compiler }}" = "gcc" ]; then
-          cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_ASAN=ON -DENABLE_COVERAGE=ON -DCMAKE_C_COMPILER=gcc
+          cmake -B build  \
+            -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+            -DENABLE_ASAN=ON \
+            -DENABLE_TEST=ON \
+            -DENABLE_COVERAGE=ON \
+            -DCMAKE_C_COMPILER=${{matrix.compiler}}
         else
-          cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_ASAN=ON -DENABLE_COVERAGE=OFF -DCMAKE_C_COMPILER=clang
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+            -DENABLE_ASAN=ON \
+            -DENABLE_TEST=ON \
+            -DENABLE_COVERAGE=OFF \
+            -DCMAKE_C_COMPILER=${{matrix.compiler}}
         fi
         
     - name: Build
@@ -84,7 +94,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y clang gcc lcov gcovr llvm
       
       - name: Configure CMake
-        run: cmake -B build -DENABLE_TSAN=ON -DCMAKE_C_COMPILER=${{ matrix.compiler }}
+        run: cmake -B build -DENABLE_TSAN=ON -DENABLE_TEST=ON -DCMAKE_C_COMPILER=${{ matrix.compiler }}
       
       - name: Build
         run: cmake --build build

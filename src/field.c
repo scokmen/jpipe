@@ -9,7 +9,7 @@
 static bool is_valid_field_key(const char *start, const char *end) {
     unsigned char c;
     while (start < end) {
-        c = *start++;
+        c = (unsigned char) *start++;
         if ((c >= 97 && c <= 122) || (c >= 65 && c <= 90) || (c >= 48 && c <= 57) || c == 45 || c == 95) {
             continue;
         }
@@ -33,7 +33,7 @@ static jp_field_t *create_field(const char *key, const char *val) {
     return field;
 }
 
-static int crete_field_from_kv(const char *kv, jp_field_t **field) {
+static jp_errno_t crete_field_from_kv(const char *kv, jp_field_t **field) {
     size_t key_len;
     char key[JP_FIELD_MAX_KEY_LEN + 1];
     char *eq = strchr(kv, '=');
@@ -60,12 +60,11 @@ static int crete_field_from_kv(const char *kv, jp_field_t **field) {
 }
 
 static void destroy_field(jp_field_t *field) {
-    JP_FREE_IF_ALLOC(field);
+    JP_FREE(field);
 }
 
 jp_field_set_t *jp_field_set_new(size_t cap) {
     jp_field_set_t *set;
-
     JP_ALLOC_OR_RET(set, malloc(sizeof(jp_field_set_t) + (cap * sizeof(jp_field_t *))), NULL);
 
     set->len = 0;
@@ -74,16 +73,14 @@ jp_field_set_t *jp_field_set_new(size_t cap) {
     return set;
 }
 
-int jp_field_set_add(jp_field_set_t *set, const char *kv) {
+jp_errno_t jp_field_set_add(jp_field_set_t *set, const char *kv) {
     if (set->len == set->cap) {
         return JP_ETOO_MANY_FIELD;
     }
     jp_field_t *field, *new_field;
-    int err = crete_field_from_kv(kv, &new_field);
-    if (err) {
-        return err;
-    }
-    for (int i = 0; i < set->len; i++) {
+    JP_OK_OR_RET(crete_field_from_kv(kv, &new_field));
+    
+    for (size_t i = 0; i < set->len; i++) {
         field = set->fields[i];
         if (field->key_len == new_field->key_len && !memcmp(field->key, new_field->key, new_field->key_len)) {
             destroy_field(field);
@@ -100,7 +97,7 @@ void jp_field_set_free(jp_field_set_t *set) {
     if (set == NULL) {
         return;
     }
-    for (int i = 0; i < set->len; i++) {
+    for (size_t i = 0; i < set->len; i++) {
         destroy_field(set->fields[i]);
     }
     free(set);

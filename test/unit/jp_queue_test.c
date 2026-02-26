@@ -3,7 +3,7 @@
 #include <jp_queue.h>
 #include <jp_test.h>
 
-#define ITEM_SIZE  4
+#define ITEM_SIZE 4
 
 void test_jp_queue_push_pop(void) {
     int v;
@@ -12,15 +12,15 @@ void test_jp_queue_push_pop(void) {
     jp_queue_t *q = jp_queue_create(4, sizeof(int));
 
     JP_ASSERT_EQ(ITEM_SIZE, q->capacity);
-    for (int i = 0; i < ITEM_SIZE; i++) {
+    for (size_t i = 0; i < ITEM_SIZE; i++) {
         JP_ASSERT_EQ(i, q->length);
         JP_ASSERT_OK(jp_queue_push(q, &data[i], sizeof(int)));
         JP_ASSERT_EQ(i + 1, q->length);
     }
 
-    for (int i = 0; i < ITEM_SIZE; i++) {
+    for (size_t i = 0; i < ITEM_SIZE; i++) {
         JP_ASSERT_EQ(ITEM_SIZE - i, q->length);
-        JP_ASSERT_OK(jp_queue_pop(q, (unsigned char *) &v, &len));
+        JP_ASSERT_OK(jp_queue_pop(q, (unsigned char *) &v, sizeof(int), &len));
         JP_ASSERT_EQ(ITEM_SIZE - i - 1, q->length);
         JP_ASSERT_EQ(v, data[i]);
     }
@@ -28,8 +28,7 @@ void test_jp_queue_push_pop(void) {
     jp_queue_destroy(q);
 }
 
-
-int main() {
+int main(void) {
     test_jp_queue_push_pop();
     return 0;
 }

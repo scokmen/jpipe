@@ -4,6 +4,8 @@
 #include <stdarg.h>
 #include <jp_common.h>
 
+#define JP_ALLOC_OR_LOG(var, expr) JP_ALLOC_OR_RET(var, expr, jp_errno_log_err(JP_ENOMEM))
+
 #define JP_ERRNO_MAP(XX)                                                                                     \
   XX(EMISSING_CMD     , "Missing command. Please use 'jpipe --help' to see available commands.")             \
   XX(EUNKNOWN_CMD     , "Unknown command. Please use 'jpipe --help' to see available commands.")             \

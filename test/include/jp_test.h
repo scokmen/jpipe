@@ -1,6 +1,9 @@
 #ifndef JPIPE_JP_TEST_H
 #define JPIPE_JP_TEST_H
 
+#include <stddef.h>
+#include <jp_errno.h>
+
 #define JP_TEST_FAIL(msg, ...)                                                           \
 do {                                                                                     \
     fprintf(stderr, "[FAIL]:  %s:%d\n  " msg "\n\n", __FILE__, __LINE__, ##__VA_ARGS__); \
@@ -10,7 +13,7 @@ do {                                                                            
 #define JP_ASSERT_EQ(expected, actual)                                     \
 do {                                                                       \
     if ((expected) != (actual)) {                                          \
-        JP_TEST_FAIL("Expected: %llu\n  Actual  : %llu",                   \
+        JP_TEST_FAIL("Expected: %llu\n  Actual: %llu",                     \
             (unsigned long long)(expected), (unsigned long long)(actual)); \
     }                                                                      \
  } while (0)
@@ -20,11 +23,11 @@ do {                                                                       \
 #define JP_ASSERT_NONNULL(actual)                           \
 do {                                                        \
     if ((actual) == NULL) {                                 \
-        JP_TEST_FAIL("Expected NONNULL\n  Actual  : NULL"); \
+        JP_TEST_FAIL("Expected NONNULL\n  Actual: NULL");   \
     }                                                       \
  } while (0)
 
-typedef int (*jp_test_fn)(void *ctx);
+typedef jp_errno_t (*jp_test_fn)(void *ctx);
 
 void jp_test_get_sandbox(char *buffer, size_t size);
 

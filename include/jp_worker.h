@@ -23,6 +23,8 @@ typedef struct {
     jp_field_set_t *fields;
 } jp_worker_args_t;
 
-int jp_wrk_exec(int argc, char *argv[]);
+JP_NONNULL_ARG(2)
+JP_READ_PTR_SIZE(2, 1)
+jp_errno_t jp_wrk_exec(int argc, char *argv[]);
 
 #endif //JPIPE_JP_WORKER_H

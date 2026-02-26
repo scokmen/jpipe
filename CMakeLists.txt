@@ -6,25 +6,17 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# This project supports only GNU GCC and Clang compilers.
-if (NOT CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    message(FATAL_ERROR "Unsupported Compiler: (${CMAKE_C_COMPILER_ID})")
-endif ()
-
 # Extend the CMake module path.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
-# Include sub modules.
+# Include sub-modules.
+include(CTest)
 include(quality)
+include(compilers)
 include(sanitizers)
 
-# ENABLE_TEST:
-# Discovers all unit and stress tests.
-option(ENABLE_TEST "Enable Test" OFF)
-
-# ENABLE_COVERAGE:
-# Generates gcov instrumentation to track code execution path.
-option(ENABLE_COVERAGE "Enable Coverage" OFF)
+# Dependencies
+find_package(Threads REQUIRED)
 
 # ENABLE_TSAN:
 # Enables ThreadSanitizer to detect data races and deadlocks.
@@ -37,22 +29,6 @@ option(ENABLE_TSAN "Enable ThreadSanitizer" OFF)
 option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
 
 ###############################################
-# JPipe: Initializers
-###############################################
-init_clang_tidy()
-init_coverage_flags(${ENABLE_TEST} ${ENABLE_COVERAGE})
-init_sanitizer_flags(${ENABLE_ASAN} ${ENABLE_TSAN})
-
-###############################################
-# JPipe: Compile Options & Packages
-###############################################
-if (CMAKE_C_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wno-gnu-zero-variadic-macro-arguments)
-endif ()
-
-find_package(Threads REQUIRED)
-
-###############################################
 # JPipe: Generated Headers
 ###############################################
 configure_file(
@@ -61,35 +37,42 @@ configure_file(
 )
 
 ###############################################
-# JPipe: Core Library
+# JPipe: Initializers
 ###############################################
-add_library(jpipe_core STATIC
-        src/errno.c
-        src/command.c
-        src/worker.c
-        src/field.c
-        src/queue.c
-)
+add_library(jpipe_settings INTERFACE)
 
-target_include_directories(jpipe_core
-        PUBLIC "${CMAKE_SOURCE_DIR}/include"
-        PUBLIC "${CMAKE_BINARY_DIR}/generated"
-)
+init_compiler_flags(jpipe_settings)
 
-target_link_libraries(jpipe_core PUBLIC Threads::Threads)
+message(STATUS "[build]: ${CMAKE_BUILD_TYPE}")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    init_debug_flags(jpipe_settings)
+    
+    if (ENABLE_ASAN AND ENABLE_TSAN)
+        message(FATAL_ERROR "AddressSanitizer/ThreadSanitizer conflict!")
+        return()
+    endif ()
+    
+    if (ENABLE_ASAN)
+        init_asan_flags(jpipe_settings)
+    endif ()
 
-###############################################
-# JPipe: Executable
-###############################################
-add_executable(jpipe src/main.c)
-
-target_link_libraries(jpipe PRIVATE jpipe_core)
-
-###############################################
-# JPipe: Unit Tests
-###############################################
-if (ENABLE_TEST)
-    enable_testing()
-    init_tests(${ENABLE_TEST} jpipe_core)
+    if (ENABLE_TSAN)
+        init_tsan_flags(jpipe_settings)
+    endif ()
 endif ()
 
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(BUILD_TESTING OFF CACHE BOOL "[testing]: disabled" FORCE)
+    init_release_flags(jpipe_settings)
+endif ()
+
+
+###############################################
+# JPipe: Packages
+###############################################
+add_subdirectory(src)
+
+if (BUILD_TESTING)
+    init_coverage_flags(jpipe_settings)
+    add_subdirectory(test)
+endif ()

@@ -6,9 +6,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <jp_worker.h>
+#include <jp_errno.h>
 #include <jp_command.h>
 
-static int display_help(void) {
+static jp_errno_t display_help(void) {
     JP_LOG_OUT("Usage: jpipe run [options]\n");
     JP_LOG_OUT("Execute the data processing engine with the following configurations:\n");
     JP_LOG_OUT("Options:");
@@ -37,9 +38,9 @@ static int display_help(void) {
     return 0;
 }
 
-static int set_out_dir(const char *arg, jp_worker_args_t *args) {
+static jp_errno_t set_out_dir(const char *arg, jp_worker_args_t *args) {
     size_t len = 0;
-    JP_FREE_IF_ALLOC(args->out_dir);
+    JP_FREE(args->out_dir);
     if (arg == NULL) {
         return jp_errno_log_err_format(JP_EMISSING_CMD,
                                        "Output path is empty.");
@@ -53,17 +54,17 @@ static int set_out_dir(const char *arg, jp_worker_args_t *args) {
         return jp_errno_log_err_format(JP_EMISSING_CMD,
                                        "Output path is too long. Maximum allowed path size: %d.", JP_PATH_MAX);
     }
-    JP_ALLOC_GUARD(args->out_dir, strdup(arg));
+    JP_ALLOC_OR_LOG(args->out_dir, strdup(arg));
     return 0;
 }
 
-static int set_field(const char *arg, jp_worker_args_t *args) {
-    int err;
+static jp_errno_t set_field(const char *arg, jp_worker_args_t *args) {
+    jp_errno_t err;
     if (arg == NULL) {
         return jp_errno_log_err_format(JP_EINV_FIELD_KEY,
                                        "Field key/value is empty");
     }
-    
+
     JP_ASSUME(args->fields != NULL);
     err = jp_field_set_add(args->fields, arg);
     if (err) {
@@ -73,7 +74,7 @@ static int set_field(const char *arg, jp_worker_args_t *args) {
     return 0;
 }
 
-static int set_chunk_size(const char *arg, jp_worker_args_t *args) {
+static jp_errno_t set_chunk_size(const char *arg, jp_worker_args_t *args) {
     char *end_ptr;
     size_t chunk_size = 0;
     unsigned long long param = 0;
@@ -110,7 +111,7 @@ static int set_chunk_size(const char *arg, jp_worker_args_t *args) {
     return 0;
 }
 
-static int set_buffer_size(const char *arg, jp_worker_args_t *args) {
+static jp_errno_t set_buffer_size(const char *arg, jp_worker_args_t *args) {
     char *end_ptr;
     unsigned long long param = 0;
 
@@ -131,7 +132,7 @@ static int set_buffer_size(const char *arg, jp_worker_args_t *args) {
     return 0;
 }
 
-static int handle_unknown_argument(const char *cmd) {
+static jp_errno_t handle_unknown_argument(const char *cmd) {
     return jp_errno_log_err_format(JP_EUNKNOWN_RUN_CMD,
                                    "Invalid or incomplete [run] command: '%.32s'.", cmd);
 }
@@ -146,22 +147,22 @@ static int get_field_args_count(int argc, char *argv[]) {
     return c;
 }
 
-static int init_worker_args(int argc, char *argv[], jp_worker_args_t *args) {
+static jp_errno_t init_worker_args(int argc, char *argv[], jp_worker_args_t *args) {
     int fields = get_field_args_count(argc, argv);
     if (fields > JP_WRK_FIELDS_MAX) {
         return jp_errno_log_err_format(JP_ETOO_MANY_FIELD,
                                        "Too many 'fields' specified: '%d'", fields);
     }
-    JP_ALLOC_GUARD(args->fields, jp_field_set_new(fields));
+    JP_ALLOC_OR_LOG(args->fields, jp_field_set_new((size_t) fields));
     return 0;
 }
 
 static void free_worker_args(jp_worker_args_t *args) {
-    JP_FREE_IF_ALLOC(args->out_dir);
+    JP_FREE(args->out_dir);
     jp_field_set_free(args->fields);
 }
 
-static int collect_cli_args(int argc, char *argv[], jp_worker_args_t *args) {
+static jp_errno_t collect_cli_args(int argc, char *argv[], jp_worker_args_t *args) {
     int option;
     opterr = 0;
     optind = 1;
@@ -182,25 +183,25 @@ static int collect_cli_args(int argc, char *argv[], jp_worker_args_t *args) {
     while ((option = getopt_long(argc, argv, ":c:b:o:f:hn", long_options, NULL)) != -1) {
         switch (option) {
             case 'c':
-                JP_ERROR_GUARD(set_chunk_size(optarg, args));
+                JP_OK_OR_RET(set_chunk_size(optarg, args));
                 break;
             case 'b':
-                JP_ERROR_GUARD(set_buffer_size(optarg, args));
+                JP_OK_OR_RET(set_buffer_size(optarg, args));
                 break;
             case 'o':
-                JP_ERROR_GUARD(set_out_dir(optarg, args));
+                JP_OK_OR_RET(set_out_dir(optarg, args));
                 break;
             case 'n':
                 args->dry_run = true;
                 break;
             case 'f':
-                JP_ERROR_GUARD(set_field(optarg, args));
+                JP_OK_OR_RET(set_field(optarg, args));
                 break;
             case 'h':
                 break;
             case ':':
             case '?':
-                JP_ERROR_GUARD(handle_unknown_argument(argv[optind - 1]));
+                JP_OK_OR_RET(handle_unknown_argument(argv[optind - 1]));
                 break;
             default: {
 
@@ -209,17 +210,17 @@ static int collect_cli_args(int argc, char *argv[], jp_worker_args_t *args) {
     }
 
     if (optind < argc) {
-        JP_ERROR_GUARD(handle_unknown_argument(argv[optind]));
+        JP_OK_OR_RET(handle_unknown_argument(argv[optind]));
     }
 
     if (args->out_dir == NULL) {
-        JP_ALLOC_GUARD(args->out_dir, strdup(JP_WRK_OUTDIR_DEF));
+        JP_ALLOC_OR_LOG(args->out_dir, strdup(JP_WRK_OUTDIR_DEF));
     }
 
     return 0;
 }
 
-static int create_and_normalize_out_dir(jp_worker_args_t *args) {
+static jp_errno_t create_and_normalize_out_dir(jp_worker_args_t *args) {
     char tmp[JP_PATH_MAX] = {0};
     char absolute_path[JP_PATH_MAX] = {0};
     char *p = NULL;
@@ -265,17 +266,17 @@ static int create_and_normalize_out_dir(jp_worker_args_t *args) {
                                        "Could not resolve absolute path: '%s'.", tmp);
     }
 
-    JP_FREE_IF_ALLOC(args->out_dir);
-    JP_ALLOC_GUARD(args->out_dir, strdup(absolute_path));
+    JP_FREE(args->out_dir);
+    JP_ALLOC_OR_LOG(args->out_dir, strdup(absolute_path));
     return 0;
 }
 
-int jp_wrk_exec(int argc, char *argv[]) {
+jp_errno_t jp_wrk_exec(int argc, char *argv[]) {
     if (argc == 2 && JP_CMD_EQ(argv[1], "-h", "--help")) {
         return display_help();
     }
-    int err = 0;
-    jp_worker_args_t args = {};
+    jp_errno_t err = 0;
+    jp_worker_args_t args = {0};
 
     err = init_worker_args(argc, argv, &args);
     if (err) {

@@ -4,7 +4,7 @@
 #include <jp_command.h>
 #include <jp_config.h>
 
-int jp_cmd_exec(jp_cmd_t *cmds, int cmdc, int argc, char *argv[]) {
+jp_errno_t jp_cmd_exec(int cmdc, jp_cmd_t *cmds, int argc, char *argv[]) {
     if (argc < 2) {
         return jp_errno_log_err_format(JP_EMISSING_CMD,
                                        "Missing or incomplete command.");
@@ -20,7 +20,7 @@ int jp_cmd_exec(jp_cmd_t *cmds, int cmdc, int argc, char *argv[]) {
                                    "Invalid or incomplete command: '%.32s'.", argv[1]);
 }
 
-int jp_cmd_help(JP_UNUSED int argc, JP_UNUSED char *argv[]) {
+jp_errno_t jp_cmd_help(JP_UNUSED int argc, JP_UNUSED char *argv[]) {
     JP_LOG_OUT("Usage: jpipe <command> [options]\n");
     JP_LOG_OUT("A lightweight C pipe-to-JSON logger designed for high-performance stream capture and extensible metadata injection.\n");
     JP_LOG_OUT("Commands:");
@@ -36,7 +36,7 @@ int jp_cmd_help(JP_UNUSED int argc, JP_UNUSED char *argv[]) {
     return 0;
 }
 
-int jp_cmd_version(JP_UNUSED int argc, JP_UNUSED char *argv[]) {
+jp_errno_t jp_cmd_version(JP_UNUSED int argc, JP_UNUSED char *argv[]) {
     JP_LOG_OUT("v%.16s", JP_VERSION);
     return 0;
 }

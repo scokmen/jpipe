@@ -4,11 +4,11 @@
 #include <stdarg.h>
 #include <jp_errno.h>
 
-#define R_RED     "\x1b[31m"
-#define R_YEL     "\x1b[33m"
-#define R_CYN     "\x1b[36m"
-#define R_BOLD    "\x1b[1m"
-#define R_RST     "\x1b[0m"
+#define R_RED  "\x1b[31m"
+#define R_YEL  "\x1b[33m"
+#define R_CYN  "\x1b[36m"
+#define R_BOLD "\x1b[1m"
+#define R_RST  "\x1b[0m"
 
 jp_errno_t jp_errno_log_err(jp_errno_t err) {
     int err_code;

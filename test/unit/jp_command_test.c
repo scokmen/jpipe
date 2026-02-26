@@ -3,12 +3,10 @@
 #include <jp_command.h>
 #include <jp_test.h>
 
-#define MOCK_RETURN_CODE 99
-
 typedef struct {
-    int expected;
+    jp_errno_t expected;
     int argc;
-    char *argv[4];
+    const char *argv[4];
 } test_case_t;
 
 typedef struct {
@@ -16,16 +14,16 @@ typedef struct {
     char **argv;
 } test_ctx_t;
 
-int mock_command() {
-    return MOCK_RETURN_CODE;
+jp_errno_t mock_command(JP_UNUSED int argc, JP_UNUSED char *argv[]) {
+    return JP_OK;
 }
 
-int help_command_adapter(void *ctx) {
+jp_errno_t help_command_adapter(void *ctx) {
     test_ctx_t *c = (test_ctx_t *) ctx;
     return jp_cmd_help(c->argc, c->argv);
 }
 
-int version_command_adapter(void *ctx) {
+jp_errno_t version_command_adapter(void *ctx) {
     test_ctx_t *c = (test_ctx_t *) ctx;
     return jp_cmd_version(c->argc, c->argv);
 }
@@ -51,18 +49,18 @@ void test_jp_cmd_exec(void) {
             {.argc = 1, .argv = {"jpipe", NULL}, .expected=JP_EMISSING_CMD},
             {.argc = 2, .argv = {"jpipe", "-u", NULL}, .expected=JP_EUNKNOWN_CMD},
             {.argc = 2, .argv = {"jpipe", "--unknown", NULL}, .expected=JP_EUNKNOWN_CMD},
-            {.argc = 3, .argv = {"jpipe", "-c", NULL}, .expected=MOCK_RETURN_CODE},
-            {.argc = 3, .argv = {"jpipe", "--command", NULL}, .expected=MOCK_RETURN_CODE},
+            {.argc = 3, .argv = {"jpipe", "-c", NULL}, .expected=JP_OK},
+            {.argc = 3, .argv = {"jpipe", "--command", NULL}, .expected=JP_OK},
     };
 
     int len = (sizeof(cases) / sizeof(cases[0]));
     for (int i = 0; i < len; i++) {
-        int err = jp_cmd_exec(commands, 1, cases[i].argc, cases[i].argv);
+        jp_errno_t err = jp_cmd_exec(1, commands, cases[i].argc, (char **) cases[i].argv);
         JP_ASSERT_EQ(cases[i].expected, err);
     }
 }
 
-int main() {
+int main(void) {
     test_jp_cmd_exec();
     test_jp_cmd_help();
     test_jp_cmd_version();

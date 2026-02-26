@@ -9,8 +9,7 @@ static jp_cmd_t commands[] = {
 };
 
 int main(int argc, char *argv[]) {
-    int err = 0;
-    err = jp_cmd_exec(commands, 3, argc, argv);
+    jp_errno_t err = jp_cmd_exec(2, commands, argc, argv);
     if (err) {
         return EXIT_FAILURE;
     }

@@ -6,7 +6,7 @@
 #include <jp_test.h>
 
 typedef struct {
-    int expected;
+    jp_errno_t expected;
     const char *kv;
     const char *key;
     const char *value;
@@ -68,7 +68,7 @@ void test_jp_field_set_add_valid_fields(void) {
             {.kv="01234567890123456789012345678912=v", .key="01234567890123456789012345678912", .value="v", .expected=0},
     };
 
-    int err;
+    jp_errno_t err;
     int len = (sizeof(cases) / sizeof(cases[0]));
     for (int i = 0; i < len; i++) {
         err = jp_field_set_add(set, cases[i].kv);
@@ -94,7 +94,7 @@ void test_jp_field_set_add_invalid_fields(void) {
             {.kv="012345678901234567890123456789120=v", .expected=JP_EINV_FIELD_KEY},
     };
 
-    int err;
+    jp_errno_t err;
     int len = (sizeof(cases) / sizeof(cases[0]));
     for (int i = 0; i < len; i++) {
         err = jp_field_set_add(set, cases[i].kv);
@@ -104,7 +104,7 @@ void test_jp_field_set_add_invalid_fields(void) {
     jp_field_set_free(set);
 }
 
-int main() {
+int main(void) {
     test_jp_field_set_new();
     test_jp_field_set_add_set_is_full();
     test_jp_field_set_add_key_exists();

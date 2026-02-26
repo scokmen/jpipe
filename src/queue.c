@@ -1,6 +1,6 @@
-#include "jp_queue.h"
 #include <stdlib.h>
 #include <string.h>
+#include <jp_queue.h>
 
 jp_queue_t *jp_queue_create(size_t capacity, size_t chunk_size) {
     jp_queue_t *queue;
@@ -31,14 +31,14 @@ jp_queue_t *jp_queue_create(size_t capacity, size_t chunk_size) {
     return queue;
 }
 
-int jp_queue_push(jp_queue_t *queue, const void *src, size_t len) {
+jp_errno_t jp_queue_push(jp_queue_t *queue, const void *src, size_t len) {
     pthread_mutex_lock(&queue->lock);
 
     while (queue->length == queue->capacity) {
         pthread_cond_wait(&queue->not_full, &queue->lock);
     }
 
-    size_t block_size = (len > queue->chunk_size) ? queue->chunk_size : len;
+    size_t block_size = MIN(len, queue->chunk_size);
     memcpy(queue->blocks[queue->tail].data, src, block_size);
     queue->blocks[queue->tail].length = block_size;
     queue->tail = (queue->tail + 1) % queue->capacity;
@@ -49,16 +49,16 @@ int jp_queue_push(jp_queue_t *queue, const void *src, size_t len) {
     return 0;
 }
 
-int jp_queue_pop(jp_queue_t *queue, unsigned char *dest_buffer, size_t *out_len) {
+jp_errno_t jp_queue_pop(jp_queue_t *queue, unsigned char *dest_buffer, size_t max_len, size_t *out_len) {
     pthread_mutex_lock(&queue->lock);
 
     while (queue->length == 0) {
         pthread_cond_wait(&queue->not_empty, &queue->lock);
     }
 
-    size_t block_len = queue->blocks[queue->head].length;
-    memcpy(dest_buffer, queue->blocks[queue->head].data, block_len);
-    *out_len = block_len;
+    size_t block_size = MIN(max_len, queue->blocks[queue->head].length);
+    memcpy(dest_buffer, queue->blocks[queue->head].data, block_size);
+    *out_len = block_size;
 
     queue->head = (queue->head + 1) % queue->capacity;
     queue->length--;
@@ -77,5 +77,5 @@ void jp_queue_destroy(jp_queue_t *queue) {
     pthread_mutex_destroy(&queue->lock);
     pthread_cond_destroy(&queue->not_empty);
     pthread_cond_destroy(&queue->not_full);
-    JP_FREE_IF_ALLOC(queue);
+    JP_FREE(queue);
 }

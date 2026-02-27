@@ -1,8 +1,14 @@
 function(init_clang_tidy TARGET)
     find_program(CLANG_TIDY_BINARY NAMES "clang-tidy")
     if (CLANG_TIDY_BINARY)
+        set(CLANG_TIDY_COMMAND
+                "${CLANG_TIDY_BINARY}"
+                "-config-file=${CMAKE_SOURCE_DIR}/.clang-tidy"
+                "--extra-arg=-Wno-unknown-warning-option"
+                "--extra-arg=-Wno-ignored-optimization-argument"
+        )
         set_target_properties(${TARGET} PROPERTIES
-                C_CLANG_TIDY "${CLANG_TIDY_BINARY};-config-file=${CMAKE_SOURCE_DIR}/.clang-tidy"
+                C_CLANG_TIDY "${CLANG_TIDY_COMMAND}"
         )
         message(STATUS "[clang-tidy]: enabled >> ${CLANG_TIDY_BINARY}")
     else ()

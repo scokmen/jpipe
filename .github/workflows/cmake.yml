@@ -12,94 +12,108 @@ env:
 jobs:
   build_asan:
     runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-    
     strategy:
       matrix:
         compiler: [ gcc, clang ]
-
-    steps:
-    - uses: actions/checkout@v6
-      
-    - name: Dependencies
-      run: sudo apt-get update && sudo apt-get install -y clang gcc lcov gcovr llvm
-
-    - name: Initialize CodeQL
-      if: matrix.compiler == 'gcc'
-      uses: github/codeql-action/init@v4
-      with:
-        languages: c-cpp
-        config-file: .github/codeql/codeql-config.yml
-        build-mode: manual
-
-    - name: Configure CMake
-      run: |
-        if [ "${{ matrix.compiler }}" = "gcc" ]; then
-          cmake -B build  \
-            -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-            -DENABLE_ASAN=ON \
-            -DENABLE_TEST=ON \
-            -DENABLE_COVERAGE=ON \
-            -DCMAKE_C_COMPILER=${{matrix.compiler}}
-        else
-          cmake -B build \
-            -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-            -DENABLE_ASAN=ON \
-            -DENABLE_TEST=ON \
-            -DENABLE_COVERAGE=OFF \
-            -DCMAKE_C_COMPILER=${{matrix.compiler}}
-        fi
         
-    - name: Build
-      run: cmake --build build
-
-    - name: Perform CodeQL Analysis
-      if: matrix.compiler == 'gcc'
-      uses: github/codeql-action/analyze@v4
-      with:
-        category: "/language:c-cpp"
-    
-    - name: Test
-      working-directory: build
-      env:
-        ASAN_OPTIONS: "detect_leaks=1:exitcode=1"
-      run: ctest -L unit --output-on-failure
-      
-    - name: Coverage
-      if: matrix.compiler == 'gcc'
-      run: cmake --build build --target coverage
-       
-    - name: Reporting
-      if: matrix.compiler == 'gcc'
-      uses: coverallsapp/github-action@v2
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        format: lcov
-        file: build/coverage_filtered.info
+    steps:
+      - uses: actions/checkout@v6
+        
+      - name: Dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang gcc llvm
+        
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_ASAN=ON -DCMAKE_C_COMPILER=${{matrix.compiler}}
+        
+      - name: Build
+        run: cmake --build build
+        
+      - name: Test
+        working-directory: build
+        env:
+          ASAN_OPTIONS: "detect_leaks=1:exitcode=1"
+        run: ctest -L unit --output-on-failure
   
   build_tsan:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [ gcc, clang ]
+        
+    steps:
+      - uses: actions/checkout@v6
+        
+      - name: Dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang gcc llvm
+        
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_TSAN=ON -DCMAKE_C_COMPILER=${{matrix.compiler}}
+        
+      - name: Build
+        run: cmake --build build
+        
+      - name: Test
+        working-directory: build
+        run: setarch $(uname -m) -R ctest -L stress --output-on-failure
+  
+  analyze:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      
+    steps:
+      - uses: actions/checkout@v6
+        
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: c-cpp
+          config-file: .github/codeql/codeql-config.yml
+          build-mode: manual
+          
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=OFF -DCMAKE_C_COMPILER=clang
+        
+      - name: Build
+        run: cmake --build build
+        
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:c-cpp"
+
+  coverage:
+    name: Coverage
     runs-on: ubuntu-latest
     permissions:
       security-events: write
 
-    strategy:
-      matrix:
-        compiler: [ gcc, clang ]
-
     steps:
       - uses: actions/checkout@v6
-      
+        
       - name: Dependencies
         run: sudo apt-get update && sudo apt-get install -y clang gcc lcov gcovr llvm
-      
+
       - name: Configure CMake
-        run: cmake -B build -DENABLE_TSAN=ON -DENABLE_TEST=ON -DCMAKE_C_COMPILER=${{ matrix.compiler }}
-      
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang
+
       - name: Build
         run: cmake --build build
-      
+        
       - name: Test
         working-directory: build
-        run: setarch $(uname -m) -R ctest -L stress --output-on-failure
-      
+        run: ctest --output-on-failure
+
+      - name: Coverage
+        run: cmake --build build --target coverage
+
+      - name: Reporting
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          format: lcov
+          file: build/coverage_filtered.info
+    
+    
+    

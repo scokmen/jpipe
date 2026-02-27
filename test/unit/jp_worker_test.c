@@ -158,7 +158,6 @@ void test_jp_wrk_exec_out_dir(void) {
     jp_errno_t err;
     int len = (sizeof(cases) / sizeof(cases[0]));
     for (int i = 0; i < len; i++) {
-        err = 0;
         optind = 1;
         optarg = NULL;
         opterr = 0;
@@ -239,7 +238,7 @@ void test_jp_wrk_exec_invalid_command(void) {
 void test_jp_wrk_exec_out_dir_enotdir(void) {
     jp_errno_t err;
     char tmp_dir[JP_PATH_MAX];
-    char out_dir[JP_PATH_MAX];
+    char out_dir[JP_PATH_MAX + 64];
 
     jp_test_get_sandbox(tmp_dir, sizeof(tmp_dir));
     snprintf(out_dir, sizeof(out_dir), "%s/c1_file/target", tmp_dir);
@@ -255,7 +254,7 @@ void test_jp_wrk_exec_out_dir_enotdir(void) {
 void test_jp_wrk_exec_out_dir_eacces(void) {
     jp_errno_t err;
     char tmp_dir[JP_PATH_MAX];
-    char out_dir[JP_PATH_MAX];
+    char out_dir[JP_PATH_MAX + 64];
 
     jp_test_get_sandbox(tmp_dir, sizeof(tmp_dir));
     snprintf(out_dir, sizeof(out_dir), "%s/c2_no_perm/target", tmp_dir);
@@ -271,7 +270,7 @@ void test_jp_wrk_exec_out_dir_eacces(void) {
 void test_jp_wrk_exec_out_dir_target_enotdir(void) {
     jp_errno_t err;
     char tmp_dir[JP_PATH_MAX];
-    char out_dir[JP_PATH_MAX];
+    char out_dir[JP_PATH_MAX + 64];
 
     jp_test_get_sandbox(tmp_dir, sizeof(tmp_dir));
     snprintf(out_dir, sizeof(out_dir), "%s/c3_is_file", tmp_dir);
@@ -287,7 +286,7 @@ void test_jp_wrk_exec_out_dir_target_enotdir(void) {
 void test_jp_wrk_exec_out_dir_target_readonly(void) {
     jp_errno_t err;
     char tmp_dir[JP_PATH_MAX];
-    char out_dir[JP_PATH_MAX];
+    char out_dir[JP_PATH_MAX + 64];
 
     jp_test_get_sandbox(tmp_dir, sizeof(tmp_dir));
     snprintf(out_dir, sizeof(out_dir), "%s/c4_read_only/target", tmp_dir);
@@ -303,7 +302,7 @@ void test_jp_wrk_exec_out_dir_target_readonly(void) {
 void test_jp_wrk_exec_no_err(void) {
     jp_errno_t err;
     char tmp_dir[JP_PATH_MAX];
-    char out_dir[JP_PATH_MAX];
+    char out_dir[JP_PATH_MAX + 64];
 
     jp_test_get_sandbox(tmp_dir, sizeof(tmp_dir));
     snprintf(out_dir, sizeof(out_dir), "%s/happy_path", tmp_dir);

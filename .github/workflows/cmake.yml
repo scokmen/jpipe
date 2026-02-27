@@ -96,7 +96,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y clang gcc lcov gcovr llvm
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc
 
       - name: Build
         run: cmake --build build
@@ -114,6 +114,3 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           format: lcov
           file: build/coverage_filtered.info
-    
-    
-    

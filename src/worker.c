@@ -9,11 +9,19 @@
 #include <jp_errno.h>
 #include <jp_command.h>
 
+typedef struct {
+    size_t chunk_size;
+    size_t buffer_size;
+    bool dry_run;
+    const char *out_dir;
+    jp_field_set_t *fields;
+} jp_worker_args_t;
+
 static jp_errno_t display_help(void) {
     JP_LOG_OUT("Usage: jpipe run [options]\n");
     JP_LOG_OUT("Execute the data processing engine with the following configurations:\n");
     JP_LOG_OUT("Options:");
-    JP_LOG_OUT("  -c, --chunk-size  <size>     Chunk size (e.g., 512kb, 16mb). Range: 1kb-64mb  (default: 1kb).");
+    JP_LOG_OUT("  -c, --chunk-size  <size>     Chunk size (e.g., 16kb, 64kb). Range: 1kb-128kb  (default: 64kb).");
     JP_LOG_OUT("  -b, --buffer-size <count>    Max pending operations. Range: 1-1024 (default: 64).");
     JP_LOG_OUT("  -o, --out-dir     <path>     Output directory (default: current dir).");
     JP_LOG_OUT("  -f, --field       key=value  Additional field to the JSON output. Can be used multiple times.");
@@ -92,15 +100,11 @@ static jp_errno_t set_chunk_size(const char *arg, jp_worker_args_t *args) {
                                        "Chunk size is empty: '%.32s'.", arg);
     }
 
-    if (*end_ptr != '\0') {
-        if (!strcmp(end_ptr, "kb") && param <= (JP_WRK_CHUNK_SIZE_MAX / BYTES_IN_KB)) {
-            chunk_size += (param * BYTES_IN_KB);
-        } else if (!strcmp(end_ptr, "mb") && param <= (JP_WRK_CHUNK_SIZE_MAX / BYTES_IN_MB)) {
-            chunk_size += (param * BYTES_IN_MB);
-        } else {
-            return jp_errno_log_err_format(JP_ECHUNK_SIZE,
-                                           "Chunk size value is invalid: '%.32s'.", arg);
-        }
+    if (*end_ptr != '\0' && !strcmp(end_ptr, "kb") && param <= (JP_WRK_CHUNK_SIZE_MAX / BYTES_IN_KB)) {
+        chunk_size += (param * BYTES_IN_KB);
+    } else {
+        return jp_errno_log_err_format(JP_ECHUNK_SIZE,
+                                       "Chunk size value is invalid: '%.32s'.", arg);
     }
 
     if (chunk_size < JP_WRK_CHUNK_SIZE_MIN || chunk_size > JP_WRK_CHUNK_SIZE_MAX) {

@@ -16,7 +16,6 @@ typedef struct {
 typedef struct {
     int argc;
     char *argv[10];
-
 } test_ctx_t;
 
 void tear_up_test_dir(const char *base_path) {
@@ -297,9 +296,9 @@ void test_jp_wrk_exec_no_err(void) {
     char out_dir[JP_PATH_MAX + 64];
 
     jp_test_get_sandbox(tmp_dir, sizeof(tmp_dir));
-    snprintf(out_dir, sizeof(out_dir), "%s/happy_path", tmp_dir);
+    snprintf(out_dir, sizeof(out_dir), "%s/happy_path-1", tmp_dir);
 
-    const char *args[10] = {
+    const char *args[8] = {
             "run",
             "-o", out_dir,
             "-b", "100",

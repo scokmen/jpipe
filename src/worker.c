@@ -8,14 +8,16 @@
 #include <jp_worker.h>
 #include <jp_errno.h>
 #include <jp_command.h>
+#include <jp_queue.h>
 
 typedef struct {
     size_t chunk_size;
     size_t buffer_size;
     bool dry_run;
     const char *out_dir;
+    jp_queue_t *queue;
     jp_field_set_t *fields;
-} jp_worker_args_t;
+} worker_args;
 
 static jp_errno_t display_help(void) {
     JP_LOG_OUT("Usage: jpipe run [options]\n");
@@ -25,6 +27,7 @@ static jp_errno_t display_help(void) {
     JP_LOG_OUT("  -b, --buffer-size <count>    Max pending operations. Range: 1-1024 (default: 64).");
     JP_LOG_OUT("  -o, --out-dir     <path>     Output directory (default: current dir).");
     JP_LOG_OUT("  -f, --field       key=value  Additional field to the JSON output. Can be used multiple times.");
+    JP_LOG_OUT("  -n, --dry-run                Dry run.");
     JP_LOG_OUT("  -h, --help                   Show this help message.\n");
     JP_LOG_OUT("Field Options:");
     JP_LOG_OUT("  -f, --field \"key=value\"   Add a field to the JSON output.\n");
@@ -46,7 +49,27 @@ static jp_errno_t display_help(void) {
     return 0;
 }
 
-static jp_errno_t set_out_dir(const char *arg, jp_worker_args_t *args) {
+static void display_summary(worker_args *args) {
+    double estimated_mem_usage = ((double) args->chunk_size * (double) args->buffer_size) / (BYTES_IN_KB * BYTES_IN_KB);
+
+    JP_LOG_OUT("Summary: jpipe configuration\n");
+    JP_LOG_OUT("Parameters:");
+    JP_LOG_OUT("  [-c, --chunk-size ]: %zu KB", (args->chunk_size / BYTES_IN_KB));
+    JP_LOG_OUT("  [-b, --buffer-size]: %zu", args->buffer_size);
+    JP_LOG_OUT("  [-o, --out-dir    ]: %s", args->out_dir);
+    if (args->fields->len > 0) {
+        JP_LOG_OUT("  [-f, --field      ]:");
+        for (size_t i = 0; i < args->fields->len; i++) {
+            JP_LOG_OUT("    %zu. %-32s: %-32s",
+                       i + 1,
+                       args->fields->fields[i]->key,
+                       args->fields->fields[i]->val);
+        }
+    }
+    JP_LOG_OUT("\nMemory Usage         :  ~%.2f MB", estimated_mem_usage);
+}
+
+static jp_errno_t set_out_dir(const char *arg, worker_args *args) {
     size_t len = 0;
     JP_FREE(args->out_dir);
     if (arg == NULL) {
@@ -66,7 +89,7 @@ static jp_errno_t set_out_dir(const char *arg, jp_worker_args_t *args) {
     return 0;
 }
 
-static jp_errno_t set_field(const char *arg, jp_worker_args_t *args) {
+static jp_errno_t set_field(const char *arg, worker_args *args) {
     jp_errno_t err;
     if (arg == NULL) {
         return jp_errno_log_err_format(JP_EINV_FIELD_KEY,
@@ -82,7 +105,7 @@ static jp_errno_t set_field(const char *arg, jp_worker_args_t *args) {
     return 0;
 }
 
-static jp_errno_t set_chunk_size(const char *arg, jp_worker_args_t *args) {
+static jp_errno_t set_chunk_size(const char *arg, worker_args *args) {
     char *end_ptr;
     size_t chunk_size = 0;
     unsigned long long param = 0;
@@ -115,7 +138,7 @@ static jp_errno_t set_chunk_size(const char *arg, jp_worker_args_t *args) {
     return 0;
 }
 
-static jp_errno_t set_buffer_size(const char *arg, jp_worker_args_t *args) {
+static jp_errno_t set_buffer_size(const char *arg, worker_args *args) {
     char *end_ptr;
     unsigned long long param = 0;
 
@@ -151,22 +174,24 @@ static int get_field_args_count(int argc, char *argv[]) {
     return c;
 }
 
-static jp_errno_t init_worker_args(int argc, char *argv[], jp_worker_args_t *args) {
+static jp_errno_t init_worker_args(int argc, char *argv[], worker_args *args) {
     int fields = get_field_args_count(argc, argv);
     if (fields > JP_WRK_FIELDS_MAX) {
         return jp_errno_log_err_format(JP_ETOO_MANY_FIELD,
                                        "Too many 'fields' specified: '%d'", fields);
     }
     JP_ALLOC_OR_LOG(args->fields, jp_field_set_new((size_t) fields));
+    JP_ALLOC_OR_LOG(args->queue, jp_queue_create(args->buffer_size, args->chunk_size));
     return 0;
 }
 
-static void free_worker_args(jp_worker_args_t *args) {
+static void free_worker_args(worker_args *args) {
     JP_FREE(args->out_dir);
     jp_field_set_free(args->fields);
+    jp_queue_destroy(args->queue);
 }
 
-static jp_errno_t collect_cli_args(int argc, char *argv[], jp_worker_args_t *args) {
+static jp_errno_t collect_cli_args(int argc, char *argv[], worker_args *args) {
     int option;
     opterr = 0;
     optind = 1;
@@ -224,7 +249,7 @@ static jp_errno_t collect_cli_args(int argc, char *argv[], jp_worker_args_t *arg
     return 0;
 }
 
-static jp_errno_t create_and_normalize_out_dir(jp_worker_args_t *args) {
+static jp_errno_t create_and_normalize_out_dir(worker_args *args) {
     char tmp[JP_PATH_MAX] = {0};
     char absolute_path[JP_PATH_MAX] = {0};
     char *p = NULL;
@@ -280,7 +305,7 @@ jp_errno_t jp_wrk_exec(int argc, char *argv[]) {
         return display_help();
     }
     jp_errno_t err = 0;
-    jp_worker_args_t args = {0};
+    worker_args args = {0};
 
     err = init_worker_args(argc, argv, &args);
     if (err) {
@@ -299,7 +324,7 @@ jp_errno_t jp_wrk_exec(int argc, char *argv[]) {
         free_worker_args(&args);
         return err;
     }
-
+    display_summary(&args);
     free_worker_args(&args);
     return 0;
 }

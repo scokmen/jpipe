@@ -33,6 +33,8 @@ jp_errno_t jp_cmd_help(JP_UNUSED int argc, JP_UNUSED char *argv[]) {
     JP_LOG_OUT("  cat data.log | jpipe run -c 1mb -o /tmp/output\n");
     JP_LOG_OUT("  # High-throughput capture with a larger buffer");
     JP_LOG_OUT("  tail -f /var/log/syslog | jpipe run -b 128 -c 64kb");
+    JP_LOG_OUT("\nDocumentation & Issues:");
+    JP_LOG_OUT("  https://github.com/scoekmen/jpipe");
     return 0;
 }
 

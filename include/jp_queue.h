@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <pthread.h>
+#include <stdbool.h>
 #include <jp_common.h>
 #include <jp_errno.h>
 
@@ -12,6 +13,7 @@ typedef struct {
 } jp_block_t;
 
 typedef struct {
+    bool active;
     size_t head;
     size_t tail;
     size_t length;
@@ -35,6 +37,9 @@ jp_errno_t jp_queue_push(jp_queue_t *queue, const void *src, size_t len);
 JP_NONNULL_ARG(1, 2, 4)
 JP_WRITE_PTR_SIZE(2, 3)
 jp_errno_t jp_queue_pop(jp_queue_t *queue, unsigned char *dest_buffer, size_t max_len, size_t *out_len);
+
+JP_NONNULL_ARG(1)
+void jp_queue_finalize(jp_queue_t *queue);
 
 void jp_queue_destroy(jp_queue_t *queue);
 

@@ -15,6 +15,8 @@
   XX(EOUT_DIR         , "Output directory is invalid, inaccessible or path too long.")                       \
   XX(ETOO_MANY_FIELD  , "Too many fields. Maximum allowed field number is 32.")                              \
   XX(EINV_FIELD_KEY   , "Invalid key. The key must be at most 64 character (allowed: a-z, A-Z, 0-9, _, -).") \
+  XX(ERUN_FAILED      , "Cannot run the application.")                                                       \
+  XX(ESHUTTING_DOWN   , "The application is shutting down.")                                                 \
   XX(ENOMEM           , "Could not allocate memory.")
 
 typedef enum {

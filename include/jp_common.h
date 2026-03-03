@@ -1,10 +1,18 @@
 #ifndef JPIPE_JP_COMMON_H
 #define JPIPE_JP_COMMON_H
 
-#define JP_PATH_MAX          4096
-#define MIN(x, y)            (((x) < (y)) ? (x) : (y))
-#define MAX(x, y)            (((x) > (y)) ? (x) : (y))
-#define JP_LOG_OUT(fmt, ...) fprintf(stdout, fmt "\n", ##__VA_ARGS__)
+#include <stdio.h>
+
+#define JP_PATH_MAX      4096
+#define MIN(x, y)        (((x) < (y)) ? (x) : (y))
+#define MAX(x, y)        (((x) > (y)) ? (x) : (y))
+#define JP_LOG(fmt, ...) fprintf(stdout, fmt "\n", ##__VA_ARGS__)
+
+#ifdef NDEBUG
+#define JP_DEBUG(fmt, ...) ((void)0)
+#else
+#define JP_DEBUG(fmt, ...) fprintf(stdout, "[DEBUG] " fmt "\n", ##__VA_ARGS__)
+#endif
 
 /*
  * Checks if __has_builtin is defined or not.

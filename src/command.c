@@ -21,24 +21,24 @@ jp_errno_t jp_cmd_exec(int cmdc, jp_cmd_t *cmds, int argc, char *argv[]) {
 }
 
 jp_errno_t jp_cmd_help(JP_UNUSED int argc, JP_UNUSED char *argv[]) {
-    JP_LOG_OUT("Usage: jpipe <command> [options]\n");
-    JP_LOG_OUT("A lightweight C pipe-to-JSON logger designed for high-performance stream capture and extensible metadata injection.\n");
-    JP_LOG_OUT("Commands:");
-    JP_LOG_OUT("  run        Process data with configurable options.");
-    JP_LOG_OUT("  version    Display version information.");
-    JP_LOG_OUT("  help       Show this help message.\n");
-    JP_LOG_OUT("Use 'jpipe <command> --help' for more information on a specific command.\n");
-    JP_LOG_OUT("Examples:");
-    JP_LOG_OUT("  # Capture stream with 1MB chunks to a specific directory");
-    JP_LOG_OUT("  cat data.log | jpipe run -c 1mb -o /tmp/output\n");
-    JP_LOG_OUT("  # High-throughput capture with a larger buffer");
-    JP_LOG_OUT("  tail -f /var/log/syslog | jpipe run -b 128 -c 64kb");
-    JP_LOG_OUT("\nDocumentation & Issues:");
-    JP_LOG_OUT("  https://github.com/scoekmen/jpipe");
+    JP_LOG("Usage: jpipe <command> [options]\n");
+    JP_LOG("A lightweight C pipe-to-JSON logger designed for high-performance stream capture and extensible metadata injection.\n");
+    JP_LOG("Commands:");
+    JP_LOG("  run        Process data with configurable options.");
+    JP_LOG("  version    Display version information.");
+    JP_LOG("  help       Show this help message.\n");
+    JP_LOG("Use 'jpipe <command> --help' for more information on a specific command.\n");
+    JP_LOG("Examples:");
+    JP_LOG("  # Capture stream with 1MB chunks to a specific directory");
+    JP_LOG("  cat data.log | jpipe run -c 1mb -o /tmp/output\n");
+    JP_LOG("  # High-throughput capture with a larger buffer");
+    JP_LOG("  tail -f /var/log/syslog | jpipe run -b 128 -c 64kb");
+    JP_LOG("\nDocumentation & Issues:");
+    JP_LOG("  https://github.com/scoekmen/jpipe");
     return 0;
 }
 
 jp_errno_t jp_cmd_version(JP_UNUSED int argc, JP_UNUSED char *argv[]) {
-    JP_LOG_OUT("v%.16s", JP_VERSION);
+    JP_LOG("v%.16s", JP_VERSION);
     return 0;
 }

@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include <jp_common.h>
 #include <jp_queue.h>
 
 jp_queue_t *jp_queue_create(size_t capacity, size_t chunk_size) {
@@ -11,6 +13,7 @@ jp_queue_t *jp_queue_create(size_t capacity, size_t chunk_size) {
 
     JP_ALLOC_OR_RET(queue, malloc(total_size), NULL);
 
+    queue->active = true;
     queue->capacity = capacity;
     queue->chunk_size = chunk_size;
     queue->head = 0;
@@ -34,8 +37,15 @@ jp_queue_t *jp_queue_create(size_t capacity, size_t chunk_size) {
 jp_errno_t jp_queue_push(jp_queue_t *queue, const void *src, size_t len) {
     pthread_mutex_lock(&queue->lock);
 
-    while (queue->length == queue->capacity) {
+    while (queue->length == queue->capacity && queue->active) {
+        JP_DEBUG("[PUSH]: Queue is full. (len: %zu, cap: %zu", queue->length, queue->capacity);
         pthread_cond_wait(&queue->not_full, &queue->lock);
+    }
+
+    if (!queue->active) {
+        JP_DEBUG("[PUSH]: Queue is not active.");
+        pthread_mutex_unlock(&queue->lock);
+        return JP_ESHUTTING_DOWN;
     }
 
     size_t block_size = MIN(len, queue->chunk_size);
@@ -52,8 +62,15 @@ jp_errno_t jp_queue_push(jp_queue_t *queue, const void *src, size_t len) {
 jp_errno_t jp_queue_pop(jp_queue_t *queue, unsigned char *dest_buffer, size_t max_len, size_t *out_len) {
     pthread_mutex_lock(&queue->lock);
 
-    while (queue->length == 0) {
+    while (queue->length == 0 && queue->active) {
+        JP_DEBUG("[POP]: Queue is empty. (len: %zu, cap: %zu)", queue->length, queue->capacity);
         pthread_cond_wait(&queue->not_empty, &queue->lock);
+    }
+
+    if (queue->length == 0 && !queue->active) {
+        JP_DEBUG("[POP]: Queue is not active.");
+        pthread_mutex_unlock(&queue->lock);
+        return JP_ESHUTTING_DOWN;
     }
 
     size_t block_size = MIN(max_len, queue->blocks[queue->head].length);
@@ -65,8 +82,15 @@ jp_errno_t jp_queue_pop(jp_queue_t *queue, unsigned char *dest_buffer, size_t ma
 
     pthread_cond_signal(&queue->not_full);
     pthread_mutex_unlock(&queue->lock);
-
     return 0;
+}
+
+void jp_queue_finalize(jp_queue_t *queue) {
+    pthread_mutex_lock(&queue->lock);
+    queue->active = false;
+    pthread_cond_broadcast(&queue->not_empty);
+    pthread_cond_broadcast(&queue->not_full);
+    pthread_mutex_unlock(&queue->lock);
 }
 
 void jp_queue_destroy(jp_queue_t *queue) {

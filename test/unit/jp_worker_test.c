@@ -101,6 +101,34 @@ void test_jp_wrk_exec_buffer_size(void) {
     }
 }
 
+void test_jp_wrk_exec_policy(void) {
+    test_case_t cases[] = {
+        {.argc = 2, .argv = {"jpipe", "-n", NULL}, .expected = 0},
+        {.argc = 4, .argv = {"jpipe", "-n", "-p", "", NULL}, .expected = JP_EOVERFLOW_POLICY},
+        {.argc = 4, .argv = {"jpipe", "-n", "-p", "waitt", NULL}, .expected = JP_EOVERFLOW_POLICY},
+        {.argc = 4, .argv = {"jpipe", "-n", "-p", "droop", NULL}, .expected = JP_EOVERFLOW_POLICY},
+        {.argc = 4, .argv = {"jpipe", "-n", "-p", "wait", NULL}, .expected = 0},
+        {.argc = 4, .argv = {"jpipe", "-n", "-p", "drop", NULL}, .expected = 0},
+        {.argc = 4, .argv = {"jpipe", "-n", "--policy", "", NULL}, .expected = JP_EOVERFLOW_POLICY},
+        {.argc = 4, .argv = {"jpipe", "-n", "--policy", "waitt", NULL}, .expected = JP_EOVERFLOW_POLICY},
+        {.argc = 4, .argv = {"jpipe", "-n", "--policy", "droop", NULL}, .expected = JP_EOVERFLOW_POLICY},
+        {.argc = 4, .argv = {"jpipe", "-n", "--policy", "wait", NULL}, .expected = 0},
+        {.argc = 4, .argv = {"jpipe", "-n", "--policy", "drop", NULL}, .expected = 0},
+    };
+    
+    jp_errno_t err;
+    int len = (sizeof(cases) / sizeof(cases[0]));
+    for (int i = 0; i < len; i++) {
+        optind = 1;
+        optarg = NULL;
+        opterr = 0;
+
+        err = jp_wrk_exec(cases[i].argc, (char**) cases[i].argv);
+
+        JP_ASSERT_EQ(cases[i].expected, err);
+    }
+}
+
 void test_jp_wrk_exec_chunk_size(void) {
     test_case_t cases[] = {
         {.argc = 2, .argv = {"jpipe", "-n", NULL}, .expected = 0},
@@ -305,6 +333,7 @@ int main(void) {
     test_jp_wrk_exec_help_command_long();
     test_jp_wrk_exec_chunk_size();
     test_jp_wrk_exec_buffer_size();
+    test_jp_wrk_exec_policy();
     test_jp_wrk_exec_out_dir();
     test_jp_wrk_exec_fields();
     test_jp_wrk_exec_invalid_command();

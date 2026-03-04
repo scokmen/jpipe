@@ -19,10 +19,16 @@ typedef struct {
     worker_func func;
 } worker_thread_t;
 
+typedef enum {
+    POLICY_WAIT = 0,
+    POLICY_DROP = 1
+} worker_overflow_policy_t;
+
 typedef struct {
     size_t chunk_size;
     size_t buffer_size;
     bool dry_run;
+    worker_overflow_policy_t policy;
     const char* out_dir;
     jp_queue_t* queue;
     jp_field_set_t* fields;
@@ -34,6 +40,7 @@ static jp_errno_t display_help(void) {
     JP_LOG("Options:");
     JP_LOG("  -c, --chunk-size  <size>     Chunk size (e.g., 16kb, 64kb). Range: 1kb-128kb  (default: 64kb).");
     JP_LOG("  -b, --buffer-size <count>    Max pending operations. Range: 1-1024 (default: 64).");
+    JP_LOG("  -p, --policy      <type>     Overflow policy: 'wait' or 'drop' (default: wait).");
     JP_LOG("  -o, --out-dir     <path>     Output directory (default: current dir).");
     JP_LOG("  -f, --field       key=value  Additional field to the JSON output. Can be used multiple times.");
     JP_LOG("  -n, --dry-run                Dry run.");
@@ -61,18 +68,22 @@ static jp_errno_t display_help(void) {
 static void display_summary(worker_arg_t* args) {
     double estimated_mem_usage = ((double) args->chunk_size * (double) args->buffer_size) / (BYTES_IN_KB * BYTES_IN_KB);
 
-    JP_LOG("Summary: jpipe configuration\n");
-    JP_LOG("Parameters:");
-    JP_LOG("  [-c, --chunk-size ]: %zu KB", (args->chunk_size / BYTES_IN_KB));
-    JP_LOG("  [-b, --buffer-size]: %zu", args->buffer_size);
-    JP_LOG("  [-o, --out-dir    ]: %s", args->out_dir);
+    JP_LOG("Configuration Summary\n");
+    JP_LOG("[Runtime Parameters]");
+    JP_LOG("• Chunk Size   (-c) : %zu KB", (args->chunk_size / BYTES_IN_KB));
+    JP_LOG("• Buffer Size  (-b) : %zu", args->buffer_size);
+    JP_LOG("• Output Dir   (-o) : %s", args->out_dir);
+    JP_LOG("• Policy       (-p) : %s", args->policy == POLICY_WAIT ? "WAIT" : "DROP");
     if (args->fields->len > 0) {
-        JP_LOG("  [-f, --field      ]:");
+        JP_LOG("• Fields       (-f) :");
         for (size_t i = 0; i < args->fields->len; i++) {
-            JP_LOG("    %zu. %-32s: %-32s", i + 1, args->fields->fields[i]->key, args->fields->fields[i]->val);
+            JP_LOG("     %zu. %-32s= %-32s", i + 1, args->fields->fields[i]->key, args->fields->fields[i]->val);
         }
     }
-    JP_LOG("\nMemory Usage         :  ~%.2f MB", estimated_mem_usage);
+    JP_LOG("\n[Resource Utilization]");
+    JP_LOG("• Memory Usage      :  ~%.2f MB", estimated_mem_usage);
+    JP_LOG("\nThese values are based on user-provided parameters.");
+    JP_LOG("Memory usage is an approximation; operating system overhead and thread stack allocations are not included.");
 }
 
 static jp_errno_t set_out_dir(const char* arg, worker_arg_t* args) {
@@ -152,6 +163,20 @@ static jp_errno_t set_buffer_size(const char* arg, worker_arg_t* args) {
 
     args->buffer_size = (size_t) param;
     return 0;
+}
+
+static jp_errno_t set_policy(const char* arg, worker_arg_t* args) {
+    if (!strcmp(arg, "wait")) {
+        args->policy = POLICY_WAIT;
+        return 0;
+    }
+
+    if (!strcmp(arg, "drop")) {
+        args->policy = POLICY_DROP;
+        return 0;
+    }
+
+    return jp_errno_log_err_format(JP_EOVERFLOW_POLICY, "Overflow policy is invalid: '%.32s'.", arg);
 }
 
 static jp_errno_t handle_unknown_argument(const char* cmd) {
@@ -238,19 +263,23 @@ static jp_errno_t collect_cli_args(int argc, char* argv[], worker_arg_t* args) {
 
     static struct option long_options[] = {{"chunk-size", required_argument, 0, 'c'},
                                            {"buffer-size", required_argument, 0, 'b'},
+                                           {"policy", required_argument, 0, 'p'},
                                            {"field", required_argument, 0, 'f'},
                                            {"out-dir", required_argument, 0, 'o'},
                                            {"dry-run", required_argument, 0, 'n'},
                                            {"help", no_argument, 0, 'h'},
                                            {0, 0, 0, 0}};
 
-    while ((option = getopt_long(argc, argv, ":c:b:o:f:hn", long_options, NULL)) != -1) {
+    while ((option = getopt_long(argc, argv, ":c:b:p:o:f:hn", long_options, NULL)) != -1) {
         switch (option) {
             case 'c':
                 JP_OK_OR_RET(set_chunk_size(optarg, args));
                 break;
             case 'b':
                 JP_OK_OR_RET(set_buffer_size(optarg, args));
+                break;
+            case 'p':
+                JP_OK_OR_RET(set_policy(optarg, args));
                 break;
             case 'o':
                 JP_OK_OR_RET(set_out_dir(optarg, args));

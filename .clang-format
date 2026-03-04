@@ -25,6 +25,7 @@ AlignConsecutiveAssignments:
 AllowShortIfStatementsOnASingleLine: false
 AllowShortBlocksOnASingleLine: false
 AllowShortFunctionsOnASingleLine: None
+AllowShortEnumsOnASingleLine: false
 
 SortIncludes: true
 SpaceAfterCStyleCast: true

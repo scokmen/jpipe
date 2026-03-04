@@ -12,6 +12,7 @@
     XX(EUNKNOWN_RUN_CMD, "Unknown [run] argument. Please use 'jpipe run --help' to see available options.") \
     XX(ECHUNK_SIZE, "Chunk size must be between 1kb (1024B) and 64mb (67108864B)")                          \
     XX(EBUFFER_SIZE, "Buffer size must be between 1 and 1024.")                                             \
+    XX(EOVERFLOW_POLICY, "Overflow policy must be 'wait' or 'drop'.")                                       \
     XX(EOUT_DIR, "Output directory is invalid, inaccessible or path too long.")                             \
     XX(ETOO_MANY_FIELD, "Too many fields. Maximum allowed field number is 32.")                             \
     XX(EINV_FIELD_KEY, "Invalid key. The key must be at most 64 character (allowed: a-z, A-Z, 0-9, _, -).") \

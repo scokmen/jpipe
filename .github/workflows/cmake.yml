@@ -83,8 +83,8 @@ jobs:
         with:
           category: "/language:c-cpp"
 
-  coverage:
-    name: Coverage
+  quality:
+    name: Code Quality & Coverage
     runs-on: ubuntu-latest
     permissions:
       security-events: write
@@ -100,6 +100,9 @@ jobs:
 
       - name: Build
         run: cmake --build build
+        
+      - name: Code Style
+        run: cmake --build build --target format
         
       - name: Test
         working-directory: build

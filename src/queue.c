@@ -1,29 +1,29 @@
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
 #include <jp_common.h>
 #include <jp_queue.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
-jp_queue_t *jp_queue_create(size_t capacity, size_t chunk_size) {
-    jp_queue_t *queue;
+jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size) {
+    jp_queue_t* queue;
 
     size_t blocks_offset = sizeof(jp_queue_t);
-    size_t area_offset = blocks_offset + (capacity * sizeof(jp_block_t));
-    size_t total_size = area_offset + (capacity * chunk_size);
+    size_t area_offset   = blocks_offset + (capacity * sizeof(jp_block_t));
+    size_t total_size    = area_offset + (capacity * chunk_size);
 
     JP_ALLOC_OR_RET(queue, malloc(total_size), NULL);
 
-    queue->active = true;
-    queue->capacity = capacity;
+    queue->active     = true;
+    queue->capacity   = capacity;
     queue->chunk_size = chunk_size;
-    queue->head = 0;
-    queue->tail = 0;
-    queue->length = 0;
-    queue->blocks = (jp_block_t *) ((unsigned char *) queue + blocks_offset);
-    queue->area = (unsigned char *) queue + area_offset;
+    queue->head       = 0;
+    queue->tail       = 0;
+    queue->length     = 0;
+    queue->blocks     = (jp_block_t*) ((unsigned char*) queue + blocks_offset);
+    queue->area       = (unsigned char*) queue + area_offset;
 
     for (size_t i = 0; i < capacity; i++) {
-        queue->blocks[i].data = queue->area + (i * chunk_size);
+        queue->blocks[i].data   = queue->area + (i * chunk_size);
         queue->blocks[i].length = 0;
     }
 
@@ -34,7 +34,7 @@ jp_queue_t *jp_queue_create(size_t capacity, size_t chunk_size) {
     return queue;
 }
 
-jp_errno_t jp_queue_push(jp_queue_t *queue, const void *src, size_t len) {
+jp_errno_t jp_queue_push(jp_queue_t* queue, const void* src, size_t len) {
     pthread_mutex_lock(&queue->lock);
 
     while (queue->length == queue->capacity && queue->active) {
@@ -51,7 +51,7 @@ jp_errno_t jp_queue_push(jp_queue_t *queue, const void *src, size_t len) {
     size_t block_size = MIN(len, queue->chunk_size);
     memcpy(queue->blocks[queue->tail].data, src, block_size);
     queue->blocks[queue->tail].length = block_size;
-    queue->tail = (queue->tail + 1) % queue->capacity;
+    queue->tail                       = (queue->tail + 1) % queue->capacity;
     queue->length++;
 
     pthread_cond_signal(&queue->not_empty);
@@ -59,7 +59,7 @@ jp_errno_t jp_queue_push(jp_queue_t *queue, const void *src, size_t len) {
     return 0;
 }
 
-jp_errno_t jp_queue_pop(jp_queue_t *queue, unsigned char *dest_buffer, size_t max_len, size_t *out_len) {
+jp_errno_t jp_queue_pop(jp_queue_t* queue, unsigned char* dest_buffer, size_t max_len, size_t* out_len) {
     pthread_mutex_lock(&queue->lock);
 
     while (queue->length == 0 && queue->active) {
@@ -85,7 +85,7 @@ jp_errno_t jp_queue_pop(jp_queue_t *queue, unsigned char *dest_buffer, size_t ma
     return 0;
 }
 
-void jp_queue_finalize(jp_queue_t *queue) {
+void jp_queue_finalize(jp_queue_t* queue) {
     pthread_mutex_lock(&queue->lock);
     queue->active = false;
     pthread_cond_broadcast(&queue->not_empty);
@@ -93,7 +93,7 @@ void jp_queue_finalize(jp_queue_t *queue) {
     pthread_mutex_unlock(&queue->lock);
 }
 
-void jp_queue_destroy(jp_queue_t *queue) {
+void jp_queue_destroy(jp_queue_t* queue) {
     if (queue == NULL) {
         return;
     }

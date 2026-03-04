@@ -9,7 +9,7 @@
 #define JP_LOG(fmt, ...) fprintf(stdout, fmt "\n", ##__VA_ARGS__)
 
 #ifdef NDEBUG
-#define JP_DEBUG(fmt, ...) ((void)0)
+#define JP_DEBUG(fmt, ...) ((void) 0)
 #else
 #define JP_DEBUG(fmt, ...) fprintf(stdout, "[DEBUG] " fmt "\n", ##__VA_ARGS__)
 #endif
@@ -32,14 +32,17 @@
 #define HAS_ATTRIBUTE(x) (0)
 #endif
 
-
 /*
  * Defines: JP_ASSUME
  */
 #if HAS_BUILTIN(__builtin_assume)
 #define JP_ASSUME(cond) __builtin_assume(cond)
 #elif HAS_BUILTIN(__builtin_unreachable)
-#define JP_ASSUME(cond) do { if (!(cond)) __builtin_unreachable(); } while (0)
+#define JP_ASSUME(cond)              \
+    do {                             \
+        if (!(cond))                 \
+            __builtin_unreachable(); \
+    } while (0)
 #else
 #define JP_ASSUME(cond)
 #endif
@@ -48,11 +51,11 @@
  * Defines: JP_LIKELY, JP_UNLIKELY
  */
 #if HAS_BUILTIN(__builtin_expect)
-#define JP_LIKELY(x)    __builtin_expect(!!(x), 1)
-#define JP_UNLIKELY(x)  __builtin_expect(!!(x), 0)
+#define JP_LIKELY(x)   __builtin_expect(!!(x), 1)
+#define JP_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else
-#define JP_LIKELY(x)    (x)
-#define JP_UNLIKELY(x)  (x)
+#define JP_LIKELY(x)   (x)
+#define JP_UNLIKELY(x) (x)
 #endif
 
 /*
@@ -124,28 +127,28 @@
 #define JP_WRITE_PTR_SIZE(ptr_idx, size_idx)
 #endif
 
-#define JP_FREE(ptr)        \
-do {                        \
-    if ((ptr) != NULL) {    \
-        free((void*)(ptr)); \
-        (ptr) = NULL;       \
-    }                       \
-} while (0)
+#define JP_FREE(ptr)             \
+    do {                         \
+        if ((ptr) != NULL) {     \
+            free((void*) (ptr)); \
+            (ptr) = NULL;        \
+        }                        \
+    } while (0)
 
-#define JP_ALLOC_OR_RET(var, expr, ret) \
-do {                                    \
-    (var) = (expr);                     \
-    if (JP_UNLIKELY((var) == NULL)) {   \
-        return (ret);                   \
-    }                                   \
-} while (0)
+#define JP_ALLOC_OR_RET(var, expr, ret)   \
+    do {                                  \
+        (var) = (expr);                   \
+        if (JP_UNLIKELY((var) == NULL)) { \
+            return (ret);                 \
+        }                                 \
+    } while (0)
 
-#define JP_OK_OR_RET(stm)          \
-do {                               \
-    __typeof__(stm) __err = (stm); \
-    if (__err != 0) {              \
-       return __err;               \
-    }                              \
-} while (0)
+#define JP_OK_OR_RET(stm)              \
+    do {                               \
+        __typeof__(stm) __err = (stm); \
+        if (__err != 0) {              \
+            return __err;              \
+        }                              \
+    } while (0)
 
-#endif //JPIPE_JP_COMMON_H
+#endif  // JPIPE_JP_COMMON_H

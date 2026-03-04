@@ -1,24 +1,24 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include <getopt.h>
+#include <jp_errno.h>
+#include <jp_test.h>
+#include <jp_worker.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <jp_worker.h>
-#include <jp_test.h>
-#include <jp_errno.h>
 
 typedef struct {
     jp_errno_t expected;
     int argc;
-    const char *argv[128];
+    const char* argv[128];
 } test_case_t;
 
 typedef struct {
     int argc;
-    char *argv[10];
+    char* argv[10];
 } test_ctx_t;
 
-void tear_up_test_dir(const char *base_path) {
+void tear_up_test_dir(const char* base_path) {
     char os_sub_path[JP_PATH_MAX];
     char os_cmd[JP_PATH_MAX + 64];
 
@@ -46,40 +46,46 @@ void tear_up_test_dir(const char *base_path) {
     JP_ASSERT_OK(mkdir(os_sub_path, 0555));
 }
 
-jp_errno_t command_adapter(void *ctx) {
-    test_ctx_t *c = (test_ctx_t *) ctx;
+jp_errno_t command_adapter(void* ctx) {
+    test_ctx_t* c = (test_ctx_t*) ctx;
     return jp_wrk_exec(c->argc, c->argv);
 }
 
 void test_jp_wrk_exec_help_command_short(void) {
-    test_ctx_t ctx = {.argc = 2, .argv = {(char *) "run", (char *) "-h", NULL}};
-    int status = jp_test_compare_stdout(command_adapter, &ctx, "run_help_command_out.tmpl");
+    test_ctx_t ctx = {.argc = 2, .argv = {(char*) "run", (char*) "-h", NULL}};
+    int status     = jp_test_compare_stdout(command_adapter, &ctx, "run_help_command_out.tmpl");
     JP_ASSERT_OK(status);
 }
 
 void test_jp_wrk_exec_help_command_long(void) {
-    test_ctx_t ctx = {.argc = 2, .argv = {(char *) "run", (char *) "--help", NULL}};
-    int status = jp_test_compare_stdout(command_adapter, &ctx, "run_help_command_out.tmpl");
+    test_ctx_t ctx = {.argc = 2, .argv = {(char*) "run", (char*) "--help", NULL}};
+    int status     = jp_test_compare_stdout(command_adapter, &ctx, "run_help_command_out.tmpl");
     JP_ASSERT_OK(status);
 }
 
 void test_jp_wrk_exec_buffer_size(void) {
     test_case_t cases[] = {
-            {.argc = 2, .argv = {"jpipe", "-n", NULL}, .expected=0},
-            {.argc = 4, .argv = {"jpipe", "-n", "-b", "-1", NULL}, .expected=JP_EBUFFER_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "-b", "", NULL}, .expected=JP_EBUFFER_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "-b", "A", NULL}, .expected=JP_EBUFFER_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "-b", "1025", NULL}, .expected=JP_EBUFFER_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "-b", "0", NULL}, .expected=JP_EBUFFER_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "-b", "1", NULL}, .expected=0,},
-            {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "1024", NULL}, .expected=0},
-            {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "-1", NULL}, .expected=JP_EBUFFER_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "", NULL}, .expected=JP_EBUFFER_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "A", NULL}, .expected=JP_EBUFFER_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "1025", NULL}, .expected=JP_EBUFFER_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "0", NULL}, .expected=JP_EBUFFER_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "1", NULL}, .expected=0},
-            {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "1024", NULL}, .expected=0},
+        {.argc = 2, .argv = {"jpipe", "-n", NULL}, .expected = 0},
+        {.argc = 4, .argv = {"jpipe", "-n", "-b", "-1", NULL}, .expected = JP_EBUFFER_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "-b", "", NULL}, .expected = JP_EBUFFER_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "-b", "A", NULL}, .expected = JP_EBUFFER_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "-b", "999999999999999999999999", NULL}, .expected = JP_EBUFFER_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "-b", "1025", NULL}, .expected = JP_EBUFFER_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "-b", "0", NULL}, .expected = JP_EBUFFER_SIZE},
+        {
+            .argc     = 4,
+            .argv     = {"jpipe", "-n", "-b", "1", NULL},
+            .expected = 0,
+        },
+        {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "1024", NULL}, .expected = 0},
+        {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "-1", NULL}, .expected = JP_EBUFFER_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "", NULL}, .expected = JP_EBUFFER_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "A", NULL}, .expected = JP_EBUFFER_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "999999999999999999999999", NULL}, .expected = JP_EBUFFER_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "1025", NULL}, .expected = JP_EBUFFER_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "0", NULL}, .expected = JP_EBUFFER_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "1", NULL}, .expected = 0},
+        {.argc = 4, .argv = {"jpipe", "-n", "--buffer-size", "1024", NULL}, .expected = 0},
     };
 
     jp_errno_t err;
@@ -89,7 +95,7 @@ void test_jp_wrk_exec_buffer_size(void) {
         optarg = NULL;
         opterr = 0;
 
-        err = jp_wrk_exec(cases[i].argc, (char **) cases[i].argv);
+        err = jp_wrk_exec(cases[i].argc, (char**) cases[i].argv);
 
         JP_ASSERT_EQ(cases[i].expected, err);
     }
@@ -97,31 +103,33 @@ void test_jp_wrk_exec_buffer_size(void) {
 
 void test_jp_wrk_exec_chunk_size(void) {
     test_case_t cases[] = {
-            {.argc = 2, .argv = {"jpipe", "-n", NULL}, .expected=0},
-            {.argc = 4, .argv = {"jpipe", "-n", "-c", "-1", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "-c", "", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "-c", "A", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "-c", "0kb", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "-c", "129kb", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "-c", "10Kb", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "-c", "10kbx", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "-c", "0mb", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "-c", "1mb", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "-c", "1kb", NULL}, .expected=0},
-            {.argc = 4, .argv = {"jpipe", "-n", "-c", "10kb", NULL}, .expected=0},
-            {.argc = 4, .argv = {"jpipe", "-n", "-c", "128kb", NULL}, .expected=0},
-            {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "-1", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "A", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "0kb", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "129kb", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "10Kb", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "10kbx", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "0mb", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "1mb", NULL}, .expected=JP_ECHUNK_SIZE},
-            {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "1kb", NULL}, .expected=0},
-            {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "10kb", NULL}, .expected=0},
-            {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "128kb", NULL}, .expected=0},
+        {.argc = 2, .argv = {"jpipe", "-n", NULL}, .expected = 0},
+        {.argc = 4, .argv = {"jpipe", "-n", "-c", "-1", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "-c", "", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "-c", "A", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "-c", "0kb", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "-c", "129kb", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "-c", "10Kb", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "-c", "10kbx", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "-c", "0mb", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "-c", "1mb", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "-c", "999999999999999999999999kb", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "-c", "1kb", NULL}, .expected = 0},
+        {.argc = 4, .argv = {"jpipe", "-n", "-c", "10kb", NULL}, .expected = 0},
+        {.argc = 4, .argv = {"jpipe", "-n", "-c", "128kb", NULL}, .expected = 0},
+        {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "-1", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "A", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "0kb", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "129kb", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "10Kb", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "10kbx", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "0mb", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "1mb", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "999999999999999999999999kb", NULL}, .expected = JP_ECHUNK_SIZE},
+        {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "1kb", NULL}, .expected = 0},
+        {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "10kb", NULL}, .expected = 0},
+        {.argc = 4, .argv = {"jpipe", "-n", "--chunk-size", "128kb", NULL}, .expected = 0},
     };
 
     jp_errno_t err;
@@ -131,7 +139,7 @@ void test_jp_wrk_exec_chunk_size(void) {
         optarg = NULL;
         opterr = 0;
 
-        err = jp_wrk_exec(cases[i].argc, (char **) cases[i].argv);
+        err = jp_wrk_exec(cases[i].argc, (char**) cases[i].argv);
 
         JP_ASSERT_EQ(cases[i].expected, err);
     }
@@ -139,11 +147,11 @@ void test_jp_wrk_exec_chunk_size(void) {
 
 void test_jp_wrk_exec_out_dir(void) {
     test_case_t cases[] = {
-            {.argc = 2, .argv = {"jpipe", "-n", NULL}, .expected=0},
-            {.argc = 4, .argv = {"jpipe", "-n", "-o", "", NULL}, .expected=JP_EMISSING_CMD},
-            {.argc = 4, .argv = {"jpipe", "-n", "-o", "/tmp", NULL}, .expected= 0},
-            {.argc = 4, .argv = {"jpipe", "-n", "--out-dir", "", NULL}, .expected= JP_EMISSING_CMD},
-            {.argc = 4, .argv = {"jpipe", "-n", "--out-dir", "/tmp", NULL}, .expected= 0},
+        {.argc = 2, .argv = {"jpipe", "-n", NULL}, .expected = 0},
+        {.argc = 4, .argv = {"jpipe", "-n", "-o", "", NULL}, .expected = JP_EMISSING_CMD},
+        {.argc = 4, .argv = {"jpipe", "-n", "-o", "/tmp", NULL}, .expected = 0},
+        {.argc = 4, .argv = {"jpipe", "-n", "--out-dir", "", NULL}, .expected = JP_EMISSING_CMD},
+        {.argc = 4, .argv = {"jpipe", "-n", "--out-dir", "/tmp", NULL}, .expected = 0},
     };
 
     jp_errno_t err;
@@ -153,7 +161,7 @@ void test_jp_wrk_exec_out_dir(void) {
         optarg = NULL;
         opterr = 0;
 
-        err = jp_wrk_exec(cases[i].argc, (char **) cases[i].argv);
+        err = jp_wrk_exec(cases[i].argc, (char**) cases[i].argv);
 
         JP_ASSERT_EQ(cases[i].expected, err);
     }
@@ -161,34 +169,20 @@ void test_jp_wrk_exec_out_dir(void) {
 
 void test_jp_wrk_exec_fields(void) {
     test_case_t cases[] = {
-            {
-                    .argc = 66,
-                    .argv = {"jpipe", "-n",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             NULL},
-                    .expected=0
-            },
-            {
-                    .argc = 67,
-                    .argv = {"jpipe", "-n",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             "-f", "k=v", "--field", "k=v", "-f", "k=v", "--field", "k=v",
-                             "-f", "k=v", NULL},
-                    .expected= JP_ETOO_MANY_FIELD
-            },
+        {.argc     = 66,
+         .argv     = {"jpipe",   "-n",  "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v",
+                      "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v",
+                      "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v",
+                      "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v",
+                      "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v", NULL},
+         .expected = 0},
+        {.argc     = 67,
+         .argv     = {"jpipe",   "-n",  "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v",
+                      "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v",
+                      "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v",
+                      "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v",
+                      "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v", "--field", "k=v", "-f",      "k=v", NULL},
+         .expected = JP_ETOO_MANY_FIELD},
     };
 
     jp_errno_t err;
@@ -198,7 +192,7 @@ void test_jp_wrk_exec_fields(void) {
         optarg = NULL;
         opterr = 0;
 
-        err = jp_wrk_exec(cases[i].argc, (char **) cases[i].argv);
+        err = jp_wrk_exec(cases[i].argc, (char**) cases[i].argv);
 
         JP_ASSERT_EQ(cases[i].expected, err);
     }
@@ -206,11 +200,11 @@ void test_jp_wrk_exec_fields(void) {
 
 void test_jp_wrk_exec_invalid_command(void) {
     test_case_t cases[] = {
-            {.argc = 2, .argv = {"jpipe", "-n", NULL}, .expected=0},
-            {.argc = 3, .argv = {"jpipe", "-n", "-x", NULL}, .expected=JP_EUNKNOWN_RUN_CMD},
-            {.argc = 3, .argv = {"jpipe", "-n", "--xx", NULL}, .expected= JP_EUNKNOWN_RUN_CMD},
-            {.argc = 5, .argv = {"jpipe", "-n", "-b", "100", "-x", NULL}, .expected= JP_EUNKNOWN_RUN_CMD},
-            {.argc = 5, .argv = {"jpipe", "-n", "-b", "100", "100", NULL}, .expected= JP_EUNKNOWN_RUN_CMD},
+        {.argc = 2, .argv = {"jpipe", "-n", NULL}, .expected = 0},
+        {.argc = 3, .argv = {"jpipe", "-n", "-x", NULL}, .expected = JP_EUNKNOWN_RUN_CMD},
+        {.argc = 3, .argv = {"jpipe", "-n", "--xx", NULL}, .expected = JP_EUNKNOWN_RUN_CMD},
+        {.argc = 5, .argv = {"jpipe", "-n", "-b", "100", "-x", NULL}, .expected = JP_EUNKNOWN_RUN_CMD},
+        {.argc = 5, .argv = {"jpipe", "-n", "-b", "100", "100", NULL}, .expected = JP_EUNKNOWN_RUN_CMD},
     };
 
     jp_errno_t err;
@@ -220,7 +214,7 @@ void test_jp_wrk_exec_invalid_command(void) {
         optarg = NULL;
         opterr = 0;
 
-        err = jp_wrk_exec(cases[i].argc, (char **) cases[i].argv);
+        err = jp_wrk_exec(cases[i].argc, (char**) cases[i].argv);
 
         JP_ASSERT_EQ(cases[i].expected, err);
     }
@@ -234,10 +228,10 @@ void test_jp_wrk_exec_out_dir_enotdir(void) {
     jp_test_get_sandbox(tmp_dir, sizeof(tmp_dir));
     snprintf(out_dir, sizeof(out_dir), "%s/c1_file/target", tmp_dir);
 
-    const char *args[5] = {"run", "-n", "-o", out_dir, NULL};
+    const char* args[5] = {"run", "-n", "-o", out_dir, NULL};
 
     tear_up_test_dir(tmp_dir);
-    err = jp_wrk_exec(4, (char **) args);
+    err = jp_wrk_exec(4, (char**) args);
 
     JP_ASSERT_EQ(JP_EOUT_DIR, err);
 }
@@ -250,10 +244,10 @@ void test_jp_wrk_exec_out_dir_eacces(void) {
     jp_test_get_sandbox(tmp_dir, sizeof(tmp_dir));
     snprintf(out_dir, sizeof(out_dir), "%s/c2_no_perm/target", tmp_dir);
 
-    const char *args[5] = {"run", "-n", "-o", out_dir, NULL};
+    const char* args[5] = {"run", "-n", "-o", out_dir, NULL};
 
     tear_up_test_dir(tmp_dir);
-    err = jp_wrk_exec(4, (char **) args);
+    err = jp_wrk_exec(4, (char**) args);
 
     JP_ASSERT_EQ(getuid() == 0 ? 0 : JP_EOUT_DIR, err);
 }
@@ -266,10 +260,10 @@ void test_jp_wrk_exec_out_dir_target_enotdir(void) {
     jp_test_get_sandbox(tmp_dir, sizeof(tmp_dir));
     snprintf(out_dir, sizeof(out_dir), "%s/c3_is_file", tmp_dir);
 
-    const char *args[5] = {"run", "-n", "-o", out_dir, NULL};
+    const char* args[5] = {"run", "-n", "-o", out_dir, NULL};
 
     tear_up_test_dir(tmp_dir);
-    err = jp_wrk_exec(4, (char **) args);
+    err = jp_wrk_exec(4, (char**) args);
 
     JP_ASSERT_EQ(JP_EOUT_DIR, err);
 }
@@ -282,10 +276,10 @@ void test_jp_wrk_exec_out_dir_target_readonly(void) {
     jp_test_get_sandbox(tmp_dir, sizeof(tmp_dir));
     snprintf(out_dir, sizeof(out_dir), "%s/c4_read_only/target", tmp_dir);
 
-    const char *args[5] = {"run", "-n", "-o", out_dir, NULL};
+    const char* args[5] = {"run", "-n", "-o", out_dir, NULL};
 
     tear_up_test_dir(tmp_dir);
-    err = jp_wrk_exec(4, (char **) args);
+    err = jp_wrk_exec(4, (char**) args);
 
     JP_ASSERT_EQ(getuid() == 0 ? 0 : JP_EOUT_DIR, err);
 }
@@ -298,16 +292,10 @@ void test_jp_wrk_exec_no_err(void) {
     jp_test_get_sandbox(tmp_dir, sizeof(tmp_dir));
     snprintf(out_dir, sizeof(out_dir), "%s/happy_path-1", tmp_dir);
 
-    const char *args[9] = {
-            "run", "-n",
-            "-o", out_dir,
-            "-b", "100",
-            "-c", "2kb",
-            NULL
-    };
+    const char* args[9] = {"run", "-n", "-o", out_dir, "-b", "100", "-c", "2kb", NULL};
 
     tear_up_test_dir(tmp_dir);
-    err = jp_wrk_exec(8, (char **) args);
+    err = jp_wrk_exec(8, (char**) args);
 
     JP_ASSERT_OK(err);
 }

@@ -1,13 +1,12 @@
-#include <stdio.h>
-#include <string.h>
-#include <jp_errno.h>
 #include <jp_command.h>
 #include <jp_config.h>
+#include <jp_errno.h>
+#include <stdio.h>
+#include <string.h>
 
-jp_errno_t jp_cmd_exec(int cmdc, jp_cmd_t *cmds, int argc, char *argv[]) {
+jp_errno_t jp_cmd_exec(int cmdc, jp_cmd_t* cmds, int argc, char* argv[]) {
     if (argc < 2) {
-        return jp_errno_log_err_format(JP_EMISSING_CMD,
-                                       "Missing or incomplete command.");
+        return jp_errno_log_err_format(JP_EMISSING_CMD, "Missing or incomplete command.");
     }
 
     for (int i = 0; i < cmdc; i++) {
@@ -16,11 +15,10 @@ jp_errno_t jp_cmd_exec(int cmdc, jp_cmd_t *cmds, int argc, char *argv[]) {
         }
     }
 
-    return jp_errno_log_err_format(JP_EUNKNOWN_CMD,
-                                   "Invalid or incomplete command: '%.32s'.", argv[1]);
+    return jp_errno_log_err_format(JP_EUNKNOWN_CMD, "Invalid or incomplete command: '%.32s'.", argv[1]);
 }
 
-jp_errno_t jp_cmd_help(JP_UNUSED int argc, JP_UNUSED char *argv[]) {
+jp_errno_t jp_cmd_help(JP_UNUSED int argc, JP_UNUSED char* argv[]) {
     JP_LOG("Usage: jpipe <command> [options]\n");
     JP_LOG("A lightweight C pipe-to-JSON logger designed for high-performance stream capture and extensible metadata injection.\n");
     JP_LOG("Commands:");
@@ -38,7 +36,7 @@ jp_errno_t jp_cmd_help(JP_UNUSED int argc, JP_UNUSED char *argv[]) {
     return 0;
 }
 
-jp_errno_t jp_cmd_version(JP_UNUSED int argc, JP_UNUSED char *argv[]) {
+jp_errno_t jp_cmd_version(JP_UNUSED int argc, JP_UNUSED char* argv[]) {
     JP_LOG("v%.16s", JP_VERSION);
     return 0;
 }

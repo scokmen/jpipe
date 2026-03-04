@@ -21,8 +21,9 @@ target_link_libraries(jpipe_core
 )
 
 ###############################################
-# JPipe: Clang-Tidy >> Core
+# JPipe: Clang-Tidy | Clang-Format >> Core
 ###############################################
+init_clang_format()
 init_clang_tidy(jpipe_core)
 
 ###############################################

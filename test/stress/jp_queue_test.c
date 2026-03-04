@@ -1,28 +1,28 @@
-#include <pthread.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
 #include <jp_queue.h>
 #include <jp_test.h>
+#include <pthread.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define ITEM_SIZE 2000000
 
-void *producer(void *arg) {
-    jp_queue_t *q = (jp_queue_t *) arg;
+void* producer(void* arg) {
+    jp_queue_t* q = (jp_queue_t*) arg;
     for (int i = 1; i <= ITEM_SIZE; i++) {
         jp_queue_push(q, &i, sizeof(int));
     }
     return NULL;
 }
 
-void *consumer(void *arg) {
+void* consumer(void* arg) {
     int val;
     size_t len;
-    int64_t sum = 0;
-    jp_queue_t *q = (jp_queue_t *) arg;
+    int64_t sum   = 0;
+    jp_queue_t* q = (jp_queue_t*) arg;
 
     for (int i = 0; i < ITEM_SIZE; i++) {
-        jp_queue_pop(q, (unsigned char *) &val, sizeof(int), &len);
+        jp_queue_pop(q, (unsigned char*) &val, sizeof(int), &len);
         sum += val;
     }
 
@@ -33,7 +33,7 @@ void *consumer(void *arg) {
 
 int main(void) {
     pthread_t prod_tid, cons_tid;
-    jp_queue_t *q = jp_queue_create(16, sizeof(int));
+    jp_queue_t* q = jp_queue_create(16, sizeof(int));
 
     pthread_create(&prod_tid, NULL, producer, q);
     pthread_create(&cons_tid, NULL, consumer, q);

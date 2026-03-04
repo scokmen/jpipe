@@ -1,17 +1,17 @@
-#include <stdio.h>
-#include <string.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <getopt.h>
+#include <jp_command.h>
+#include <jp_errno.h>
+#include <jp_queue.h>
+#include <jp_worker.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <signal.h>
-#include <jp_worker.h>
-#include <jp_errno.h>
-#include <jp_command.h>
-#include <jp_queue.h>
 
-typedef void *(*worker_func)(void *);
+typedef void* (*worker_func)(void*);
 
 typedef struct {
     bool running;
@@ -23,9 +23,9 @@ typedef struct {
     size_t chunk_size;
     size_t buffer_size;
     bool dry_run;
-    const char *out_dir;
-    jp_queue_t *queue;
-    jp_field_set_t *fields;
+    const char* out_dir;
+    jp_queue_t* queue;
+    jp_field_set_t* fields;
 } worker_arg_t;
 
 static jp_errno_t display_help(void) {
@@ -58,7 +58,7 @@ static jp_errno_t display_help(void) {
     return 0;
 }
 
-static void display_summary(worker_arg_t *args) {
+static void display_summary(worker_arg_t* args) {
     double estimated_mem_usage = ((double) args->chunk_size * (double) args->buffer_size) / (BYTES_IN_KB * BYTES_IN_KB);
 
     JP_LOG("Summary: jpipe configuration\n");
@@ -69,114 +69,99 @@ static void display_summary(worker_arg_t *args) {
     if (args->fields->len > 0) {
         JP_LOG("  [-f, --field      ]:");
         for (size_t i = 0; i < args->fields->len; i++) {
-            JP_LOG("    %zu. %-32s: %-32s",
-                   i + 1,
-                   args->fields->fields[i]->key,
-                   args->fields->fields[i]->val);
+            JP_LOG("    %zu. %-32s: %-32s", i + 1, args->fields->fields[i]->key, args->fields->fields[i]->val);
         }
     }
     JP_LOG("\nMemory Usage         :  ~%.2f MB", estimated_mem_usage);
 }
 
-static jp_errno_t set_out_dir(const char *arg, worker_arg_t *args) {
+static jp_errno_t set_out_dir(const char* arg, worker_arg_t* args) {
     size_t len = 0;
     JP_FREE(args->out_dir);
     if (arg == NULL) {
-        return jp_errno_log_err_format(JP_EMISSING_CMD,
-                                       "Output path is empty.");
+        return jp_errno_log_err_format(JP_EMISSING_CMD, "Output path is empty.");
     }
     len = strlen(arg);
     if (len == 0) {
-        return jp_errno_log_err_format(JP_EMISSING_CMD,
-                                       "Output path is empty.");
+        return jp_errno_log_err_format(JP_EMISSING_CMD, "Output path is empty.");
     }
     if (len > JP_PATH_MAX) {
-        return jp_errno_log_err_format(JP_EMISSING_CMD,
-                                       "Output path is too long. Maximum allowed path size: %d.", JP_PATH_MAX);
+        return jp_errno_log_err_format(JP_EMISSING_CMD, "Output path is too long. Maximum allowed path size: %d.", JP_PATH_MAX);
     }
     JP_ALLOC_OR_LOG(args->out_dir, strdup(arg));
     return 0;
 }
 
-static jp_errno_t set_field(const char *arg, worker_arg_t *args) {
+static jp_errno_t set_field(const char* arg, worker_arg_t* args) {
     jp_errno_t err;
     if (arg == NULL) {
-        return jp_errno_log_err_format(JP_EINV_FIELD_KEY,
-                                       "Field key/value is empty");
+        return jp_errno_log_err_format(JP_EINV_FIELD_KEY, "Field key/value is empty");
     }
 
     JP_ASSUME(args->fields != NULL);
     err = jp_field_set_add(args->fields, arg);
     if (err) {
-        return jp_errno_log_err_format(err,
-                                       "Field key/value is invalid: '%s'", arg);
+        return jp_errno_log_err_format(err, "Field key/value is invalid: '%s'", arg);
     }
     return 0;
 }
 
-static jp_errno_t set_chunk_size(const char *arg, worker_arg_t *args) {
-    char *end_ptr;
-    size_t chunk_size = 0;
+static jp_errno_t set_chunk_size(const char* arg, worker_arg_t* args) {
+    char* end_ptr;
+    size_t chunk_size        = 0;
     unsigned long long param = 0;
 
     errno = 0;
     param = strtoull(arg, &end_ptr, 10);
 
     if (errno == ERANGE) {
-        return jp_errno_log_err_format(JP_ECHUNK_SIZE,
-                                       "Chunk size format is incorrect: '%.32s'.", arg);
+        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Chunk size format is incorrect: '%.32s'.", arg);
     }
 
     if (end_ptr == arg) {
-        return jp_errno_log_err_format(JP_ECHUNK_SIZE,
-                                       "Chunk size is empty: '%.32s'.", arg);
+        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Chunk size is empty: '%.32s'.", arg);
     }
 
     if (*end_ptr != '\0' && !strcmp(end_ptr, "kb") && param <= (JP_WRK_CHUNK_SIZE_MAX / BYTES_IN_KB)) {
         chunk_size += (param * BYTES_IN_KB);
     } else {
-        return jp_errno_log_err_format(JP_ECHUNK_SIZE,
-                                       "Chunk size value is invalid: '%.32s'.", arg);
+        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Chunk size value is invalid: '%.32s'.", arg);
     }
 
     if (chunk_size < JP_WRK_CHUNK_SIZE_MIN || chunk_size > JP_WRK_CHUNK_SIZE_MAX) {
-        return jp_errno_log_err_format(JP_ECHUNK_SIZE,
-                                       "Chunk size value is invalid: '%.32s'.", arg);
+        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Chunk size value is invalid: '%.32s'.", arg);
     }
     args->chunk_size = (size_t) chunk_size;
     return 0;
 }
 
-static jp_errno_t set_buffer_size(const char *arg, worker_arg_t *args) {
-    char *end_ptr;
+static jp_errno_t set_buffer_size(const char* arg, worker_arg_t* args) {
+    char* end_ptr;
     unsigned long long param = 0;
 
     errno = 0;
     param = strtoull(arg, &end_ptr, 10);
 
     if (errno == ERANGE || end_ptr == arg || *end_ptr != '\0') {
-        return jp_errno_log_err_format(JP_EBUFFER_SIZE,
-                                       "Buffer size format is incorrect: '%.32s'.", arg);
+        return jp_errno_log_err_format(JP_EBUFFER_SIZE, "Buffer size format is incorrect: '%.32s'.", arg);
     }
 
     if (param < JP_WRK_BUFFER_SIZE_MIN || param > JP_WRK_BUFFER_SIZE_MAX) {
-        return jp_errno_log_err_format(JP_EBUFFER_SIZE,
-                                       "Buffer size format invalid: '%.32s'.", arg);
+        return jp_errno_log_err_format(JP_EBUFFER_SIZE, "Buffer size format invalid: '%.32s'.", arg);
     }
 
     args->buffer_size = (size_t) param;
     return 0;
 }
 
-static jp_errno_t handle_unknown_argument(const char *cmd) {
-    return jp_errno_log_err_format(JP_EUNKNOWN_RUN_CMD,
-                                   "Invalid or incomplete [run] command: '%.32s'.", cmd);
+static jp_errno_t handle_unknown_argument(const char* cmd) {
+    return jp_errno_log_err_format(JP_EUNKNOWN_RUN_CMD, "Invalid or incomplete [run] command: '%.32s'.", cmd);
 }
 
-static jp_errno_t create_and_normalize_out_dir(worker_arg_t *args) {
-    char tmp[JP_PATH_MAX] = {0};
+static jp_errno_t create_and_normalize_out_dir(worker_arg_t* args) {
+    char tmp[JP_PATH_MAX]           = {0};
     char absolute_path[JP_PATH_MAX] = {0};
-    char *p = NULL;
+    char* p                         = NULL;
     struct stat st;
 
     size_t path_len = strlen(args->out_dir);
@@ -191,32 +176,26 @@ static jp_errno_t create_and_normalize_out_dir(worker_arg_t *args) {
         if (*p == '/') {
             *p = '\0';
             if (mkdir(tmp, 0755) != 0 && errno != EEXIST) {
-                return jp_errno_log_err_format(JP_EOUT_DIR,
-                                               "Could not create the output directory: '%s'", tmp);
+                return jp_errno_log_err_format(JP_EOUT_DIR, "Could not create the output directory: '%s'", tmp);
             }
             *p = '/';
         }
     }
 
     if (mkdir(tmp, 0755) != 0 && errno != EEXIST) {
-        return jp_errno_log_err_format(JP_EOUT_DIR,
-                                       "Could not create the output directory: '%s'.", tmp);
+        return jp_errno_log_err_format(JP_EOUT_DIR, "Could not create the output directory: '%s'.", tmp);
     }
 
-
     if (stat(tmp, &st) != 0 || !S_ISDIR(st.st_mode)) {
-        return jp_errno_log_err_format(JP_EOUT_DIR,
-                                       "The target path is not a directory: '%s'.", tmp);
+        return jp_errno_log_err_format(JP_EOUT_DIR, "The target path is not a directory: '%s'.", tmp);
     }
 
     if (access(tmp, W_OK) != 0) {
-        return jp_errno_log_err_format(JP_EOUT_DIR,
-                                       "The target path is inaccessible: '%s'.", tmp);
+        return jp_errno_log_err_format(JP_EOUT_DIR, "The target path is inaccessible: '%s'.", tmp);
     }
 
     if (realpath(tmp, absolute_path) == NULL) {
-        return jp_errno_log_err_format(JP_EOUT_DIR,
-                                       "Could not resolve absolute path: '%s'.", tmp);
+        return jp_errno_log_err_format(JP_EOUT_DIR, "Could not resolve absolute path: '%s'.", tmp);
     }
 
     JP_FREE(args->out_dir);
@@ -224,7 +203,7 @@ static jp_errno_t create_and_normalize_out_dir(worker_arg_t *args) {
     return 0;
 }
 
-static int get_field_args_count(int argc, char *argv[]) {
+static int get_field_args_count(int argc, char* argv[]) {
     int c = 0;
     for (int i = 0; i < argc; i++) {
         if (JP_CMD_EQ(argv[i], "-f", "--field")) {
@@ -234,39 +213,36 @@ static int get_field_args_count(int argc, char *argv[]) {
     return c;
 }
 
-static void free_worker_args(worker_arg_t *args) {
+static void free_worker_args(worker_arg_t* args) {
     JP_FREE(args->out_dir);
     jp_field_set_free(args->fields);
     jp_queue_destroy(args->queue);
 }
 
-static jp_errno_t init_worker_args(int argc, char *argv[], worker_arg_t *args) {
+static jp_errno_t init_worker_args(int argc, char* argv[], worker_arg_t* args) {
     int fields = get_field_args_count(argc, argv);
     if (fields > JP_WRK_FIELDS_MAX) {
-        return jp_errno_log_err_format(JP_ETOO_MANY_FIELD,
-                                       "Too many 'fields' specified: '%d'", fields);
+        return jp_errno_log_err_format(JP_ETOO_MANY_FIELD, "Too many 'fields' specified: '%d'", fields);
     }
     JP_ALLOC_OR_LOG(args->fields, jp_field_set_new((size_t) fields));
     return 0;
 }
 
-static jp_errno_t collect_cli_args(int argc, char *argv[], worker_arg_t *args) {
+static jp_errno_t collect_cli_args(int argc, char* argv[], worker_arg_t* args) {
     int option;
-    opterr = 0;
-    optind = 1;
-    args->chunk_size = JP_WRK_CHUNK_SIZE_DEF;
+    opterr            = 0;
+    optind            = 1;
+    args->chunk_size  = JP_WRK_CHUNK_SIZE_DEF;
     args->buffer_size = JP_WRK_BUFFER_SIZE_DEF;
-    args->out_dir = NULL;
+    args->out_dir     = NULL;
 
-    static struct option long_options[] = {
-            {"chunk-size",  required_argument, 0, 'c'},
-            {"buffer-size", required_argument, 0, 'b'},
-            {"field",       required_argument, 0, 'f'},
-            {"out-dir",     required_argument, 0, 'o'},
-            {"dry-run",     required_argument, 0, 'n'},
-            {"help",        no_argument,       0, 'h'},
-            {0, 0,                             0, 0}
-    };
+    static struct option long_options[] = {{"chunk-size", required_argument, 0, 'c'},
+                                           {"buffer-size", required_argument, 0, 'b'},
+                                           {"field", required_argument, 0, 'f'},
+                                           {"out-dir", required_argument, 0, 'o'},
+                                           {"dry-run", required_argument, 0, 'n'},
+                                           {"help", no_argument, 0, 'h'},
+                                           {0, 0, 0, 0}};
 
     while ((option = getopt_long(argc, argv, ":c:b:o:f:hn", long_options, NULL)) != -1) {
         switch (option) {
@@ -292,7 +268,6 @@ static jp_errno_t collect_cli_args(int argc, char *argv[], worker_arg_t *args) {
                 JP_OK_OR_RET(handle_unknown_argument(argv[optind - 1]));
                 break;
             default: {
-
             }
         }
     }
@@ -308,15 +283,15 @@ static jp_errno_t collect_cli_args(int argc, char *argv[], worker_arg_t *args) {
     return 0;
 }
 
-static jp_errno_t finalize_worker_args(worker_arg_t *args) {
+static jp_errno_t finalize_worker_args(worker_arg_t* args) {
     JP_OK_OR_RET(create_and_normalize_out_dir(args));
     JP_ALLOC_OR_LOG(args->queue, jp_queue_create(args->buffer_size, args->chunk_size));
     return 0;
 }
 
-static void *producer_thread_init(void *data) {
+static void* producer_thread_init(void* data) {
     jp_errno_t err;
-    worker_arg_t *args = (worker_arg_t *) data;
+    worker_arg_t* args = (worker_arg_t*) data;
 
     while (true) {
         // TODO: Replace with the real implementation.
@@ -330,11 +305,11 @@ static void *producer_thread_init(void *data) {
     return NULL;
 }
 
-static void *consumer_thread_init(void *data) {
+static void* consumer_thread_init(void* data) {
     jp_errno_t err;
     size_t max_len, read_len;
     unsigned char buffer[JP_WRK_CHUNK_SIZE_MAX];
-    worker_arg_t *args = (worker_arg_t *) data;
+    worker_arg_t* args = (worker_arg_t*) data;
 
     max_len = args->chunk_size;
     while (true) {
@@ -349,12 +324,10 @@ static void *consumer_thread_init(void *data) {
     return NULL;
 }
 
-static jp_errno_t orchestrate_threads(worker_arg_t *args) {
+static jp_errno_t orchestrate_threads(worker_arg_t* args) {
     int err = 0, join_err = 0, sig;
     sigset_t set;
-    worker_thread_t threads[2] = {{.func = producer_thread_init, .running = false},
-                                  {.func = consumer_thread_init, .running = false}
-    };
+    worker_thread_t threads[2] = {{.func = producer_thread_init, .running = false}, {.func = consumer_thread_init, .running = false}};
 
     sigemptyset(&set);
     sigaddset(&set, SIGTERM);
@@ -374,7 +347,7 @@ static jp_errno_t orchestrate_threads(worker_arg_t *args) {
         jp_queue_finalize(args->queue);
     }
 
-    clean_up:
+clean_up:
     if (err) {
         jp_errno_log_err_format(JP_ERUN_FAILED, "%s", strerror(err));
     }
@@ -392,8 +365,8 @@ static jp_errno_t orchestrate_threads(worker_arg_t *args) {
     return err ? JP_ERUN_FAILED : 0;
 }
 
-jp_errno_t jp_wrk_exec(int argc, char *argv[]) {
-    jp_errno_t err = 0;
+jp_errno_t jp_wrk_exec(int argc, char* argv[]) {
+    jp_errno_t err    = 0;
     worker_arg_t args = {0};
 
     if (argc == 2 && JP_CMD_EQ(argv[1], "-h", "--help")) {
@@ -420,7 +393,7 @@ jp_errno_t jp_wrk_exec(int argc, char *argv[]) {
         err = orchestrate_threads(&args);
     }
 
-    clean_up:
+clean_up:
     free_worker_args(&args);
     return err;
 }

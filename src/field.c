@@ -1,12 +1,12 @@
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <jp_field.h>
 #include <jp_common.h>
 #include <jp_errno.h>
+#include <jp_field.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
-static bool is_valid_field_key(const char *start, const char *end) {
+static bool is_valid_field_key(const char* start, const char* end) {
     unsigned char c;
     while (start < end) {
         c = (unsigned char) *start++;
@@ -18,25 +18,25 @@ static bool is_valid_field_key(const char *start, const char *end) {
     return true;
 }
 
-static jp_field_t *create_field(const char *key, const char *val) {
-    jp_field_t *field;
+static jp_field_t* create_field(const char* key, const char* val) {
+    jp_field_t* field;
     size_t key_len = strlen(key);
     size_t val_len = strlen(val);
 
     JP_ALLOC_OR_RET(field, malloc(sizeof(jp_field_t) + key_len + val_len + 2), NULL);
 
-    field->key = ((const char *) field + sizeof(jp_field_t));
-    field->val = field->key + key_len + 1;
+    field->key     = ((const char*) field + sizeof(jp_field_t));
+    field->val     = field->key + key_len + 1;
     field->key_len = key_len;
-    memcpy((void *) field->key, key, key_len + 1);
-    memcpy((void *) field->val, val, val_len + 1);
+    memcpy((void*) field->key, key, key_len + 1);
+    memcpy((void*) field->val, val, val_len + 1);
     return field;
 }
 
-static jp_errno_t crete_field_from_kv(const char *kv, jp_field_t **field) {
+static jp_errno_t crete_field_from_kv(const char* kv, jp_field_t** field) {
     size_t key_len;
     char key[JP_FIELD_MAX_KEY_LEN + 1];
-    char *eq = strchr(kv, '=');
+    char* eq = strchr(kv, '=');
 
     *field = NULL;
     if (eq == NULL || eq == kv) {
@@ -59,27 +59,27 @@ static jp_errno_t crete_field_from_kv(const char *kv, jp_field_t **field) {
     return 0;
 }
 
-static void destroy_field(jp_field_t *field) {
+static void destroy_field(jp_field_t* field) {
     JP_FREE(field);
 }
 
-jp_field_set_t *jp_field_set_new(size_t cap) {
-    jp_field_set_t *set;
-    JP_ALLOC_OR_RET(set, malloc(sizeof(jp_field_set_t) + (cap * sizeof(jp_field_t *))), NULL);
+jp_field_set_t* jp_field_set_new(size_t cap) {
+    jp_field_set_t* set;
+    JP_ALLOC_OR_RET(set, malloc(sizeof(jp_field_set_t) + (cap * sizeof(jp_field_t*))), NULL);
 
-    set->len = 0;
-    set->cap = cap;
-    set->fields = (jp_field_t **) (set + 1);
+    set->len    = 0;
+    set->cap    = cap;
+    set->fields = (jp_field_t**) (set + 1);
     return set;
 }
 
-jp_errno_t jp_field_set_add(jp_field_set_t *set, const char *kv) {
+jp_errno_t jp_field_set_add(jp_field_set_t* set, const char* kv) {
     if (set->len == set->cap) {
         return JP_ETOO_MANY_FIELD;
     }
     jp_field_t *field, *new_field;
     JP_OK_OR_RET(crete_field_from_kv(kv, &new_field));
-    
+
     for (size_t i = 0; i < set->len; i++) {
         field = set->fields[i];
         if (field->key_len == new_field->key_len && !memcmp(field->key, new_field->key, new_field->key_len)) {
@@ -93,7 +93,7 @@ jp_errno_t jp_field_set_add(jp_field_set_t *set, const char *kv) {
     return 0;
 }
 
-void jp_field_set_free(jp_field_set_t *set) {
+void jp_field_set_free(jp_field_set_t* set) {
     if (set == NULL) {
         return;
     }

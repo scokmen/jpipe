@@ -8,37 +8,54 @@
 #define ITEM_SIZE 2000000
 
 void* producer(void* arg) {
+    int* err      = calloc(1, sizeof(int));
     jp_queue_t* q = (jp_queue_t*) arg;
     for (int i = 1; i <= ITEM_SIZE; i++) {
-        jp_queue_push(q, &i, sizeof(int));
+        *err = (int) jp_queue_push(q, &i, sizeof(int));
+        if (*err) {
+            pthread_exit(err);
+        }
     }
-    return NULL;
+    pthread_exit(err);
 }
 
 void* consumer(void* arg) {
     int val;
     size_t len;
     int64_t sum   = 0;
+    int* err      = calloc(1, sizeof(int));
     jp_queue_t* q = (jp_queue_t*) arg;
 
     for (int i = 0; i < ITEM_SIZE; i++) {
-        jp_queue_pop(q, (unsigned char*) &val, sizeof(int), &len);
+        *err = (int) jp_queue_pop(q, (unsigned char*) &val, sizeof(int), &len);
+        if (*err) {
+            pthread_exit(err);
+        }
         sum += val;
     }
 
     int64_t expected = (int64_t) ITEM_SIZE * (ITEM_SIZE + 1) / 2;
-    JP_ASSERT_OK((int) (expected - sum));
-    return NULL;
+    if (expected != sum) {
+        *err = 1;
+    }
+    pthread_exit(err);
 }
 
 int main(void) {
+    void *producer_result, *consumer_result;
     pthread_t prod_tid, cons_tid;
-    jp_queue_t* q = jp_queue_create(16, sizeof(int));
+    jp_queue_t* q = jp_queue_create(16, sizeof(int), JP_QUEUE_POLICY_WAIT);
 
     pthread_create(&prod_tid, NULL, producer, q);
     pthread_create(&cons_tid, NULL, consumer, q);
-    pthread_join(prod_tid, NULL);
-    pthread_join(cons_tid, NULL);
+
+    pthread_join(prod_tid, &producer_result);
+    JP_ASSERT_OK(*((int*) producer_result));
+    free(producer_result);
+
+    pthread_join(cons_tid, &consumer_result);
+    JP_ASSERT_OK(*((int*) consumer_result));
+    free(consumer_result);
 
     jp_queue_destroy(q);
     return 0;

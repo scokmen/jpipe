@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size) {
+jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size, jp_queue_policy_t policy) {
     jp_queue_t* queue;
 
     size_t blocks_offset = sizeof(jp_queue_t);
@@ -16,6 +16,7 @@ jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size) {
     queue->active     = true;
     queue->capacity   = capacity;
     queue->chunk_size = chunk_size;
+    queue->policy     = policy;
     queue->head       = 0;
     queue->tail       = 0;
     queue->length     = 0;
@@ -37,8 +38,8 @@ jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size) {
 jp_errno_t jp_queue_push(jp_queue_t* queue, const void* src, size_t len) {
     pthread_mutex_lock(&queue->lock);
 
-    while (queue->length == queue->capacity && queue->active) {
-        JP_DEBUG("[PUSH]: Queue is full. (len: %zu, cap: %zu", queue->length, queue->capacity);
+    while (queue->length == queue->capacity && queue->active && queue->policy == JP_QUEUE_POLICY_WAIT) {
+        JP_DEBUG("[PUSH]: Queue is full. Waiting... (len: %zu, cap: %zu)", queue->length, queue->capacity);
         pthread_cond_wait(&queue->not_full, &queue->lock);
     }
 
@@ -46,6 +47,12 @@ jp_errno_t jp_queue_push(jp_queue_t* queue, const void* src, size_t len) {
         JP_DEBUG("[PUSH]: Queue is not active.");
         pthread_mutex_unlock(&queue->lock);
         return JP_ESHUTTING_DOWN;
+    }
+
+    if (queue->length == queue->capacity && queue->policy == JP_QUEUE_POLICY_DROP) {
+        JP_DEBUG("[PUSH]: Queue is full. Dropping... (len: %zu, cap: %zu)", queue->length, queue->capacity);
+        pthread_mutex_unlock(&queue->lock);
+        return JP_EMSG_DROPPED;
     }
 
     size_t block_size = MIN(len, queue->chunk_size);

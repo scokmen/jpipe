@@ -18,6 +18,7 @@
     XX(EINV_FIELD_KEY, "Invalid key. The key must be at most 64 character (allowed: a-z, A-Z, 0-9, _, -).") \
     XX(ERUN_FAILED, "Cannot run the application.")                                                          \
     XX(ESHUTTING_DOWN, "The application is shutting down.")                                                 \
+    XX(EMSG_DROPPED, "Message was dropped.")                                                                \
     XX(ENOMEM, "Could not allocate memory.")
 
 typedef enum {

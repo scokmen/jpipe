@@ -19,16 +19,11 @@ typedef struct {
     worker_func func;
 } worker_thread_t;
 
-typedef enum {
-    POLICY_WAIT = 0,
-    POLICY_DROP = 1
-} worker_overflow_policy_t;
-
 typedef struct {
     size_t chunk_size;
     size_t buffer_size;
     bool dry_run;
-    worker_overflow_policy_t policy;
+    jp_queue_policy_t policy;
     const char* out_dir;
     jp_queue_t* queue;
     jp_field_set_t* fields;
@@ -73,7 +68,7 @@ static void display_summary(worker_arg_t* args) {
     JP_LOG("• Chunk Size   (-c) : %zu KB", (args->chunk_size / BYTES_IN_KB));
     JP_LOG("• Buffer Size  (-b) : %zu", args->buffer_size);
     JP_LOG("• Output Dir   (-o) : %s", args->out_dir);
-    JP_LOG("• Policy       (-p) : %s", args->policy == POLICY_WAIT ? "WAIT" : "DROP");
+    JP_LOG("• Policy       (-p) : %s", args->policy == JP_QUEUE_POLICY_WAIT ? "WAIT" : "DROP");
     if (args->fields->len > 0) {
         JP_LOG("• Fields       (-f) :");
         for (size_t i = 0; i < args->fields->len; i++) {
@@ -167,12 +162,12 @@ static jp_errno_t set_buffer_size(const char* arg, worker_arg_t* args) {
 
 static jp_errno_t set_policy(const char* arg, worker_arg_t* args) {
     if (!strcmp(arg, "wait")) {
-        args->policy = POLICY_WAIT;
+        args->policy = JP_QUEUE_POLICY_WAIT;
         return 0;
     }
 
     if (!strcmp(arg, "drop")) {
-        args->policy = POLICY_DROP;
+        args->policy = JP_QUEUE_POLICY_DROP;
         return 0;
     }
 
@@ -314,7 +309,7 @@ static jp_errno_t collect_cli_args(int argc, char* argv[], worker_arg_t* args) {
 
 static jp_errno_t finalize_worker_args(worker_arg_t* args) {
     JP_OK_OR_RET(create_and_normalize_out_dir(args));
-    JP_ALLOC_OR_LOG(args->queue, jp_queue_create(args->buffer_size, args->chunk_size));
+    JP_ALLOC_OR_LOG(args->queue, jp_queue_create(args->buffer_size, args->chunk_size, args->policy));
     return 0;
 }
 

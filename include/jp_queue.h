@@ -7,6 +7,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+typedef enum {
+    JP_QUEUE_POLICY_WAIT = 0,
+    JP_QUEUE_POLICY_DROP = 1
+} jp_queue_policy_t;
+
 typedef struct {
     unsigned char* data;
     size_t length;
@@ -22,13 +27,14 @@ typedef struct {
     pthread_mutex_t lock;
     pthread_cond_t not_empty;
     pthread_cond_t not_full;
+    jp_queue_policy_t policy;
     jp_block_t* blocks;
     unsigned char* area;
 } jp_queue_t;
 
 JP_MALLOC
 JP_USE_RESULT
-jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size);
+jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size, jp_queue_policy_t policy);
 
 JP_NONNULL_ARG(1, 2)
 JP_READ_PTR_SIZE(2, 3)

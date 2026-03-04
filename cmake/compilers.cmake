@@ -21,7 +21,6 @@ function(init_compiler_flags TARGET)
     target_compile_options(${TARGET} INTERFACE
             -Wall
             -Wextra
-            -Wpedantic
             -Wconversion
             -Wshadow
             -Wstrict-prototypes

@@ -44,7 +44,8 @@
             __builtin_unreachable(); \
     } while (0)
 #else
-#define JP_ASSUME(cond)
+#define JP_ASSUME(cond) ((void) 0)
+#pragma message("cc: builtin not supported (__builtin_assume || __builtin_unreachable)")
 #endif
 
 /*
@@ -56,6 +57,7 @@
 #else
 #define JP_LIKELY(x)   (x)
 #define JP_UNLIKELY(x) (x)
+#pragma message("cc: builtin not supported (__builtin_expect)")
 #endif
 
 /*
@@ -74,6 +76,7 @@
 #define JP_USE_RESULT __attribute__((warn_unused_result))
 #else
 #define JP_USE_RESULT
+#pragma message("cc: attribute not supported (warn_unused_result)")
 #endif
 
 /*
@@ -83,6 +86,7 @@
 #define JP_CONST_FUNC __attribute__((const))
 #else
 #define JP_CONST_FUNC
+#pragma message("cc: attribute not supported (const)")
 #endif
 
 /*
@@ -92,6 +96,7 @@
 #define JP_PRINT_FUNC(fmt) __attribute__((format(printf, fmt, (fmt) + 1)))
 #else
 #define JP_PRINT_FUNC
+#pragma message("cc: attribute not supported (format)")
 #endif
 
 /*
@@ -101,6 +106,7 @@
 #define JP_UNUSED __attribute__((unused))
 #else
 #define JP_UNUSED
+#pragma message("cc: attribute not supported (unused)")
 #endif
 
 /*
@@ -110,6 +116,7 @@
 #define JP_NONNULL_ARG(...) __attribute__((nonnull(__VA_ARGS__)))
 #else
 #define JP_NONNULL_ARG(...)
+#pragma message("cc: attribute not supported (nonnull)")
 #endif
 
 /*
@@ -125,6 +132,7 @@
 #define JP_READ_PTR_SIZE(ptr_idx, size_idx)
 #define JP_WRITE_PTR(ptr_idx)
 #define JP_WRITE_PTR_SIZE(ptr_idx, size_idx)
+#pragma message("cc: attribute not supported (access)")
 #endif
 
 #define JP_FREE(ptr)             \

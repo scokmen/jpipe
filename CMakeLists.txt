@@ -7,6 +7,11 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+message(STATUS "• Compiler Properties:")
+message(STATUS "• C Compiler ID:  ${CMAKE_C_COMPILER_ID}")
+message(STATUS "• C Compiler:     ${CMAKE_C_COMPILER}")
+message(STATUS "• C Compiler Ver: ${CMAKE_C_COMPILER_VERSION}")
+
 # Extend the CMake module path.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 

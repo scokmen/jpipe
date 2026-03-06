@@ -1,4 +1,8 @@
 function(init_clang_tidy TARGET)
+    if (NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
+        message(WARNING "[clang-tidy]: disabled >> [cc=${CMAKE_C_COMPILER_ID}]")
+        return()
+    endif ()
     find_program(CLANG_TIDY_BINARY NAMES "clang-tidy")
     if (CLANG_TIDY_BINARY)
         set(CLANG_TIDY_COMMAND

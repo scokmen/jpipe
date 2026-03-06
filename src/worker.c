@@ -2,10 +2,12 @@
 #include <getopt.h>
 #include <jp_command.h>
 #include <jp_errno.h>
+#include <jp_poller.h>
 #include <jp_queue.h>
 #include <jp_worker.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -15,6 +17,7 @@ typedef void* (*worker_func)(void*);
 
 typedef struct {
     bool running;
+    bool detached;
     pthread_t tid;
     worker_func func;
 } worker_thread_t;
@@ -33,7 +36,7 @@ static jp_errno_t display_help(void) {
     JP_LOG("Usage: jpipe run [options]\n");
     JP_LOG("Execute the data processing engine with the following configurations:\n");
     JP_LOG("Options:");
-    JP_LOG("  -c, --chunk-size  <size>     Chunk size (e.g., 16kb, 64kb). Range: 1kb-128kb  (default: 64kb).");
+    JP_LOG("  -c, --chunk-size  <size>     Chunk size (e.g., 16kb, 64kb). Range: 1kb-128kb  (default: 16kb).");
     JP_LOG("  -b, --buffer-size <count>    Max pending operations. Range: 1-1024 (default: 64).");
     JP_LOG("  -p, --policy      <type>     Overflow policy: 'wait' or 'drop' (default: wait).");
     JP_LOG("  -o, --out-dir     <path>     Output directory (default: current dir).");
@@ -63,7 +66,7 @@ static jp_errno_t display_help(void) {
 static void display_summary(worker_arg_t* args) {
     double estimated_mem_usage = ((double) args->chunk_size * (double) args->buffer_size) / (BYTES_IN_KB * BYTES_IN_KB);
 
-    JP_LOG("Configuration Summary\n");
+    JP_LOG("[JPIPE]: Configuration Summary\n");
     JP_LOG("[Runtime Parameters]");
     JP_LOG("• Chunk Size   (-c) : %zu KB", (args->chunk_size / BYTES_IN_KB));
     JP_LOG("• Buffer Size  (-b) : %zu", args->buffer_size);
@@ -233,18 +236,12 @@ static int get_field_args_count(int argc, char* argv[]) {
     return c;
 }
 
-static void free_worker_args(worker_arg_t* args) {
-    JP_FREE(args->out_dir);
-    jp_field_set_free(args->fields);
-    jp_queue_destroy(args->queue);
-}
-
 static jp_errno_t init_worker_args(int argc, char* argv[], worker_arg_t* args) {
     int fields = get_field_args_count(argc, argv);
     if (fields > JP_WRK_FIELDS_MAX) {
         return jp_errno_log_err_format(JP_ETOO_MANY_FIELD, "Too many 'fields' specified: '%d'", fields);
     }
-    JP_ALLOC_OR_LOG(args->fields, jp_field_set_new((size_t) fields));
+    JP_ALLOC_OR_LOG(args->fields, jp_field_set_create((size_t) fields));
     return 0;
 }
 
@@ -288,6 +285,7 @@ static jp_errno_t collect_cli_args(int argc, char* argv[], worker_arg_t* args) {
             case 'h':
                 break;
             case ':':
+                JP_FALLTHROUGH;
             case '?':
                 JP_OK_OR_RET(handle_unknown_argument(argv[optind - 1]));
                 break;
@@ -314,25 +312,78 @@ static jp_errno_t finalize_worker_args(worker_arg_t* args) {
 }
 
 static void* producer_thread_init(void* data) {
+    size_t chunk_size;
     jp_errno_t err;
+    unsigned char* buffer;
+    jp_poller_t* poller;
     worker_arg_t* args = (worker_arg_t*) data;
 
+    chunk_size = args->chunk_size;
+    args       = (worker_arg_t*) data;
+    buffer     = malloc(chunk_size);
+    poller     = jp_poller_create(100);
+    if (buffer == NULL || poller == NULL) {
+        err = JP_ENOMEM;
+        jp_errno_log_err(err);
+        goto clean_up;
+    }
+
+    err = jp_poller_poll(poller, STDIN_FILENO);
+    if (err) {
+        jp_errno_log_err(err);
+        goto clean_up;
+    }
+
     while (true) {
-        // TODO: Replace with the real implementation.
-        err = jp_queue_push(args->queue, "1234", 5);
-        if (err) {
-            JP_DEBUG("[PRODUCER]: Cannot push.");
+        err = jp_poller_wait(poller);
+        if (err == JP_EREAD_FAILED) {
+            jp_errno_log_err(err);
             break;
+        }
+        if (err == JP_EAGAIN) {
+            continue;
+        }
+        while (true) {
+            err       = 0;
+            ssize_t n = read(STDIN_FILENO, buffer, chunk_size);
+            if (n == 0) {
+                jp_queue_finalize(args->queue);
+                goto clean_up;
+            }
+            if (n < 0) {
+                if (errno == EINTR) {
+                    continue;
+                }
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    break;
+                }
+                err = JP_EREAD_FAILED;
+                jp_errno_log_err(err);
+                jp_queue_finalize(args->queue);
+                goto clean_up;
+            }
+            err = jp_queue_push(args->queue, buffer, (size_t) n);
+            if (err == JP_EMSG_DROPPED) {
+                // TODO: Handle message dropped.
+                break;
+            }
+            if (err == JP_ESHUTTING_DOWN) {
+                goto clean_up;
+            }
         }
     }
 
-    return NULL;
+clean_up:
+    JP_FREE(buffer);
+    jp_poller_destroy(poller);
+    // TODO: Solve performance-no-int-to-ptr
+    pthread_exit((void*) (uintptr_t) err);  // NOLINT(performance-no-int-to-ptr)
 }
 
 static void* consumer_thread_init(void* data) {
     jp_errno_t err;
     size_t max_len, read_len;
-    unsigned char buffer[JP_WRK_CHUNK_SIZE_MAX];
+    unsigned char buffer[1024 * 16];
     worker_arg_t* args = (worker_arg_t*) data;
 
     max_len = args->chunk_size;
@@ -345,30 +396,50 @@ static void* consumer_thread_init(void* data) {
         }
     }
 
-    return NULL;
+    // TODO: Solve performance-no-int-to-ptr
+    pthread_exit((void*) (uintptr_t) err);  // NOLINT(performance-no-int-to-ptr)
+}
+
+static void* watcher_thread_init(void* data) {
+    int sig;
+    sigset_t set;
+    worker_arg_t* args = (worker_arg_t*) data;
+
+    sigemptyset(&set);
+    sigaddset(&set, SIGINT);
+    sigaddset(&set, SIGTERM);
+    if (sigwait(&set, &sig) == 0) {
+        JP_DEBUG("[WATCHER]: Termination signal (%s) was received. Shutting down...", sig == SIGINT ? "SIGINT" : "SIGTERM");
+        jp_queue_finalize(args->queue);
+    }
+    pthread_exit(NULL);
 }
 
 static jp_errno_t orchestrate_threads(worker_arg_t* args) {
-    int err = 0, join_err = 0, sig;
+    int err = 0, join_err = 0;
+    void* thread_result;
     sigset_t set;
-    worker_thread_t threads[2] = {{.func = producer_thread_init, .running = false}, {.func = consumer_thread_init, .running = false}};
+    worker_thread_t threads[3] = {{.func = producer_thread_init, .running = false, .detached = false},
+                                  {.func = consumer_thread_init, .running = false, .detached = false},
+                                  {.func = watcher_thread_init, .running = false, .detached = true}};
 
     sigemptyset(&set);
     sigaddset(&set, SIGTERM);
     sigaddset(&set, SIGINT);
     pthread_sigmask(SIG_BLOCK, &set, NULL);
-
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 3; i++) {
         err = pthread_create(&threads[i].tid, NULL, threads[i].func, args);
         if (err) {
             goto clean_up;
         }
         threads[i].running = true;
-    }
-
-    if (sigwait(&set, &sig) == 0) {
-        JP_DEBUG("[ORCHESTRATOR]: Termination signal was received. Shutting down...");
-        jp_queue_finalize(args->queue);
+        if (!threads[i].detached) {
+            continue;
+        }
+        err = pthread_detach(threads[i].tid);
+        if (err) {
+            goto clean_up;
+        }
     }
 
 clean_up:
@@ -377,11 +448,12 @@ clean_up:
     }
 
     for (int i = 0; i < 2; i++) {
-        if (threads[i].running) {
-            join_err = pthread_join(threads[i].tid, NULL);
+        if (threads[i].running && !threads[i].detached) {
+            join_err = pthread_join(threads[i].tid, &thread_result);
             if (join_err) {
                 jp_errno_log_err_format(JP_ERUN_FAILED, "%s", strerror(join_err));
             }
+            err                = (int) (uintptr_t) thread_result;
             threads[i].running = false;
         }
     }
@@ -418,6 +490,8 @@ jp_errno_t jp_wrk_exec(int argc, char* argv[]) {
     }
 
 clean_up:
-    free_worker_args(&args);
+    JP_FREE(args.out_dir);
+    jp_field_set_destroy(args.fields);
+    jp_queue_destroy(args.queue);
     return err;
 }

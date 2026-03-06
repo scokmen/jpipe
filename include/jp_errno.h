@@ -19,6 +19,8 @@
     XX(ERUN_FAILED, "Cannot run the application.")                                                          \
     XX(ESHUTTING_DOWN, "The application is shutting down.")                                                 \
     XX(EMSG_DROPPED, "Message was dropped.")                                                                \
+    XX(EREAD_FAILED, "Cannot read incoming stream.")                                                        \
+    XX(EAGAIN, "Try again later.")                                                                          \
     XX(ENOMEM, "Could not allocate memory.")
 
 typedef enum {

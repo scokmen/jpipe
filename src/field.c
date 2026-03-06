@@ -24,7 +24,6 @@ static jp_field_t* create_field(const char* key, const char* val) {
     size_t val_len = strlen(val);
 
     JP_ALLOC_OR_RET(field, malloc(sizeof(jp_field_t) + key_len + val_len + 2), NULL);
-
     field->key     = ((const char*) field + sizeof(jp_field_t));
     field->val     = field->key + key_len + 1;
     field->key_len = key_len;
@@ -63,7 +62,7 @@ static void destroy_field(jp_field_t* field) {
     JP_FREE(field);
 }
 
-jp_field_set_t* jp_field_set_new(size_t cap) {
+jp_field_set_t* jp_field_set_create(size_t cap) {
     jp_field_set_t* set;
     JP_ALLOC_OR_RET(set, malloc(sizeof(jp_field_set_t) + (cap * sizeof(jp_field_t*))), NULL);
 
@@ -93,7 +92,7 @@ jp_errno_t jp_field_set_add(jp_field_set_t* set, const char* kv) {
     return 0;
 }
 
-void jp_field_set_free(jp_field_set_t* set) {
+void jp_field_set_destroy(jp_field_set_t* set) {
     if (set == NULL) {
         return;
     }

@@ -29,7 +29,6 @@ set(UNIT_TEST_SOURCES
         unit/jp_queue_test.c
 )
 
-
 foreach (source_file ${UNIT_TEST_SOURCES})
     get_filename_component(raw_name ${source_file} NAME_WE)
     set(test_target "unit_test_${raw_name}")
@@ -40,7 +39,6 @@ foreach (source_file ${UNIT_TEST_SOURCES})
             test_utils
             jpipe_settings
     )
-    target_include_directories(${test_target} PRIVATE "${CMAKE_BINARY_DIR}/generated")
     add_test(NAME ${test_target} COMMAND ${test_target})
     set_tests_properties(${test_target} PROPERTIES LABELS "unit")
 endforeach ()
@@ -62,7 +60,6 @@ foreach (source_file ${STRESS_TEST_SOURCES})
             test_utils
             jpipe_settings
     )
-    target_include_directories(${test_target} PRIVATE "${CMAKE_BINARY_DIR}/generated")
     add_test(NAME ${test_target} COMMAND ${test_target})
     set_tests_properties(${test_target} PROPERTIES LABELS "stress")
 endforeach ()

@@ -6,7 +6,7 @@
 
 #define BYTES_IN_KB            1024    // 1KB
 #define JP_WRK_CHUNK_SIZE_MIN  1024    // 1KB
-#define JP_WRK_CHUNK_SIZE_DEF  65536   // 64KB
+#define JP_WRK_CHUNK_SIZE_DEF  16384   // 16KB
 #define JP_WRK_CHUNK_SIZE_MAX  131072  // 128KB
 #define JP_WRK_BUFFER_SIZE_MIN 1
 #define JP_WRK_BUFFER_SIZE_DEF 64

@@ -135,6 +135,27 @@
 #pragma message("cc: attribute not supported (access)")
 #endif
 
+#if HAS_ATTRIBUTE(fd_arg)
+#define JP_FILE_DESC(n) __attribute__((fd_arg(n)))
+#else
+#define JP_FILE_DESC(n)
+#pragma message("cc: attribute not supported (fd_arg)")
+#endif
+
+#if HAS_ATTRIBUTE(fd_arg_read)
+#define JP_FILE_DESC_READ(n) __attribute__((fd_arg_read(n)))
+#else
+#define JP_FILE_DESC_READ(n)
+#pragma message("cc: attribute not supported (fd_arg_read)")
+#endif
+
+#if HAS_ATTRIBUTE(fallthrough)
+#define JP_FALLTHROUGH __attribute__((fallthrough))
+#else
+#define JP_FALLTHROUGH
+#pragma message("cc: attribute not supported (fallthrough)")
+#endif
+
 #define JP_FREE(ptr)             \
     do {                         \
         if ((ptr) != NULL) {     \

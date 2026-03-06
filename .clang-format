@@ -30,6 +30,5 @@ AllowShortEnumsOnASingleLine: false
 SortIncludes: true
 SpaceAfterCStyleCast: true
 
-
 BinPackArguments: false
 BinPackParameters: false

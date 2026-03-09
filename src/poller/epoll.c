@@ -1,6 +1,6 @@
+#include <jp_common.h>
 #include <jp_errno.h>
 #include <jp_poller.h>
-#include <jp_common.h>
 
 jp_poller_t* jp_poller_create(JP_UNUSED int timeout) {
     return NULL;

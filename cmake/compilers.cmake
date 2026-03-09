@@ -1,22 +1,8 @@
 function(init_compiler_flags TARGET)
     target_compile_options(${TARGET} INTERFACE
-            $<$<CONFIG:Debug>:
-            -g
-            -O1
-            >
-            $<$<CONFIG:Release>:
-            -O3
-            -flto
-            -fomit-frame-pointer
-            -march=native
-            -DNDEBUG
-            >
-            $<$<CONFIG:RelWithDebInfo>:
-            -g
-            -O2
-            -march=native
-            -DNDEBUG
-            >
+            $<$<CONFIG:Debug>: -g -O1>
+            $<$<CONFIG:Release>: -O3 -flto -fomit-frame-pointer -march=native -DNDEBUG>
+            $<$<CONFIG:RelWithDebInfo>: -g -O2 -march=native -DNDEBUG>
     )
 
     set(SHARED_FLAGS

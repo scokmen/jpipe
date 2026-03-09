@@ -4,9 +4,7 @@ function(init_asan_flags TARGET)
     )
     target_link_options(${TARGET} INTERFACE
             -fsanitize=address
-            $<$<C_COMPILER_ID:GNU>:
-            -static-libasan
-            >
+            $<$<C_COMPILER_ID:GNU>: -static-libasan>
     )
     message(STATUS "[address-sanitizer]: enabled")
 endfunction()

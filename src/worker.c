@@ -6,8 +6,8 @@
 #include <jp_queue.h>
 #include <jp_worker.h>
 #include <signal.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -66,7 +66,7 @@ static jp_errno_t display_help(void) {
 static void display_summary(worker_arg_t* args) {
     double estimated_mem_usage = ((double) args->chunk_size * (double) args->buffer_size) / (BYTES_IN_KB * BYTES_IN_KB);
 
-    JP_LOG("[JPIPE]: Configuration Summary\n");
+    JP_LOG("[jpipe]: Configuration Summary\n");
     JP_LOG("[Runtime Parameters]");
     JP_LOG("• Chunk Size   (-c) : %zu KB", (args->chunk_size / BYTES_IN_KB));
     JP_LOG("• Buffer Size  (-b) : %zu", args->buffer_size);
@@ -416,7 +416,7 @@ static void* watcher_thread_init(void* data) {
 }
 
 static jp_errno_t orchestrate_threads(worker_arg_t* args) {
-    int err = 0, join_err = 0;
+    int err = 0, join_err = 0, t_size = 0;
     void* thread_result;
     sigset_t set;
     worker_thread_t threads[3] = {{.func = producer_thread_init, .running = false, .detached = false},
@@ -427,7 +427,9 @@ static jp_errno_t orchestrate_threads(worker_arg_t* args) {
     sigaddset(&set, SIGTERM);
     sigaddset(&set, SIGINT);
     pthread_sigmask(SIG_BLOCK, &set, NULL);
-    for (int i = 0; i < 3; i++) {
+
+    t_size = (sizeof(threads) / sizeof(threads[0]));
+    for (int i = 0; i < t_size; i++) {
         err = pthread_create(&threads[i].tid, NULL, threads[i].func, args);
         if (err) {
             goto clean_up;
@@ -447,7 +449,7 @@ clean_up:
         jp_errno_log_err_format(JP_ERUN_FAILED, "%s", strerror(err));
     }
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < t_size; i++) {
         if (threads[i].running && !threads[i].detached) {
             join_err = pthread_join(threads[i].tid, &thread_result);
             if (join_err) {

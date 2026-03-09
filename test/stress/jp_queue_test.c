@@ -5,13 +5,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define ITEM_SIZE 2000000
+#define ITEM_SIZE 200000
 
-void* producer(void* arg) {
+typedef void* (*thread_handler)(void*);
+
+void* sequential_write(void* arg) {
     jp_errno_t result = 0;
     int* err          = calloc(1, sizeof(int));
     jp_queue_t* q     = (jp_queue_t*) arg;
-    for (int i = 1; i <= ITEM_SIZE; i++) {
+    for (int i = 0; i <= ITEM_SIZE; i++) {
         result = jp_queue_push(q, &i, sizeof(int));
         if (result && err != NULL) {
             *err = (int) result;
@@ -21,7 +23,22 @@ void* producer(void* arg) {
     pthread_exit(err);
 }
 
-void* consumer(void* arg) {
+void* sequential_write_interrupted(void* arg) {
+    jp_errno_t result = 0;
+    int* err          = calloc(1, sizeof(int));
+    jp_queue_t* q     = (jp_queue_t*) arg;
+    for (int i = 0; i <= ITEM_SIZE; i++) {
+        result = jp_queue_push(q, &i, sizeof(int));
+        if (result && err != NULL) {
+            *err = (int) result;
+            pthread_exit(err);
+        }
+    }
+    jp_queue_finalize(q);
+    pthread_exit(err);
+}
+
+void* sequential_read(void* arg) {
     int val;
     jp_errno_t result = 0;
     size_t len;
@@ -29,7 +46,7 @@ void* consumer(void* arg) {
     int* err      = calloc(1, sizeof(int));
     jp_queue_t* q = (jp_queue_t*) arg;
 
-    for (int i = 0; i < ITEM_SIZE; i++) {
+    for (int i = 0; i <= ITEM_SIZE; i++) {
         result = jp_queue_pop(q, (unsigned char*) &val, sizeof(int), &len);
         if (result && err != NULL) {
             *err = (int) result;
@@ -45,7 +62,7 @@ void* consumer(void* arg) {
     pthread_exit(err);
 }
 
-int main(void) {
+void jp_queue_run_with_args(thread_handler producer, thread_handler consumer) {
     void *producer_result, *consumer_result;
     pthread_t prod_tid, cons_tid;
     jp_queue_t* q = jp_queue_create(16, sizeof(int), JP_QUEUE_POLICY_WAIT);
@@ -64,5 +81,10 @@ int main(void) {
     free(consumer_result);
 
     jp_queue_destroy(q);
+}
+
+int main(void) {
+    jp_queue_run_with_args(sequential_write, sequential_read);
+    jp_queue_run_with_args(sequential_write_interrupted, sequential_read);
     return 0;
 }

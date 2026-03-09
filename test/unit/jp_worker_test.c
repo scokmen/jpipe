@@ -115,7 +115,7 @@ void test_jp_wrk_exec_policy(void) {
         {.argc = 4, .argv = {"jpipe", "-n", "--policy", "wait", NULL}, .expected = 0},
         {.argc = 4, .argv = {"jpipe", "-n", "--policy", "drop", NULL}, .expected = 0},
     };
-    
+
     jp_errno_t err;
     int len = (sizeof(cases) / sizeof(cases[0]));
     for (int i = 0; i < len; i++) {

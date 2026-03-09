@@ -5,7 +5,6 @@
 
 #define JP_PATH_MAX      4096
 #define MIN(x, y)        (((x) < (y)) ? (x) : (y))
-#define MAX(x, y)        (((x) > (y)) ? (x) : (y))
 #define JP_LOG(fmt, ...) fprintf(stdout, fmt "\n", ##__VA_ARGS__)
 
 #ifdef NDEBUG
@@ -135,6 +134,9 @@
 #pragma message("cc: attribute not supported (access)")
 #endif
 
+/*
+ * Defines: JP_FILE_DESC
+ */
 #if HAS_ATTRIBUTE(fd_arg)
 #define JP_FILE_DESC(n) __attribute__((fd_arg(n)))
 #else
@@ -142,6 +144,9 @@
 #pragma message("cc: attribute not supported (fd_arg)")
 #endif
 
+/*
+ * Defines: JP_FILE_DESC_READ
+ */
 #if HAS_ATTRIBUTE(fd_arg_read)
 #define JP_FILE_DESC_READ(n) __attribute__((fd_arg_read(n)))
 #else
@@ -149,6 +154,9 @@
 #pragma message("cc: attribute not supported (fd_arg_read)")
 #endif
 
+/*
+ * Defines: JP_FALLTHROUGH
+ */
 #if HAS_ATTRIBUTE(fallthrough)
 #define JP_FALLTHROUGH __attribute__((fallthrough))
 #else

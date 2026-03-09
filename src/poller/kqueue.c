@@ -46,14 +46,11 @@ jp_errno_t jp_poller_poll(jp_poller_t* poller, int fd) {
 jp_errno_t jp_poller_wait(jp_poller_t* poller) {
     int n = kevent(poller->fd, NULL, 0, &poller->event, 1, &poller->ts);
     if (n == 0) {
-        return JP_EAGAIN;
+        return JP_ETRYAGAIN;
     }
 
     if (n < 0) {
-        if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
-            return JP_EAGAIN;
-        }
-        return JP_EREAD_FAILED;
+        return (errno == EINTR || JP_IS_EAGAIN(errno)) ? JP_ETRYAGAIN : JP_EREAD_FAILED;
     }
 
     if (poller->event.flags & EV_ERROR) {

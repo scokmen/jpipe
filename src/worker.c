@@ -187,6 +187,9 @@ static jp_errno_t create_and_normalize_out_dir(worker_arg_t* args) {
     char* p                         = NULL;
     struct stat st;
 
+    if (args->out_dir == NULL) {
+        JP_ALLOC_OR_LOG(args->out_dir, strdup(JP_WRK_OUTDIR_DEF));
+    }
     size_t path_len = strlen(args->out_dir);
     strncpy(tmp, args->out_dir, sizeof(tmp));
 
@@ -297,11 +300,7 @@ static jp_errno_t collect_cli_args(int argc, char* argv[], worker_arg_t* args) {
     if (optind < argc) {
         JP_OK_OR_RET(handle_unknown_argument(argv[optind]));
     }
-
-    if (args->out_dir == NULL) {
-        JP_ALLOC_OR_LOG(args->out_dir, strdup(JP_WRK_OUTDIR_DEF));
-    }
-
+    
     return 0;
 }
 
@@ -323,7 +322,7 @@ static void* producer_thread_init(void* data) {
     buffer     = malloc(chunk_size);
     poller     = jp_poller_create(100);
     if (buffer == NULL || poller == NULL) {
-        err = JP_ENOMEM;
+        err = JP_ENOMEMORY;
         jp_errno_log_err(err);
         goto clean_up;
     }
@@ -340,7 +339,7 @@ static void* producer_thread_init(void* data) {
             jp_errno_log_err(err);
             break;
         }
-        if (err == JP_EAGAIN) {
+        if (err == JP_ETRYAGAIN) {
             continue;
         }
         while (true) {
@@ -354,7 +353,7 @@ static void* producer_thread_init(void* data) {
                 if (errno == EINTR) {
                     continue;
                 }
-                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                if (JP_IS_EAGAIN(errno)) {
                     break;
                 }
                 err = JP_EREAD_FAILED;

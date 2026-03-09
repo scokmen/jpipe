@@ -33,6 +33,7 @@ jobs:
       - name: Thread Sanitizer Flow
         env:
           CC: ${{matrix.compiler}}
+          TSAN_OPTIONS: "halt_on_error=1"
         run: setarch $(uname -m) -R make test-tsan-flow CC=${{matrix.compiler}}
   
   analyze:

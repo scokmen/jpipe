@@ -52,10 +52,9 @@ check_include_file("sys/epoll.h" FLAG_EPOLL)
 # JPipe: Initializers
 ###############################################
 add_library(jpipe_settings INTERFACE)
-
 init_compiler_flags(jpipe_settings)
-
 message(STATUS "[build]: ${CMAKE_BUILD_TYPE}")
+
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     if (ENABLE_ASAN AND ENABLE_TSAN)
         message(FATAL_ERROR "AddressSanitizer/ThreadSanitizer conflict!")

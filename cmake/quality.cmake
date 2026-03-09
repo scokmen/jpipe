@@ -1,3 +1,10 @@
+function(__log_binary NAME VERSION LOCATION)
+    message(STATUS "[${NAME}]: enabled
+            version=${VERSION}
+            path=${LOCATION}"
+    )
+endfunction()
+
 function(init_clang_tidy TARGET)
     if (NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
         message(WARNING "[clang-tidy]: disabled >> [cc=${CMAKE_C_COMPILER_ID}]")
@@ -19,10 +26,7 @@ function(init_clang_tidy TARGET)
         set_target_properties(${TARGET} PROPERTIES
                 C_CLANG_TIDY "${CLANG_TIDY_COMMAND}"
         )
-        message(STATUS "[clang-tidy]: enabled
-            version=${CLANG_TIDY_VERSION}
-            path=${CLANG_TIDY_BINARY}"
-        )
+        __log_binary("clang-tidy" ${CLANG_TIDY_VERSION} ${CLANG_TIDY_BINARY})
     else ()
         message(WARNING "[clang-tidy]: disabled >> [not found]")
     endif ()
@@ -49,10 +53,7 @@ function(init_clang_format)
                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
                 COMMENT "[clang-format]: analysing..."
         )
-        message(STATUS "[clang-format]: enabled
-            version=${CLANG_FORMAT_VERSION}
-            path=${CLANG_FORMAT_BINARY}"
-        )
+        __log_binary("clang-format" ${CLANG_FORMAT_VERSION} ${CLANG_FORMAT_BINARY})
     else ()
         message(WARNING "[clang-format]: disabled >> [not found]")
     endif ()
@@ -66,10 +67,7 @@ function(init_coverage_flags TARGET)
                 OUTPUT_VARIABLE LCOV_VERSION
                 OUTPUT_STRIP_TRAILING_WHITESPACE
         )
-        message(STATUS "[lcov]: enabled
-            version=${LCOV_VERSION}
-            path=${LCOV_BINARY}"
-        )
+        __log_binary("lcov" ${LCOV_VERSION} ${LCOV_BINARY})
     else ()
         message(WARNING "[lcov]: disabled >> [not found]")
     endif ()
@@ -81,10 +79,7 @@ function(init_coverage_flags TARGET)
                 OUTPUT_VARIABLE GCOVR_VERSION
                 OUTPUT_STRIP_TRAILING_WHITESPACE
         )
-        message(STATUS "[gcovr]: enabled
-            version=${GCOVR_VERSION}
-            path=${GCOVR_BINARY}"
-        )
+        __log_binary("gcovr" ${GCOVR_VERSION} ${GCOVR_BINARY})
     else ()
         message(WARNING "[gcovr]: disabled >> [not found]")
     endif ()

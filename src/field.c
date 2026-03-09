@@ -54,7 +54,7 @@ static jp_errno_t crete_field_from_kv(const char* kv, jp_field_t** field) {
     memcpy(key, kv, key_len);
     key[key_len] = '\0';
 
-    JP_ALLOC_OR_RET(*field, create_field(key, eq + 1), JP_ENOMEM);
+    JP_ALLOC_OR_RET(*field, create_field(key, eq + 1), JP_ENOMEMORY);
     return 0;
 }
 

@@ -15,7 +15,7 @@ AlignConsecutiveMacros:
   AcrossComments: true
   AlignCompound: true
   PadOperators: true
-  
+
 AlignConsecutiveAssignments:
   Enabled: true
   AcrossEmptyLines: false
@@ -26,9 +26,11 @@ AllowShortIfStatementsOnASingleLine: false
 AllowShortBlocksOnASingleLine: false
 AllowShortFunctionsOnASingleLine: None
 AllowShortEnumsOnASingleLine: false
-
-SortIncludes: true
+SpacesInContainerLiterals: false
+Cpp11BracedListStyle: true
+SpaceBeforeCpp11BracedList: true
 SpaceAfterCStyleCast: true
+SortIncludes: true
 
 BinPackArguments: false
 BinPackParameters: false

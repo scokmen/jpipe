@@ -97,6 +97,7 @@ void test_jp_field_set_add_invalid_fields(void) {
     jp_errno_t err;
     int len = (sizeof(cases) / sizeof(cases[0]));
     for (int i = 0; i < len; i++) {
+        JP_ASSERT_NONNULL(cases[i].kv);
         err = jp_field_set_add(set, cases[i].kv);
         JP_ASSERT_EQ(cases[i].expected, err);
     }

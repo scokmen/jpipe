@@ -34,7 +34,7 @@ jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size, jp_queue_policy_
     return queue;
 }
 
-jp_errno_t jp_queue_reserve(jp_queue_t* queue, jp_block_t** block) {
+jp_errno_t jp_queue_push_uncommitted(jp_queue_t* queue, jp_block_t** block) {
     pthread_mutex_lock(&queue->lock);
 
     while (queue->length == queue->capacity && queue->active && queue->policy == JP_QUEUE_POLICY_WAIT) {
@@ -59,7 +59,7 @@ jp_errno_t jp_queue_reserve(jp_queue_t* queue, jp_block_t** block) {
     return 0;
 }
 
-void jp_queue_commit(jp_queue_t* queue) {
+void jp_queue_push_commit(jp_queue_t* queue) {
     pthread_mutex_lock(&queue->lock);
     queue->tail = (queue->tail + 1) % queue->capacity;
     queue->length++;
@@ -67,7 +67,7 @@ void jp_queue_commit(jp_queue_t* queue) {
     pthread_mutex_unlock(&queue->lock);
 }
 
-jp_errno_t jp_queue_pop(jp_queue_t* queue, unsigned char* dest_buffer, size_t max_len, size_t* out_len) {
+jp_errno_t jp_queue_pop_uncommitted(jp_queue_t* queue, jp_block_t** block) {
     pthread_mutex_lock(&queue->lock);
 
     while (queue->length == 0 && queue->active) {
@@ -81,16 +81,17 @@ jp_errno_t jp_queue_pop(jp_queue_t* queue, unsigned char* dest_buffer, size_t ma
         return JP_ESHUTTING_DOWN;
     }
 
-    size_t block_size = MIN(max_len, queue->blocks[queue->head].length);
-    memcpy(dest_buffer, queue->blocks[queue->head].data, block_size);
-    *out_len = block_size;
-
-    queue->head = (queue->head + 1) % queue->capacity;
-    queue->length--;
-
-    pthread_cond_signal(&queue->not_full);
+    *block = &queue->blocks[queue->head];
     pthread_mutex_unlock(&queue->lock);
     return 0;
+}
+
+void jp_queue_pop_commit(jp_queue_t* queue) {
+    pthread_mutex_lock(&queue->lock);
+    queue->head = (queue->head + 1) % queue->capacity;
+    queue->length--;
+    pthread_cond_signal(&queue->not_full);
+    pthread_mutex_unlock(&queue->lock);
 }
 
 void jp_queue_finalize(jp_queue_t* queue) {

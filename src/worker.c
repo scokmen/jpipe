@@ -337,7 +337,7 @@ static void* producer_thread_init(void* data) {
             continue;
         }
         while (true) {
-            err = jp_queue_reserve(args->queue, &block);
+            err = jp_queue_push_uncommitted(args->queue, &block);
             if (err == JP_ESHUTTING_DOWN) {
                 err = 0;
                 goto clean_up;
@@ -358,7 +358,7 @@ static void* producer_thread_init(void* data) {
             }
             if (err == 0) {
                 block->length = (size_t) read_len;
-                jp_queue_commit(args->queue);
+                jp_queue_push_commit(args->queue);
             }
         }
     }
@@ -375,7 +375,7 @@ clean_up:
 
 static void* consumer_thread_init(void* data) {
     jp_errno_t err = 0;
-    size_t max_len, read_len;
+    jp_block_t* block;
     const worker_arg_t* args = data;
     unsigned char* buffer    = malloc(args->chunk_size);
     if (buffer == NULL) {
@@ -383,15 +383,15 @@ static void* consumer_thread_init(void* data) {
         goto clean_up;
     }
 
-    max_len = args->chunk_size;
     while (true) {
-        err = jp_queue_pop(args->queue, buffer, max_len, &read_len);
+        err = jp_queue_pop_uncommitted(args->queue, &block);
         if (err) {
             if (err == JP_ESHUTTING_DOWN) {
                 err = 0;
             }
             break;
         }
+        jp_queue_pop_commit(args->queue);
     }
 
 clean_up:

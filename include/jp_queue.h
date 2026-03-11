@@ -37,14 +37,16 @@ jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size, jp_queue_policy_
 
 JP_NONNULL_ARG(1, 2)
 JP_USE_RESULT
-jp_errno_t jp_queue_reserve(jp_queue_t* queue, jp_block_t** block);
+jp_errno_t jp_queue_push_uncommitted(jp_queue_t* queue, jp_block_t** block);
 
 JP_NONNULL_ARG(1)
-void jp_queue_commit(jp_queue_t* queue);
+void jp_queue_push_commit(jp_queue_t* queue);
 
-JP_NONNULL_ARG(1, 2, 4)
-JP_WRITE_PTR_SIZE(2, 3)
-jp_errno_t jp_queue_pop(jp_queue_t* queue, unsigned char* dest_buffer, size_t max_len, size_t* out_len);
+JP_NONNULL_ARG(1, 2)
+jp_errno_t jp_queue_pop_uncommitted(jp_queue_t* queue, jp_block_t** block);
+
+JP_NONNULL_ARG(1)
+void jp_queue_pop_commit(jp_queue_t* queue);
 
 JP_NONNULL_ARG(1)
 void jp_queue_finalize(jp_queue_t* queue);

@@ -15,13 +15,13 @@ void* sequential_write(void* arg) {
     jp_block_t* block;
 
     for (int i = 0; i <= ITEM_SIZE; i++) {
-        err = jp_queue_reserve(q, &block);
+        err = jp_queue_push_uncommitted(q, &block);
         if (err) {
             break;
         }
         *(int*) block->data = i;
         block->length       = sizeof(int);
-        jp_queue_commit(q);
+        jp_queue_push_commit(q);
     }
 
     jp_queue_finalize(q);
@@ -29,13 +29,13 @@ void* sequential_write(void* arg) {
 }
 
 void* sequential_read(void* arg) {
-    int val;
-    size_t len;
     int64_t sum   = 0;
     jp_queue_t* q = arg;
+    jp_block_t* block;
 
-    while (jp_queue_pop(q, (unsigned char*) &val, sizeof(int), &len) == 0) {
-        sum += val;
+    while (jp_queue_pop_uncommitted(q, &block) == 0) {
+        sum += *(int*) block->data;
+        jp_queue_pop_commit(q);
     }
 
     pthread_exit((void*) (uintptr_t) sum);  // NOLINT(performance-no-int-to-ptr)

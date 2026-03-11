@@ -46,7 +46,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Install
-        run: sudo apt-get update && sudo apt-get install -y clang gcc llvm
+        run: sudo apt-get update && sudo apt-get install -y clang gcc llvm lcov gcovr
 
       - name: CodeQL Initialization
         uses: github/codeql-action/init@v4
@@ -57,8 +57,8 @@ jobs:
 
       - name: Coverage Flow
         env:
-          CC: clang
-        run: make coverage CC=clang
+          CC: gcc
+        run: make coverage CC=gcc
 
       - name: Code Formatting Flow
         run: make format

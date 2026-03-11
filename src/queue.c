@@ -34,7 +34,7 @@ jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size, jp_queue_policy_
     return queue;
 }
 
-jp_errno_t jp_queue_push(jp_queue_t* queue, const void* src, size_t len) {
+jp_errno_t jp_queue_reserve(jp_queue_t* queue, jp_block_t** block) {
     pthread_mutex_lock(&queue->lock);
 
     while (queue->length == queue->capacity && queue->active && queue->policy == JP_QUEUE_POLICY_WAIT) {
@@ -51,18 +51,20 @@ jp_errno_t jp_queue_push(jp_queue_t* queue, const void* src, size_t len) {
     if (queue->length == queue->capacity && queue->policy == JP_QUEUE_POLICY_DROP) {
         JP_DEBUG("[QUEUE]: Queue is full. Dropping... (len: %zu, cap: %zu)", queue->length, queue->capacity);
         pthread_mutex_unlock(&queue->lock);
-        return JP_EMSG_DROPPED;
+        return JP_EMSG_SHOULD_DROP;
     }
 
-    size_t block_size = MIN(len, queue->chunk_size);
-    memcpy(queue->blocks[queue->tail].data, src, block_size);
-    queue->blocks[queue->tail].length = block_size;
-    queue->tail                       = (queue->tail + 1) % queue->capacity;
-    queue->length++;
-
-    pthread_cond_signal(&queue->not_empty);
+    *block = &queue->blocks[queue->tail];
     pthread_mutex_unlock(&queue->lock);
     return 0;
+}
+
+void jp_queue_commit(jp_queue_t* queue) {
+    pthread_mutex_lock(&queue->lock);
+    queue->tail = (queue->tail + 1) % queue->capacity;
+    queue->length++;
+    pthread_cond_signal(&queue->not_empty);
+    pthread_mutex_unlock(&queue->lock);
 }
 
 jp_errno_t jp_queue_pop(jp_queue_t* queue, unsigned char* dest_buffer, size_t max_len, size_t* out_len) {

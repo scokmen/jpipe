@@ -140,7 +140,7 @@ static jp_errno_t set_chunk_size(const char* arg, worker_arg_t* args) {
     if (chunk_size < JP_WRK_CHUNK_SIZE_MIN || chunk_size > JP_WRK_CHUNK_SIZE_MAX) {
         return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Chunk size value is invalid: '%.32s'.", arg);
     }
-    args->chunk_size = (size_t) chunk_size;
+    args->chunk_size = chunk_size;
     return 0;
 }
 
@@ -311,16 +311,13 @@ static jp_errno_t finalize_worker_args(worker_arg_t* args) {
 }
 
 static void* producer_thread_init(void* data) {
-    size_t chunk_size;
     jp_errno_t err = 0;
-    unsigned char* buffer;
-    jp_poller_t* poller;
-    worker_arg_t* args = data;
-
-    chunk_size = args->chunk_size;
-    args       = (worker_arg_t*) data;
-    buffer     = malloc(chunk_size);
-    poller     = jp_poller_create(100);
+    ssize_t read_len;
+    jp_block_t* block;
+    const worker_arg_t* args = data;
+    const size_t chunk_size  = args->chunk_size;
+    unsigned char* buffer    = malloc(chunk_size);
+    jp_poller_t* poller      = jp_poller_create(100);
     if (buffer == NULL || poller == NULL) {
         err = JP_ENOMEMORY;
         goto clean_up;
@@ -340,11 +337,16 @@ static void* producer_thread_init(void* data) {
             continue;
         }
         while (true) {
-            ssize_t n = read(STDIN_FILENO, buffer, chunk_size);
-            if (n == 0) {
+            err = jp_queue_reserve(args->queue, &block);
+            if (err == JP_ESHUTTING_DOWN) {
+                err = 0;
                 goto clean_up;
             }
-            if (n < 0) {
+            read_len = err == JP_EMSG_SHOULD_DROP ? read(STDIN_FILENO, buffer, chunk_size) : read(STDIN_FILENO, block->data, chunk_size);
+            if (read_len == 0) {
+                goto clean_up;
+            }
+            if (read_len < 0) {
                 if (errno == EINTR) {
                     continue;
                 }
@@ -354,14 +356,9 @@ static void* producer_thread_init(void* data) {
                 err = JP_EREAD_FAILED;
                 goto clean_up;
             }
-            err = jp_queue_push(args->queue, buffer, (size_t) n);
-            if (err == JP_EMSG_DROPPED) {
-                // TODO: Handle message dropped.
-                break;
-            }
-            if (err == JP_ESHUTTING_DOWN) {
-                err = 0;
-                goto clean_up;
+            if (err == 0) {
+                block->length = (size_t) read_len;
+                jp_queue_commit(args->queue);
             }
         }
     }
@@ -379,8 +376,8 @@ clean_up:
 static void* consumer_thread_init(void* data) {
     jp_errno_t err = 0;
     size_t max_len, read_len;
-    worker_arg_t* args    = data;
-    unsigned char* buffer = malloc(args->chunk_size);
+    const worker_arg_t* args = data;
+    unsigned char* buffer    = malloc(args->chunk_size);
     if (buffer == NULL) {
         err = JP_ENOMEMORY;
         goto clean_up;

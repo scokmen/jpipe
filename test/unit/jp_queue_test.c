@@ -10,11 +10,15 @@ void test_jp_queue_push_pop(void) {
     size_t len;
     int data[ITEM_SIZE] = {1, 2, 3, 4};
     jp_queue_t* q       = jp_queue_create(4, sizeof(int), JP_QUEUE_POLICY_WAIT);
+    jp_block_t* block;
 
     JP_ASSERT_EQ(ITEM_SIZE, q->capacity);
     for (size_t i = 0; i < ITEM_SIZE; i++) {
         JP_ASSERT_EQ(i, q->length);
-        JP_ASSERT_OK(jp_queue_push(q, &data[i], sizeof(int)));
+        JP_ASSERT_OK(jp_queue_reserve(q, &block));
+        *(int*) block->data = data[i];
+        block->length       = sizeof(int);
+        jp_queue_commit(q);
         JP_ASSERT_EQ(i + 1, q->length);
     }
 
@@ -31,13 +35,19 @@ void test_jp_queue_push_pop(void) {
 void test_jp_queue_push_finalized_queue(void) {
     int data[ITEM_SIZE] = {1, 2, 3, 4};
     jp_queue_t* q       = jp_queue_create(4, sizeof(int), JP_QUEUE_POLICY_WAIT);
+    jp_block_t* block;
 
     JP_ASSERT_EQ(ITEM_SIZE, q->capacity);
-    JP_ASSERT_OK(jp_queue_push(q, &data[0], sizeof(int)));
-    JP_ASSERT_OK(jp_queue_push(q, &data[1], sizeof(int)));
+    for (size_t i = 0; i < 2; i++) {
+        JP_ASSERT_OK(jp_queue_reserve(q, &block));
+        *(int*) block->data = data[i];
+        block->length       = sizeof(int);
+        jp_queue_commit(q);
+        JP_ASSERT_EQ(i + 1, q->length);
+    }
 
     jp_queue_finalize(q);
-    JP_ASSERT_EQ(JP_ESHUTTING_DOWN, jp_queue_push(q, &data[2], sizeof(int)));
+    JP_ASSERT_EQ(JP_ESHUTTING_DOWN, jp_queue_reserve(q, &block));
     jp_queue_destroy(q);
 }
 
@@ -46,11 +56,13 @@ void test_jp_queue_pop_finalized_queue(void) {
     size_t len;
     int data[ITEM_SIZE] = {1, 2, 3, 4};
     jp_queue_t* q       = jp_queue_create(4, sizeof(int), JP_QUEUE_POLICY_WAIT);
-
+    jp_block_t* block;
     JP_ASSERT_EQ(ITEM_SIZE, q->capacity);
     for (size_t i = 0; i < ITEM_SIZE; i++) {
-        JP_ASSERT_EQ(i, q->length);
-        JP_ASSERT_OK(jp_queue_push(q, &data[i], sizeof(int)));
+        JP_ASSERT_OK(jp_queue_reserve(q, &block));
+        *(int*) block->data = data[i];
+        block->length       = sizeof(int);
+        jp_queue_commit(q);
         JP_ASSERT_EQ(i + 1, q->length);
     }
 
@@ -68,17 +80,21 @@ void test_jp_queue_pop_policy_drop(void) {
     size_t len;
     int data[ITEM_SIZE] = {1, 2, 3, 4};
     jp_queue_t* q       = jp_queue_create(2, sizeof(int), JP_QUEUE_POLICY_DROP);
+    jp_block_t* block;
 
     JP_ASSERT_EQ(2, q->capacity);
     for (size_t i = 0; i < 2; i++) {
         JP_ASSERT_EQ(i, q->length);
-        JP_ASSERT_OK(jp_queue_push(q, &data[i], sizeof(int)));
+        JP_ASSERT_OK(jp_queue_reserve(q, &block));
+        *(int*) block->data = data[i];
+        block->length       = sizeof(int);
+        jp_queue_commit(q);
         JP_ASSERT_EQ(i + 1, q->length);
     }
 
     for (size_t i = 0; i < 2; i++) {
         JP_ASSERT_EQ(2, q->length);
-        JP_ASSERT_EQ(JP_EMSG_DROPPED, jp_queue_push(q, &data[i], sizeof(int)));
+        JP_ASSERT_EQ(JP_EMSG_SHOULD_DROP, jp_queue_reserve(q, &block));
         JP_ASSERT_EQ(2, q->length);
     }
 

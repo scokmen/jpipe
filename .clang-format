@@ -1,0 +1,36 @@
+---
+BasedOnStyle: Google
+
+IndentWidth: 4
+ColumnLimit: 150
+TabWidth: 4
+UseTab: Never
+
+DerivePointerAlignment: false
+PointerAlignment: Left
+
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: true
+  AlignCompound: true
+  PadOperators: true
+
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: true
+  AlignCompound: true
+
+AllowShortIfStatementsOnASingleLine: false
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortEnumsOnASingleLine: false
+SpacesInContainerLiterals: false
+Cpp11BracedListStyle: true
+SpaceBeforeCpp11BracedList: true
+SpaceAfterCStyleCast: true
+SortIncludes: true
+
+BinPackArguments: false
+BinPackParameters: false

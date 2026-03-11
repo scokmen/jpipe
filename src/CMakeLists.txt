@@ -1,12 +1,25 @@
 ###############################################
 # JPipe: Core Library
 ###############################################
+set(NON_PORTABLE_C_FILES "")
+
+if (FLAG_EPOLL)
+    message(STATUS "[polling]: sys/epoll.h")
+    list(APPEND NON_PORTABLE_C_FILES "poller/epoll.c")
+elseif (FLAG_KQUEUE)
+    message(STATUS "[polling]: sys/event.h")
+    list(APPEND NON_PORTABLE_C_FILES "poller/kqueue.c")
+else ()
+    message(FATAL_ERROR "[polling]: Unsupported polling platform.")
+endif ()
+
 add_library(jpipe_core STATIC
         worker.c
         queue.c
         command.c
         field.c
         errno.c
+        ${NON_PORTABLE_C_FILES}
 )
 
 target_include_directories(jpipe_core
@@ -21,8 +34,9 @@ target_link_libraries(jpipe_core
 )
 
 ###############################################
-# JPipe: Clang-Tidy >> Core
+# JPipe: Clang-Tidy & Clang-Format
 ###############################################
+init_clang_format()
 init_clang_tidy(jpipe_core)
 
 ###############################################

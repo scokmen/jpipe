@@ -4,7 +4,13 @@ project(jpipe VERSION 0.0.1 LANGUAGES C)
 # Project Properties.
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+message(STATUS "Compiler Properties:")
+message(STATUS "- C Compiler ID:  ${CMAKE_C_COMPILER_ID}")
+message(STATUS "- C Compiler:     ${CMAKE_C_COMPILER}")
+message(STATUS "- C Compiler Ver: ${CMAKE_C_COMPILER_VERSION}")
 
 # Extend the CMake module path.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -37,21 +43,24 @@ configure_file(
 )
 
 ###############################################
+# JPipe: Platform Feature Flags
+###############################################
+check_include_file("sys/event.h" FLAG_KQUEUE)
+check_include_file("sys/epoll.h" FLAG_EPOLL)
+
+###############################################
 # JPipe: Initializers
 ###############################################
 add_library(jpipe_settings INTERFACE)
-
 init_compiler_flags(jpipe_settings)
-
 message(STATUS "[build]: ${CMAKE_BUILD_TYPE}")
+
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    init_debug_flags(jpipe_settings)
-    
     if (ENABLE_ASAN AND ENABLE_TSAN)
         message(FATAL_ERROR "AddressSanitizer/ThreadSanitizer conflict!")
         return()
     endif ()
-    
+
     if (ENABLE_ASAN)
         init_asan_flags(jpipe_settings)
     endif ()
@@ -59,19 +68,18 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     if (ENABLE_TSAN)
         init_tsan_flags(jpipe_settings)
     endif ()
-endif ()
-
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
+else ()
     set(BUILD_TESTING OFF CACHE BOOL "[testing]: disabled" FORCE)
-    init_release_flags(jpipe_settings)
 endif ()
-
 
 ###############################################
-# JPipe: Packages
+# JPipe: Core
 ###############################################
 add_subdirectory(src)
 
+###############################################
+# JPipe: Testing & Coverage
+###############################################
 if (BUILD_TESTING)
     init_coverage_flags(jpipe_settings)
     add_subdirectory(test)

@@ -3,10 +3,12 @@ Usage: jpipe run [options]
 Execute the data processing engine with the following configurations:
 
 Options:
-  -c, --chunk-size  <size>     Chunk size (e.g., 512kb, 16mb). Range: 1kb-64mb  (default: 1kb).
+  -c, --chunk-size  <size>     Chunk size (e.g., 16kb, 64kb). Range: 1kb-128kb  (default: 16kb).
   -b, --buffer-size <count>    Max pending operations. Range: 1-1024 (default: 64).
+  -p, --policy      <type>     Overflow policy: 'wait' or 'drop' (default: wait).
   -o, --out-dir     <path>     Output directory (default: current dir).
   -f, --field       key=value  Additional field to the JSON output. Can be used multiple times.
+  -n, --dry-run                Dry run.
   -h, --help                   Show this help message.
 
 Field Options:

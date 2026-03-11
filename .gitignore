@@ -60,6 +60,7 @@ cmake-build-*
 
 # Clion
 .idea
+.cache
 
 # Local tools
 /scripts

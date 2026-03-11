@@ -11,12 +11,9 @@
 #define R_RST  "\x1b[0m"
 
 jp_errno_t jp_errno_log_err(jp_errno_t err) {
-    int err_code;
-    const char* msg;
-
-    err_code = errno;
-    errno    = 0;
-    msg      = jp_errno_explain(err);
+    int err_code    = errno;
+    errno           = 0;
+    const char* msg = jp_errno_explain(err);
 
     fprintf(stderr, R_BOLD R_CYN "[jpipe]" R_RST ": " R_RED "An error occurred.\n" R_RST);
     fprintf(stderr, "  " R_YEL "└─ Caused By: " R_RST "%.256s\n", msg);
@@ -28,13 +25,10 @@ jp_errno_t jp_errno_log_err(jp_errno_t err) {
 }
 
 jp_errno_t jp_errno_log_err_format(jp_errno_t err, const char* fmt, ...) {
-    int err_code;
-    const char* msg;
     va_list args;
-
-    err_code = errno;
-    errno    = 0;
-    msg      = jp_errno_explain(err);
+    int err_code    = errno;
+    errno           = 0;
+    const char* msg = jp_errno_explain(err);
 
     fprintf(stderr, R_BOLD R_CYN "[jpipe]" R_RST ": " R_RED "An error occurred.\n" R_RST);
     fprintf(stderr, "  " R_YEL "└─ Caused By: " R_RST "%.256s\n", msg);

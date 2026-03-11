@@ -1,4 +1,5 @@
 function(init_compiler_flags TARGET)
+    # TODO: Add distribution target specific compiler flags.
     target_compile_options(${TARGET} INTERFACE
             $<$<CONFIG:Debug>: -g -O1>
             $<$<CONFIG:Release>: -O3 -flto -fomit-frame-pointer -march=native -DNDEBUG>
@@ -24,6 +25,7 @@ function(init_compiler_flags TARGET)
             -Wno-gnu-zero-variadic-macro-arguments>
     )
 
+    # TODO: Add GCC version specific compiler flags.
     set(GCC_FLAGS
             $<$<C_COMPILER_ID:GNU>:
             -Wduplicated-branches

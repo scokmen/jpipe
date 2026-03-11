@@ -300,7 +300,7 @@ static jp_errno_t collect_cli_args(int argc, char* argv[], worker_arg_t* args) {
     if (optind < argc) {
         JP_OK_OR_RET(handle_unknown_argument(argv[optind]));
     }
-    
+
     return 0;
 }
 
@@ -312,10 +312,10 @@ static jp_errno_t finalize_worker_args(worker_arg_t* args) {
 
 static void* producer_thread_init(void* data) {
     size_t chunk_size;
-    jp_errno_t err;
+    jp_errno_t err = 0;
     unsigned char* buffer;
     jp_poller_t* poller;
-    worker_arg_t* args = (worker_arg_t*) data;
+    worker_arg_t* args = data;
 
     chunk_size = args->chunk_size;
     args       = (worker_arg_t*) data;
@@ -323,30 +323,25 @@ static void* producer_thread_init(void* data) {
     poller     = jp_poller_create(100);
     if (buffer == NULL || poller == NULL) {
         err = JP_ENOMEMORY;
-        jp_errno_log_err(err);
         goto clean_up;
     }
 
     err = jp_poller_poll(poller, STDIN_FILENO);
     if (err) {
-        jp_errno_log_err(err);
         goto clean_up;
     }
 
     while (true) {
         err = jp_poller_wait(poller);
         if (err == JP_EREAD_FAILED) {
-            jp_errno_log_err(err);
             break;
         }
         if (err == JP_ETRYAGAIN) {
             continue;
         }
         while (true) {
-            err       = 0;
             ssize_t n = read(STDIN_FILENO, buffer, chunk_size);
             if (n == 0) {
-                jp_queue_finalize(args->queue);
                 goto clean_up;
             }
             if (n < 0) {
@@ -357,8 +352,6 @@ static void* producer_thread_init(void* data) {
                     break;
                 }
                 err = JP_EREAD_FAILED;
-                jp_errno_log_err(err);
-                jp_queue_finalize(args->queue);
                 goto clean_up;
             }
             err = jp_queue_push(args->queue, buffer, (size_t) n);
@@ -367,42 +360,56 @@ static void* producer_thread_init(void* data) {
                 break;
             }
             if (err == JP_ESHUTTING_DOWN) {
+                err = 0;
                 goto clean_up;
             }
         }
     }
 
 clean_up:
+    if (err) {
+        jp_errno_log_err(err);
+    }
     JP_FREE(buffer);
     jp_poller_destroy(poller);
-    // TODO: Solve performance-no-int-to-ptr
+    jp_queue_finalize(args->queue);
     pthread_exit((void*) (uintptr_t) err);  // NOLINT(performance-no-int-to-ptr)
 }
 
 static void* consumer_thread_init(void* data) {
-    jp_errno_t err;
+    jp_errno_t err = 0;
     size_t max_len, read_len;
-    unsigned char buffer[1024 * 16];
-    worker_arg_t* args = (worker_arg_t*) data;
+    worker_arg_t* args    = data;
+    unsigned char* buffer = malloc(args->chunk_size);
+    if (buffer == NULL) {
+        err = JP_ENOMEMORY;
+        goto clean_up;
+    }
 
     max_len = args->chunk_size;
     while (true) {
-        // TODO: Replace with the real implementation.
         err = jp_queue_pop(args->queue, buffer, max_len, &read_len);
         if (err) {
-            JP_DEBUG("[CONSUMER]: Cannot pop.");
+            if (err == JP_ESHUTTING_DOWN) {
+                err = 0;
+            }
             break;
         }
     }
 
-    // TODO: Solve performance-no-int-to-ptr
+clean_up:
+    if (err) {
+        jp_errno_log_err(err);
+    }
+    JP_FREE(buffer);
+    jp_queue_finalize(args->queue);
     pthread_exit((void*) (uintptr_t) err);  // NOLINT(performance-no-int-to-ptr)
 }
 
 static void* watcher_thread_init(void* data) {
     int sig;
     sigset_t set;
-    worker_arg_t* args = (worker_arg_t*) data;
+    worker_arg_t* args = data;
 
     sigemptyset(&set);
     sigaddset(&set, SIGINT);

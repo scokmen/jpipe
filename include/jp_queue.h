@@ -5,7 +5,6 @@
 #include <jp_errno.h>
 #include <pthread.h>
 #include <stdbool.h>
-#include <stddef.h>
 
 typedef enum {
     JP_QUEUE_POLICY_WAIT = 0,
@@ -13,7 +12,7 @@ typedef enum {
 } jp_queue_policy_t;
 
 typedef struct {
-    unsigned char* data;
+    unsigned char* data JP_NONSTRING;
     size_t length;
 } jp_block_t;
 
@@ -29,7 +28,7 @@ typedef struct {
     pthread_cond_t not_full;
     jp_queue_policy_t policy;
     jp_block_t* blocks;
-    unsigned char* area;
+    unsigned char* area JP_NONSTRING;
 } jp_queue_t;
 
 JP_MALLOC

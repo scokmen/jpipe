@@ -3,16 +3,13 @@
 
 #include <errno.h>
 #include <jp_common.h>
-#include <stdarg.h>
 
 /**
  * @brief Attempts allocation, logs an error on failure, and returns the error code.
- * 
- * This is a specialized version of JP_ALLOC_OR_RET. If the allocation (expr) 
- * results in NULL, it logs a "Memory Exhausted" error using the logging system and returns the corresponding error code.
  *
- * Ideal for high-level functions where failing an allocation must be reported
- * to the logging system.
+ * This is a specialized version of JP_ALLOC_OR_RET. If the allocation (expr) results in NULL,
+ * it logs a "Memory Exhausted" error using the logging system and returns the corresponding error code.
+ * Ideal for high-level functions where failing an allocation must be reported to the logging system.
  *
  * @param var  Target variable to store the allocation result.
  * @param expr The allocation expression (e.g., malloc, calloc, strdup).
@@ -24,11 +21,11 @@
 /**
  * @brief Portable check for "Resource Temporarily Unavailable" errors.
  *
- * In POSIX programming, non-blocking I/O operations may return EAGAIN or 
- * EWOULDBLOCK when no data is available. While most modern systems define 
+ * In POSIX programming, non-blocking I/O operations may return EAGAIN or
+ * EWOULDBLOCK when no data is available. While most modern systems define
  * them as the same value, some architectures treat them as distinct.
  *
- * This macro abstracts that difference, ensuring that the application 
+ * This macro abstracts that difference, ensuring that the application
  * correctly identifies "try again" scenarios regardless of the platform.
  *
  * @param err The error code to check (usually from 'errno').
@@ -39,11 +36,11 @@
 /**
  * @brief Portable check for "Resource Temporarily Unavailable" errors.
  *
- * In POSIX programming, non-blocking I/O operations may return EAGAIN or 
- * EWOULDBLOCK when no data is available. While most modern systems define 
+ * In POSIX programming, non-blocking I/O operations may return EAGAIN or
+ * EWOULDBLOCK when no data is available. While most modern systems define
  * them as the same value, some architectures treat them as distinct.
  *
- * This macro abstracts that difference, ensuring that the application 
+ * This macro abstracts that difference, ensuring that the application
  * correctly identifies "try again" scenarios regardless of the platform.
  *
  * @param err The error code to check (usually from 'errno').

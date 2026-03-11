@@ -38,18 +38,18 @@ jp_errno_t jp_queue_push(jp_queue_t* queue, const void* src, size_t len) {
     pthread_mutex_lock(&queue->lock);
 
     while (queue->length == queue->capacity && queue->active && queue->policy == JP_QUEUE_POLICY_WAIT) {
-        JP_DEBUG("[PUSH]: Queue is full. Waiting... (len: %zu, cap: %zu)", queue->length, queue->capacity);
+        JP_DEBUG("[QUEUE]: Queue is full. Waiting... (len: %zu, cap: %zu)", queue->length, queue->capacity);
         pthread_cond_wait(&queue->not_full, &queue->lock);
     }
 
     if (!queue->active) {
-        JP_DEBUG("[PUSH]: Queue is not active.");
+        JP_DEBUG("[QUEUE]: Queue is not active.");
         pthread_mutex_unlock(&queue->lock);
         return JP_ESHUTTING_DOWN;
     }
 
     if (queue->length == queue->capacity && queue->policy == JP_QUEUE_POLICY_DROP) {
-        JP_DEBUG("[PUSH]: Queue is full. Dropping... (len: %zu, cap: %zu)", queue->length, queue->capacity);
+        JP_DEBUG("[QUEUE]: Queue is full. Dropping... (len: %zu, cap: %zu)", queue->length, queue->capacity);
         pthread_mutex_unlock(&queue->lock);
         return JP_EMSG_DROPPED;
     }
@@ -69,12 +69,12 @@ jp_errno_t jp_queue_pop(jp_queue_t* queue, unsigned char* dest_buffer, size_t ma
     pthread_mutex_lock(&queue->lock);
 
     while (queue->length == 0 && queue->active) {
-        JP_DEBUG("[POP]: Queue is empty. (len: %zu, cap: %zu)", queue->length, queue->capacity);
+        JP_DEBUG("[QUEUE]: Queue is empty. (len: %zu, cap: %zu)", queue->length, queue->capacity);
         pthread_cond_wait(&queue->not_empty, &queue->lock);
     }
 
     if (queue->length == 0 && !queue->active) {
-        JP_DEBUG("[POP]: Queue is not active.");
+        JP_DEBUG("[QUEUE]: Queue is not active.");
         pthread_mutex_unlock(&queue->lock);
         return JP_ESHUTTING_DOWN;
     }
@@ -93,9 +93,12 @@ jp_errno_t jp_queue_pop(jp_queue_t* queue, unsigned char* dest_buffer, size_t ma
 
 void jp_queue_finalize(jp_queue_t* queue) {
     pthread_mutex_lock(&queue->lock);
-    queue->active = false;
-    pthread_cond_broadcast(&queue->not_empty);
-    pthread_cond_broadcast(&queue->not_full);
+    if (queue->active) {
+        JP_DEBUG("[QUEUE]: Queue is being finalized...");
+        queue->active = false;
+        pthread_cond_broadcast(&queue->not_empty);
+        pthread_cond_broadcast(&queue->not_full);
+    }
     pthread_mutex_unlock(&queue->lock);
 }
 
@@ -103,7 +106,6 @@ void jp_queue_destroy(jp_queue_t* queue) {
     if (queue == NULL) {
         return;
     }
-
     pthread_mutex_destroy(&queue->lock);
     pthread_cond_destroy(&queue->not_empty);
     pthread_cond_destroy(&queue->not_full);

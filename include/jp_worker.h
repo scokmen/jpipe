@@ -2,7 +2,6 @@
 #define JPIPE_JP_WORKER_H
 
 #include <jp_field.h>
-#include <stdbool.h>
 
 #define BYTES_IN_KB            1024    // 1KB
 #define JP_WRK_CHUNK_SIZE_MIN  1024    // 1KB

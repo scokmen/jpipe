@@ -2,7 +2,6 @@
 #define JPIPE_JP_COMMAND_H
 
 #include <jp_errno.h>
-#include <string.h>
 
 /**
  * @brief Checks if a command string matches either a short code or a long name.

@@ -3,8 +3,6 @@
 
 #include <jp_common.h>
 #include <jp_errno.h>
-#include <stdbool.h>
-#include <stddef.h>
 
 #define JP_FIELD_MAX_KEY_LEN 32
 

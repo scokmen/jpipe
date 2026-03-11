@@ -34,7 +34,7 @@ jp_errno_t jp_poller_poll(jp_poller_t* poller, int fd) {
         return JP_EREAD_FAILED;
     }
 
-    EV_SET(&event, fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+    EV_SET(&event, fd, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
 
     err = kevent(poller->fd, &event, 1, NULL, 0, NULL);
     if (err == -1) {

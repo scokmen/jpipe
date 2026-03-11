@@ -1,8 +1,10 @@
-function(__log_binary NAME VERSION LOCATION)
-    message(STATUS "[${NAME}]: enabled
-            version=${VERSION}
-            path=${LOCATION}"
+function(__binary_ver BINARY_PATH FLAG VERSION)
+    execute_process(
+            COMMAND ${BINARY_PATH} ${FLAG}
+            OUTPUT_VARIABLE COMMAND_OUT
+            OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+    set(${VERSION} "${COMMAND_OUT}" PARENT_SCOPE)
 endfunction()
 
 function(init_clang_tidy TARGET)
@@ -12,11 +14,6 @@ function(init_clang_tidy TARGET)
     endif ()
     find_program(CLANG_TIDY_BINARY NAMES "clang-tidy")
     if (CLANG_TIDY_BINARY)
-        execute_process(
-                COMMAND ${CLANG_TIDY_BINARY} --version
-                OUTPUT_VARIABLE CLANG_TIDY_VERSION
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
         set(CLANG_TIDY_COMMAND
                 "${CLANG_TIDY_BINARY}"
                 "-config-file=${CMAKE_SOURCE_DIR}/.clang-tidy"
@@ -26,7 +23,8 @@ function(init_clang_tidy TARGET)
         set_target_properties(${TARGET} PROPERTIES
                 C_CLANG_TIDY "${CLANG_TIDY_COMMAND}"
         )
-        __log_binary("clang-tidy" ${CLANG_TIDY_VERSION} ${CLANG_TIDY_BINARY})
+        __binary_ver(${CLANG_TIDY_BINARY} "--version" CLANG_TIDY_VERSION)
+        message(STATUS "[clang-tidy]: enabled >> version=v${CLANG_TIDY_VERSION}, path='${CLANG_TIDY_BINARY}'")
     else ()
         message(WARNING "[clang-tidy]: disabled >> [not found]")
     endif ()
@@ -35,25 +33,23 @@ endfunction()
 function(init_clang_format)
     find_program(CLANG_FORMAT_BINARY clang-format)
     if (CLANG_FORMAT_BINARY)
-        execute_process(
-                COMMAND ${CLANG_FORMAT_BINARY} --version
-                OUTPUT_VARIABLE CLANG_FORMAT_VERSION
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
         file(GLOB_RECURSE ALL_SOURCE_FILES
                 "${CMAKE_SOURCE_DIR}/src/*.c"
                 "${CMAKE_SOURCE_DIR}/include/*.h")
-        add_custom_target(format
-                COMMAND ${CLANG_FORMAT_BINARY}
-                --style=file
-                --dry-run
-                --Werror
-                -n
-                ${ALL_SOURCE_FILES}
-                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-                COMMENT "[clang-format]: analysing..."
-        )
-        __log_binary("clang-format" ${CLANG_FORMAT_VERSION} ${CLANG_FORMAT_BINARY})
+        if (NOT TARGET format)
+            add_custom_target(format
+                    COMMAND ${CLANG_FORMAT_BINARY}
+                    --style=file
+                    --dry-run
+                    --Werror
+                    -n
+                    ${ALL_SOURCE_FILES}
+                    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                    COMMENT "[clang-format]: analysing..."
+            )
+        endif ()
+        __binary_ver(${CLANG_FORMAT_BINARY} "--version" CLANG_FORMAT_VERSION)
+        message(STATUS "[clang-format]: enabled >> version=v${CLANG_FORMAT_VERSION}, path='${CLANG_FORMAT_BINARY}'")
     else ()
         message(WARNING "[clang-format]: disabled >> [not found]")
     endif ()
@@ -62,12 +58,8 @@ endfunction()
 function(init_coverage_flags TARGET)
     find_program(LCOV_BINARY NAMES "lcov")
     if (LCOV_BINARY)
-        execute_process(
-                COMMAND ${LCOV_BINARY} --version
-                OUTPUT_VARIABLE LCOV_VERSION
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-        __log_binary("lcov" ${LCOV_VERSION} ${LCOV_BINARY})
+        __binary_ver(${LCOV_BINARY} "--version" LCOV_VERSION)
+        message(STATUS "[lcov]: enabled >> version=v${LCOV_VERSION}, path='${LCOV_BINARY}'")
     else ()
         message(WARNING "[lcov]: disabled >> [not found]")
     endif ()
@@ -79,7 +71,8 @@ function(init_coverage_flags TARGET)
                 OUTPUT_VARIABLE GCOVR_VERSION
                 OUTPUT_STRIP_TRAILING_WHITESPACE
         )
-        __log_binary("gcovr" ${GCOVR_VERSION} ${GCOVR_BINARY})
+        __binary_ver(${GCOVR_BINARY} "--version" GCOVR_VERSION)
+        message(STATUS "[gcovr]: enabled >> version=v${GCOVR_VERSION}, path='${GCOVR_BINARY}'")
     else ()
         message(WARNING "[gcovr]: disabled >> [not found]")
     endif ()
@@ -95,7 +88,7 @@ function(init_coverage_flags TARGET)
     target_link_options(${TARGET} INTERFACE
             --coverage
     )
-
+    
     if (NOT TARGET coverage)
         add_custom_target(coverage
                 COMMAND ${LCOV_BINARY} --capture --initial --directory . --output-file base.info

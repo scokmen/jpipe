@@ -12,8 +12,7 @@
  *
  * Wraps the __has_builtin extension (available in Clang and GCC 10+) to
  * detect if the compiler provides a specific intrinsic/built-in function.
- * If the compiler is older and doesn't support detection, it safely
- * defaults to 0.
+ * If the compiler is older and doesn't support detection, it safely defaults to 0.
  *
  * @param built_in The built-in function name to check (e.g., __builtin_trap).
  * @return 1 if supported, 0 otherwise.
@@ -56,8 +55,7 @@
  *
  * This allows the optimizer to discard branches or simplify logic based on 'cond'.
  * 1. Uses __builtin_assume if available (Clang).
- * 2. Falls back to __builtin_unreachable() (GCC), signaling that the false branch
- * can never be taken.
+ * 2. Falls back to __builtin_unreachable() (GCC), signaling that the false branch can never be taken.
  * 3. Defaults to a no-op if no compiler support is found.
  *
  * @warning Use with extreme caution. If 'cond' is ever false at runtime,
@@ -72,8 +70,7 @@
  *
  * This allows the optimizer to discard branches or simplify logic based on 'cond'.
  * 1. Uses __builtin_assume if available (Clang).
- * 2. Falls back to __builtin_unreachable() (GCC), signaling that the false branch
- * can never be taken.
+ * 2. Falls back to __builtin_unreachable() (GCC), signaling that the false branch can never be taken.
  * 3. Defaults to a no-op if no compiler support is found.
  *
  * @warning Use with extreme caution. If 'cond' is ever false at runtime,
@@ -99,8 +96,7 @@
  * @brief Optimization hint for the "Happy Path" (most likely execution path).
  *
  * Instructs the compiler to prioritize the branch where 'cond' is true.
- * This keeps the instruction pipeline full for the common case,
- * minimizing branch misprediction penalties.
+ * This keeps the instruction pipeline full for the common case, minimizing branch misprediction penalties.
  *
  * @param cond Condition expected to be true.
  */
@@ -108,11 +104,11 @@
 /**
  * @brief Optimization hint for the "Error Path" (least likely execution path).
  *
- * Tells the compiler that 'cond' is rarely true. The optimizer may move the
- * code inside this branch to a "cold" section of the binary, improving
- * instruction cache locality for the hot (likely) code.
+ * Tells the compiler that 'cond' is rarely true.
+ * The optimizer may move the code inside this branch to a "cold" section of the binary,
+ * improving instruction cache locality for the hot (likely) code.
  *
- * @param x Condition expected to be false.
+ * @param cond Condition expected to be false.
  */
 #define JP_UNLIKELY(cond) __builtin_expect(!!(cond), 0)
 #else
@@ -131,13 +127,11 @@
 /**
  * @brief Hints that a function returns a newly allocated pointer.
  *
- * This attribute tells the compiler that the returned pointer cannot "alias"
- * any other existing pointer. It allows the optimizer to assume that memory
- * pointed to by the return value is distinct from any other accessible memory.
+ * This attribute tells the compiler that the returned pointer cannot "alias" any other existing pointer.
+ * It allows the optimizer to assume that memory pointed to by the return value is distinct from any other accessible memory.
  *
- * This leads to significant optimizations in loop unrolling and instruction
- * scheduling because the compiler knows that writing to this new memory
- * won't affect other variables.
+ * This leads to significant optimizations in loop unrolling and instruction scheduling because the compiler
+ * knows that writing to this new memory won't affect other variables.
  *
  * @note Best used for custom allocator wrappers or factory functions.
  */
@@ -154,10 +148,9 @@
 /**
  * @brief Enforces that the return value of a function must be checked.
  *
- * If a function decorated with this macro is called and its return value
- * is discarded, the compiler will issue a warning (or an error with -Werror).
- * This is critical for functions returning error codes or allocated resources
- * that must be managed.
+ * If a function decorated with this macro is called and its return value is discarded,
+ * the compiler will issue a warning (or an error with -Werror).
+ * This is critical for functions returning error codes or allocated resources that must be managed.
  */
 #define JP_USE_RESULT __attribute__((warn_unused_result))
 #else
@@ -172,17 +165,15 @@
 /**
  * @brief Specifies that a function has no side effects and depends only on its arguments.
  *
- * A "const" function does not examine any values except its arguments, and have
- * no effects except its return value. It cannot read global memory or
- * call non-const functions.
+ * A "const" function does not examine any values except its arguments, and have no effects except its return value.
+ * It cannot read global memory or call non-const functions.
  *
  * This allows the compiler to:
  * 1. Perform Common Subexpression Elimination (CSE).
  * 2. Cache the result if the function is called multiple times with same arguments.
  * 3. Delete the call entirely if the return value is not used.
  *
- * @warning Do not use this if the function reads pointers, global variables,
- * or volatile memory.
+ * @warning Do not use this if the function reads pointers, global variables, or volatile memory.
  */
 #define JP_CONST_FUNC __attribute__((const))
 #else
@@ -197,9 +188,8 @@
 /**
  * @brief Enables printf-style format string validation for custom functions.
  *
- * This attribute instructs the compiler to check the arguments passed to the
- * function against the format string, just like it does for printf().
- * It helps catch type mismatches and missing arguments at compile time.
+ * This attribute instructs the compiler to check the arguments passed to the function against the format string,
+ * just like it does for printf(). It helps catch type mismatches and missing arguments at compile time.
  *
  * @param fmt The index of the format string argument (1-based).
  * The arguments to check are assumed to start at (fmt + 1).
@@ -209,7 +199,7 @@
 /**
  * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
  */
-#define JP_PRINT_FUNC
+#define JP_PRINT_FUNC(fmt)
 #pragma message("cc: attribute not supported (format)")
 #endif
 
@@ -238,8 +228,7 @@
  *
  * This attribute allows the compiler to:
  * 1. Issue a warning at compile-time if it detects a NULL value being passed.
- * 2. Optimize out NULL checks inside the function, assuming the caller
- * has followed the contract.
+ * 2. Optimize out NULL checks inside the function, assuming the caller has followed the contract.
  *
  * @param ... The indices of the arguments that are required to be non-null (1-based).
  * If no indices are provided, all pointer arguments are marked non-null.
@@ -257,12 +246,11 @@
 /**
  * @brief Informs the compiler that a pointer argument is only used for reading.
  *
- * This attribute enables stronger static analysis by the compiler's
- * -Wstringop-overflow and analyzer passes. It guarantees that the function
- * will not modify the memory pointed to by 'ptr_idx'.
+ * This attribute enables stronger static analysis by the compiler's -Wstringop-overflow and analyzer passes.
+ * It guarantees that the function will not modify the memory pointed to by 'ptr_idx'.
  *
- * It is a more powerful version of 'const' for the compiler, as it defines
- * the specific access intent at the architectural level.
+ * It is a more powerful version of 'const' for the compiler,
+ * as it defines the specific access intent at the architectural level.
  *
  * @param ptr_idx The 1-based index of the pointer argument.
  */
@@ -270,9 +258,8 @@
 /**
  * @brief Informs the compiler that a pointer is read-only and defines its bound.
  *
- * Tells the optimizer and static analyzer that the function reads 'size_idx'
- * elements from the pointer at 'ptr_idx'. This allows the compiler to detect
- * out-of-bounds reads at compile-time.
+ * Tells the optimizer and static analyzer that the function reads 'size_idx' elements from the pointer at 'ptr_idx'.
+ * This allows the compiler to detect out-of-bounds reads at compile-time.
  *
  * @param ptr_idx  The 1-based index of the pointer argument.
  * @param size_idx The 1-based index of the argument representing the buffer size.
@@ -281,10 +268,9 @@
 /**
  * @brief Informs the compiler that a pointer argument is used for writing.
  *
- * This attribute hints that the function will modify the memory pointed to
- * by 'ptr_idx'. It helps the compiler's static analyzer detect if
- * uninitialized memory is being passed to a function that expects to
- * write to it, or if a constant pointer is incorrectly passed.
+ * This attribute hints that the function will modify the memory pointed to by 'ptr_idx'.
+ * It helps the compiler's static analyzer detect if uninitialized memory is being passed to a function that
+ * expects to write to it, or if a constant pointer is incorrectly passed.
  *
  * Useful for functions that return results via pointer arguments.
  *
@@ -294,9 +280,8 @@
 /**
  * @brief Informs the compiler that a pointer is write-only and defines its bound.
  *
- * This attribute allows the compiler to verify that the buffer pointed to by
- * 'ptr_idx' is large enough to handle 'size_idx' amount of data. It is
- * essential for preventing buffer overflows during output operations.
+ * This attribute allows the compiler to verify that the buffer pointed to by 'ptr_idx' is large enough
+ * to handle 'size_idx' amount of data. It is essential for preventing buffer overflows during output operations.
  *
  * @param ptr_idx  The 1-based index of the pointer argument.
  * @param size_idx The 1-based index of the argument representing the buffer size.
@@ -326,8 +311,8 @@
 /**
  * @brief Marks an integer argument as a file descriptor.
  *
- * This attribute allows the compiler's static analyzer to track the lifecycle
- * of file descriptors. It helps detect common bugs such as:
+ * This attribute allows the compiler's static analyzer to track the lifecycle of file descriptors.
+ * It helps detect common bugs such as:
  * 1. Passing an invalid or closed file descriptor.
  * 2. Performing I/O operations on a file descriptor that wasn't properly opened.
  * 3. Resource leaks (forgetting to close a descriptor).
@@ -367,9 +352,8 @@
 /**
  * @brief Indicates that a switch case fall-through is intentional.
  *
- * Prevents the compiler from issuing a warning when a 'case' block does
- * not end with a 'break' or 'return'. This clarifies intent to both
- * the compiler's static analyzer and other developers.
+ * Prevents the compiler from issuing a warning when a 'case' block does not end with a 'break' or 'return'.
+ * This clarifies intent to both the compiler's static analyzer and other developers.
  */
 #define JP_FALLTHROUGH __attribute__((fallthrough))
 #else
@@ -380,12 +364,35 @@
 #pragma message("cc: attribute not supported (fallthrough)")
 #endif
 
+#if HAS_ATTRIBUTE(nonstring)
+/**
+ * @brief Marks a character array or pointer as not necessarily null-terminated.
+ *
+ * This attribute informs the compiler (GCC) that the associated 'char' buffer
+ * is used as a fixed-size storage for character data rather than a standard C-style string.
+ *
+ * Key Benefits:
+ * 1. Suppresses warnings like -Wstringop-truncation when copying data into
+ * the buffer without adding a null terminator.
+ * 2. Triggers a warning if this buffer is passed to functions expecting a
+ * null-terminated string (e.g., strlen, printf %s, puts).
+ *
+ * Useful for fixed-width protocol headers, tags, or database fields.
+ */
+#define JP_NONSTRING __attribute__((nonstring))
+#else
+/**
+ * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
+ */
+#define JP_NONSTRING
+#pragma message("cc: attribute not supported (nonstring)")
+#endif
+
 /**
  * @brief Safely frees a pointer and sets it to NULL.
  *
  * Checks if the pointer is not NULL before calling free(). After freeing,
- * it explicitly sets the pointer to NULL to prevent dangling pointer issues
- * and accidental double-free errors.
+ * it explicitly sets the pointer to NULL to prevent dangling pointer issues and accidental double-free errors.
  *
  * @note The cast to (void*) ensures compatibility with various pointer types
  * and avoids potential warnings with 'const' pointers.
@@ -402,9 +409,9 @@
 
 /**
  * @brief Safely allocates memory/resource and returns on failure.
- * * Assigns 'expr' to 'var'. If the assignment fails (NULL), it executes
- * 'return ret'. Uses do-while(0) for statement safety and JP_UNLIKELY
- * for branch optimization.
+ *
+ * Assigns 'expr' to 'var'. If the assignment fails (NULL), it executes 'return ret'.
+ * Uses do-while(0) for statement safety and JP_UNLIKELY for branch optimization.
  *
  * @param var  Target variable to store the allocation result.
  * @param expr The allocation expression (e.g., malloc, strdup).
@@ -421,9 +428,8 @@
 /**
  * @brief Executes a statement and returns its error code if it is non-zero.
  *
- * This macro captures the result of 'stm' into a temporary variable to avoid
- * double evaluation. If the result is not 0 (standard for errors in POSIX/C),
- * it immediately returns that value from the current function.
+ * This macro captures the result of 'stm' into a temporary variable to avoid double evaluation.
+ * If the result is not 0 (standard for errors in POSIX/C), it immediately returns that value from the current function.
  *
  * @note Uses __typeof__ (GCC/Clang extension) for type safety and to support
  * various return types (int, long, etc.) without explicit casting.
@@ -454,9 +460,9 @@
 /**
  * @brief Conditionally prints debug information to stdout.
  *
- * When NDEBUG is not defined, this macro behaves like fprintf, adding a "[DEBUG]" prefix and a newline.
- * When NDEBUG is defined (Release mode), it evaluates to a no-op, ensuring zero runtime overhead and
- * removing debug strings from the binary.
+ * * When NDEBUG is not defined, this macro behaves like fprintf, adding a "[DEBUG]" prefix and a newline.
+ *
+ * * When NDEBUG is defined (Release mode), it evaluates to a no-op, ensuring zero runtime overhead and removing debug strings from the binary.
  *
  * @param fmt Format string (printf-style).
  * @param ... Variadic arguments for the format string.

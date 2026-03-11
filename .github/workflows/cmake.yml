@@ -61,8 +61,6 @@ jobs:
         run: make test CC=clang
 
       - name: Code Formatting Flow
-        env:
-          CC: clang
         run: make format
 
       - name: CodeQL Reporting

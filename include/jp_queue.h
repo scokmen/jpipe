@@ -36,8 +36,11 @@ JP_USE_RESULT
 jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size, jp_queue_policy_t policy);
 
 JP_NONNULL_ARG(1, 2)
-JP_READ_PTR_SIZE(2, 3)
-jp_errno_t jp_queue_push(jp_queue_t* queue, const void* src, size_t len);
+JP_USE_RESULT
+jp_errno_t jp_queue_reserve(jp_queue_t* queue, jp_block_t** block);
+
+JP_NONNULL_ARG(1)
+void jp_queue_commit(jp_queue_t* queue);
 
 JP_NONNULL_ARG(1, 2, 4)
 JP_WRITE_PTR_SIZE(2, 3)

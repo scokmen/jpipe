@@ -61,7 +61,7 @@
     XX(EINV_FIELD_KEY, "Invalid key. The key must be at most 64 character (allowed: a-z, A-Z, 0-9, _, -).") \
     XX(ERUN_FAILED, "An error occurred. Cannot run the application.")                                       \
     XX(ESHUTTING_DOWN, "The application is shutting down.")                                                 \
-    XX(EMSG_DROPPED, "Message was dropped.")                                                                \
+    XX(EMSG_SHOULD_DROP, "Message was dropped.")                                                            \
     XX(EREAD_FAILED, "Cannot read the incoming stream.")                                                    \
     XX(ETRYAGAIN, "Try again later.")                                                                       \
     XX(ENOMEMORY, "Could not allocate memory.")

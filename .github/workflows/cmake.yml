@@ -57,8 +57,8 @@ jobs:
 
       - name: Coverage Flow
         env:
-          CC: clang
-        run: make coverage CC=clang
+          CC: gcc
+        run: make coverage CC=gcc
 
       - name: Code Formatting Flow
         run: make format

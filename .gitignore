@@ -56,9 +56,10 @@ dkms.conf
 
 # CMake build
 build/
+build_*
 cmake-build-*
 
-# Clion
+# Editor
 .idea
 .cache
 

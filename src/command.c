@@ -18,9 +18,11 @@ jp_errno_t jp_cmd_exec(int cmdc, jp_cmd_t* cmds, int argc, char* argv[]) {
     return jp_errno_log_err_format(JP_EUNKNOWN_CMD, "Invalid or incomplete command: '%.32s'.", argv[1]);
 }
 
-jp_errno_t jp_cmd_help(JP_UNUSED int argc, JP_UNUSED char* argv[]) {
+jp_errno_t jp_cmd_help(JP_ATTR_UNUSED int argc, JP_ATTR_UNUSED char* argv[]) {
     JP_LOG("Usage: jpipe <command> [options]\n");
-    JP_LOG("A lightweight C pipe-to-JSON logger designed for high-performance stream capture and extensible metadata injection.\n");
+    JP_LOG(
+        "A lightweight C pipe-to-JSON logger designed for high-performance stream capture and extensible metadata "
+        "injection.\n");
     JP_LOG("Commands:");
     JP_LOG("  run        Process data with configurable options.");
     JP_LOG("  version    Display version information.");
@@ -36,7 +38,7 @@ jp_errno_t jp_cmd_help(JP_UNUSED int argc, JP_UNUSED char* argv[]) {
     return 0;
 }
 
-jp_errno_t jp_cmd_version(JP_UNUSED int argc, JP_UNUSED char* argv[]) {
-    JP_LOG("v%.16s", JP_VERSION);
+jp_errno_t jp_cmd_version(JP_ATTR_UNUSED int argc, JP_ATTR_UNUSED char* argv[]) {
+    JP_LOG("v%.16s", JP_CONF_VERSION);
     return 0;
 }

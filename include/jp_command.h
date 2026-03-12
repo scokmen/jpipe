@@ -13,6 +13,7 @@
  * @param code The short version of the command (e.g., "-v").
  * @param name The long version of the command (e.g., "--version").
  * @return Non-zero (true) if 'cmd' matches either 'code' or 'name', zero otherwise.
+ *
  * @note This macro uses strcmp, so it is case-sensitive. Ensure 'cmd' is not NULL
  * before calling to avoid segmentation faults.
  */
@@ -26,17 +27,17 @@ typedef struct {
     jp_cmd_handler_t handler;
 } jp_cmd_t;
 
-JP_NONNULL_ARG(2, 4)
-JP_READ_PTR_SIZE(4, 3)
-JP_READ_PTR_SIZE(2, 1)
+JP_ATTR_NONNULL(2, 4)
+JP_ATTR_READONLY_N(4, 3)
+JP_ATTR_READONLY_N(2, 1)
 jp_errno_t jp_cmd_exec(int cmdc, jp_cmd_t* cmds, int argc, char* argv[]);
 
-JP_NONNULL_ARG(2)
-JP_READ_PTR_SIZE(2, 1)
+JP_ATTR_NONNULL(2)
+JP_ATTR_READONLY_N(2, 1)
 jp_errno_t jp_cmd_help(int argc, char* argv[]);
 
-JP_NONNULL_ARG(2)
-JP_READ_PTR_SIZE(2, 1)
+JP_ATTR_NONNULL(2)
+JP_ATTR_READONLY_N(2, 1)
 jp_errno_t jp_cmd_version(int argc, char* argv[]);
 
 #endif  // JPIPE_JP_COMMAND_H

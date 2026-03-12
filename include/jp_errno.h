@@ -7,7 +7,7 @@
 /**
  * @brief Attempts allocation, logs an error on failure, and returns the error code.
  *
- * This is a specialized version of JP_ALLOC_OR_RET. If the allocation (expr) results in NULL,
+ * This is a specialized version of JP_ALLOC. If the allocation (expr) results in NULL,
  * it logs a "Memory Exhausted" error using the logging system and returns the corresponding error code.
  * Ideal for high-level functions where failing an allocation must be reported to the logging system.
  *
@@ -15,7 +15,7 @@
  * @param expr The allocation expression (e.g., malloc, calloc, strdup).
  * @return Returns the result of jp_errno_log_err(JP_ENOMEMORY) on failure.
  */
-#define JP_ALLOC_OR_LOG(var, expr) JP_ALLOC_OR_RET(var, expr, jp_errno_log_err(JP_ENOMEMORY))
+#define JP_ALLOC_ERRNO(var, expr) JP_ALLOC(var, expr, jp_errno_log_err(JP_ENOMEMORY))
 
 #if (EAGAIN == EWOULDBLOCK)
 /**
@@ -31,7 +31,7 @@
  * @param err The error code to check (usually from 'errno').
  * @return Non-zero (true) if the error is EAGAIN or EWOULDBLOCK, zero otherwise.
  */
-#define JP_IS_EAGAIN(err) ((err) == EAGAIN)
+#define JP_ERRNO_EAGAIN(err) ((err) == EAGAIN)
 #else
 /**
  * @brief Portable check for "Resource Temporarily Unavailable" errors.
@@ -46,7 +46,7 @@
  * @param err The error code to check (usually from 'errno').
  * @return Non-zero (true) if the error is EAGAIN or EWOULDBLOCK, zero otherwise.
  */
-#define JP_IS_EAGAIN(err) ((err) == EAGAIN || (err) == EWOULDBLOCK)
+#define JP_ERRNO_EAGAIN(err) ((err) == EAGAIN || (err) == EWOULDBLOCK)
 #endif
 
 #define JP_ERRNO_MAP(XX)                                                                                    \
@@ -75,10 +75,10 @@ typedef enum {
 
 jp_errno_t jp_errno_log_err(jp_errno_t err);
 
-JP_PRINT_FUNC(2)
+JP_ATTR_FORMAT(2)
 jp_errno_t jp_errno_log_err_format(jp_errno_t err, const char* fmt, ...);
 
-JP_CONST_FUNC
+JP_ATTR_CONST
 const char* jp_errno_explain(jp_errno_t err);
 
 #endif  // JPIPE_JP_ERRNO_H

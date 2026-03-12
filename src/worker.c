@@ -2,6 +2,7 @@
 #include <getopt.h>
 #include <jp_command.h>
 #include <jp_errno.h>
+#include <jp_field.h>
 #include <jp_poller.h>
 #include <jp_queue.h>
 #include <jp_worker.h>
@@ -81,7 +82,8 @@ static void display_summary(worker_arg_t* args) {
     JP_LOG("\n[Resource Utilization]");
     JP_LOG("• Memory Usage      :  ~%.2f MB", estimated_mem_usage);
     JP_LOG("\nThese values are based on user-provided parameters.");
-    JP_LOG("Memory usage is an approximation; operating system overhead and thread stack allocations are not included.");
+    JP_LOG(
+        "Memory usage is an approximation; operating system overhead and thread stack allocations are not included.");
 }
 
 static jp_errno_t set_out_dir(const char* arg, worker_arg_t* args) {
@@ -95,9 +97,10 @@ static jp_errno_t set_out_dir(const char* arg, worker_arg_t* args) {
         return jp_errno_log_err_format(JP_EMISSING_CMD, "Output path is empty.");
     }
     if (len > JP_PATH_MAX) {
-        return jp_errno_log_err_format(JP_EMISSING_CMD, "Output path is too long. Maximum allowed path size: %d.", JP_PATH_MAX);
+        return jp_errno_log_err_format(
+            JP_EMISSING_CMD, "Output path is too long. Maximum allowed path size: %d.", JP_PATH_MAX);
     }
-    JP_ALLOC_OR_LOG(args->out_dir, strdup(arg));
+    JP_ALLOC_ERRNO(args->out_dir, strdup(arg));
     return 0;
 }
 
@@ -107,7 +110,7 @@ static jp_errno_t set_field(const char* arg, worker_arg_t* args) {
         return jp_errno_log_err_format(JP_EINV_FIELD_KEY, "Field key/value is empty");
     }
 
-    JP_ASSUME(args->fields != NULL);
+    JP_ATTR_ASSUME(args->fields != NULL);
     err = jp_field_set_add(args->fields, arg);
     if (err) {
         return jp_errno_log_err_format(err, "Field key/value is invalid: '%s'", arg);
@@ -131,7 +134,7 @@ static jp_errno_t set_chunk_size(const char* arg, worker_arg_t* args) {
         return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Chunk size is empty: '%.32s'.", arg);
     }
 
-    if (*end_ptr != '\0' && !strcmp(end_ptr, "kb") && param <= (JP_WRK_CHUNK_SIZE_MAX / BYTES_IN_KB)) {
+    if (*end_ptr != '\0' && !strcmp(end_ptr, "kb") && param <= JP_WRK_CHUNK_SIZE_MAX / BYTES_IN_KB) {
         chunk_size += (param * BYTES_IN_KB);
     } else {
         return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Chunk size value is invalid: '%.32s'.", arg);
@@ -188,7 +191,7 @@ static jp_errno_t create_and_normalize_out_dir(worker_arg_t* args) {
     struct stat st;
 
     if (args->out_dir == NULL) {
-        JP_ALLOC_OR_LOG(args->out_dir, strdup(JP_WRK_OUTDIR_DEF));
+        JP_ALLOC_ERRNO(args->out_dir, strdup(JP_WRK_OUTDIR_DEF));
     }
     size_t path_len = strlen(args->out_dir);
     strncpy(tmp, args->out_dir, sizeof(tmp));
@@ -225,7 +228,7 @@ static jp_errno_t create_and_normalize_out_dir(worker_arg_t* args) {
     }
 
     JP_FREE(args->out_dir);
-    JP_ALLOC_OR_LOG(args->out_dir, strdup(absolute_path));
+    JP_ALLOC_ERRNO(args->out_dir, strdup(absolute_path));
     return 0;
 }
 
@@ -244,7 +247,7 @@ static jp_errno_t init_worker_args(int argc, char* argv[], worker_arg_t* args) {
     if (fields > JP_WRK_FIELDS_MAX) {
         return jp_errno_log_err_format(JP_ETOO_MANY_FIELD, "Too many 'fields' specified: '%d'", fields);
     }
-    JP_ALLOC_OR_LOG(args->fields, jp_field_set_create((size_t) fields));
+    JP_ALLOC_ERRNO(args->fields, jp_field_set_create((size_t) fields));
     return 0;
 }
 
@@ -268,29 +271,29 @@ static jp_errno_t collect_cli_args(int argc, char* argv[], worker_arg_t* args) {
     while ((option = getopt_long(argc, argv, ":c:b:p:o:f:hn", long_options, NULL)) != -1) {
         switch (option) {
             case 'c':
-                JP_OK_OR_RET(set_chunk_size(optarg, args));
+                JP_VERIFY(set_chunk_size(optarg, args));
                 break;
             case 'b':
-                JP_OK_OR_RET(set_buffer_size(optarg, args));
+                JP_VERIFY(set_buffer_size(optarg, args));
                 break;
             case 'p':
-                JP_OK_OR_RET(set_policy(optarg, args));
+                JP_VERIFY(set_policy(optarg, args));
                 break;
             case 'o':
-                JP_OK_OR_RET(set_out_dir(optarg, args));
+                JP_VERIFY(set_out_dir(optarg, args));
                 break;
             case 'n':
                 args->dry_run = true;
                 break;
             case 'f':
-                JP_OK_OR_RET(set_field(optarg, args));
+                JP_VERIFY(set_field(optarg, args));
                 break;
             case 'h':
                 break;
             case ':':
                 JP_FALLTHROUGH;
             case '?':
-                JP_OK_OR_RET(handle_unknown_argument(argv[optind - 1]));
+                JP_VERIFY(handle_unknown_argument(argv[optind - 1]));
                 break;
             default: {
             }
@@ -298,15 +301,15 @@ static jp_errno_t collect_cli_args(int argc, char* argv[], worker_arg_t* args) {
     }
 
     if (optind < argc) {
-        JP_OK_OR_RET(handle_unknown_argument(argv[optind]));
+        JP_VERIFY(handle_unknown_argument(argv[optind]));
     }
 
     return 0;
 }
 
 static jp_errno_t finalize_worker_args(worker_arg_t* args) {
-    JP_OK_OR_RET(create_and_normalize_out_dir(args));
-    JP_ALLOC_OR_LOG(args->queue, jp_queue_create(args->buffer_size, args->chunk_size, args->policy));
+    JP_VERIFY(create_and_normalize_out_dir(args));
+    JP_ALLOC_ERRNO(args->queue, jp_queue_create(args->buffer_size, args->chunk_size, args->policy));
     return 0;
 }
 
@@ -342,7 +345,8 @@ static void* producer_thread_init(void* data) {
                 err = 0;
                 goto clean_up;
             }
-            read_len = err == JP_EMSG_SHOULD_DROP ? read(STDIN_FILENO, buffer, chunk_size) : read(STDIN_FILENO, block->data, chunk_size);
+            read_len = err == JP_EMSG_SHOULD_DROP ? read(STDIN_FILENO, buffer, chunk_size)
+                                                  : read(STDIN_FILENO, block->data, chunk_size);
             if (read_len == 0) {
                 goto clean_up;
             }
@@ -350,7 +354,7 @@ static void* producer_thread_init(void* data) {
                 if (errno == EINTR) {
                     continue;
                 }
-                if (JP_IS_EAGAIN(errno)) {
+                if (JP_ERRNO_EAGAIN(errno)) {
                     break;
                 }
                 err = JP_EREAD_FAILED;
@@ -412,7 +416,8 @@ static void* watcher_thread_init(void* data) {
     sigaddset(&set, SIGINT);
     sigaddset(&set, SIGTERM);
     if (sigwait(&set, &sig) == 0) {
-        JP_DEBUG("[WATCHER]: Termination signal (%s) was received. Shutting down...", sig == SIGINT ? "SIGINT" : "SIGTERM");
+        JP_LOG_DEBUG("[WATCHER]: Termination signal (%s) was received. Shutting down...",
+                     sig == SIGINT ? "SIGINT" : "SIGTERM");
         jp_queue_finalize(args->queue);
     }
     pthread_exit(NULL);

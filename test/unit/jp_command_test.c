@@ -14,17 +14,17 @@ typedef struct {
     char** argv;
 } test_ctx_t;
 
-jp_errno_t mock_command(JP_UNUSED int argc, JP_UNUSED char* argv[]) {
+jp_errno_t mock_command(JP_ATTR_UNUSED int argc, JP_ATTR_UNUSED char* argv[]) {
     return JP_OK;
 }
 
 jp_errno_t help_command_adapter(void* ctx) {
-    test_ctx_t* c = (test_ctx_t*) ctx;
+    test_ctx_t* c = ctx;
     return jp_cmd_help(c->argc, c->argv);
 }
 
 jp_errno_t version_command_adapter(void* ctx) {
-    test_ctx_t* c = (test_ctx_t*) ctx;
+    test_ctx_t* c = ctx;
     return jp_cmd_version(c->argc, c->argv);
 }
 
@@ -41,6 +41,7 @@ void test_jp_cmd_version(void) {
 }
 
 void test_jp_cmd_exec(void) {
+    jp_errno_t err;
     jp_cmd_t commands[] = {
         {.code = "-c", .name = "--command", .handler = mock_command},
     };
@@ -53,9 +54,9 @@ void test_jp_cmd_exec(void) {
         {.argc = 3, .argv = {"jpipe", "--command", NULL}, .expected = JP_OK},
     };
 
-    int len = (sizeof(cases) / sizeof(cases[0]));
+    int len = sizeof(cases) / sizeof(cases[0]);
     for (int i = 0; i < len; i++) {
-        jp_errno_t err = jp_cmd_exec(1, commands, cases[i].argc, (char**) cases[i].argv);
+        err = jp_cmd_exec(1, commands, cases[i].argc, (char**) cases[i].argv);
         JP_ASSERT_EQ(cases[i].expected, err);
     }
 }

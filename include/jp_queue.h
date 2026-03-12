@@ -31,24 +31,23 @@ typedef struct {
     unsigned char* area JP_NONSTRING;
 } jp_queue_t;
 
-JP_MALLOC
-JP_USE_RESULT
+JP_ATTR_ALLOCATED
+JP_ATTR_USE_RETURN
 jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size, jp_queue_policy_t policy);
 
-JP_NONNULL_ARG(1, 2)
-JP_USE_RESULT
+JP_ATTR_NONNULL(1, 2)
 jp_errno_t jp_queue_push_uncommitted(jp_queue_t* queue, jp_block_t** block);
 
-JP_NONNULL_ARG(1)
+JP_ATTR_NONNULL(1)
 void jp_queue_push_commit(jp_queue_t* queue);
 
-JP_NONNULL_ARG(1, 2)
+JP_ATTR_NONNULL(1, 2)
 jp_errno_t jp_queue_pop_uncommitted(jp_queue_t* queue, jp_block_t** block);
 
-JP_NONNULL_ARG(1)
+JP_ATTR_NONNULL(1)
 void jp_queue_pop_commit(jp_queue_t* queue);
 
-JP_NONNULL_ARG(1)
+JP_ATTR_NONNULL(1)
 void jp_queue_finalize(jp_queue_t* queue);
 
 void jp_queue_destroy(jp_queue_t* queue);

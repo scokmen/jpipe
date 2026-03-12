@@ -23,8 +23,8 @@ static jp_field_t* create_field(const char* key, const char* val) {
     size_t key_len = strlen(key);
     size_t val_len = strlen(val);
 
-    JP_ALLOC_OR_RET(field, malloc(sizeof(jp_field_t) + key_len + val_len + 2), NULL);
-    field->key     = ((const char*) field + sizeof(jp_field_t));
+    JP_ALLOC(field, malloc(sizeof(jp_field_t) + key_len + val_len + 2), NULL);
+    field->key     = (const char*) field + sizeof(jp_field_t);
     field->val     = field->key + key_len + 1;
     field->key_len = key_len;
     memcpy((void*) field->key, key, key_len + 1);
@@ -54,7 +54,7 @@ static jp_errno_t crete_field_from_kv(const char* kv, jp_field_t** field) {
     memcpy(key, kv, key_len);
     key[key_len] = '\0';
 
-    JP_ALLOC_OR_RET(*field, create_field(key, eq + 1), JP_ENOMEMORY);
+    JP_ALLOC(*field, create_field(key, eq + 1), JP_ENOMEMORY);
     return 0;
 }
 
@@ -64,7 +64,7 @@ static void destroy_field(jp_field_t* field) {
 
 jp_field_set_t* jp_field_set_create(size_t cap) {
     jp_field_set_t* set;
-    JP_ALLOC_OR_RET(set, malloc(sizeof(jp_field_set_t) + (cap * sizeof(jp_field_t*))), NULL);
+    JP_ALLOC(set, malloc(sizeof(jp_field_set_t) + cap * sizeof(jp_field_t*)), NULL);
 
     set->len    = 0;
     set->cap    = cap;
@@ -77,7 +77,7 @@ jp_errno_t jp_field_set_add(jp_field_set_t* set, const char* kv) {
         return JP_ETOO_MANY_FIELD;
     }
     jp_field_t *field, *new_field;
-    JP_OK_OR_RET(crete_field_from_kv(kv, &new_field));
+    JP_VERIFY(crete_field_from_kv(kv, &new_field));
 
     for (size_t i = 0; i < set->len; i++) {
         field = set->fields[i];

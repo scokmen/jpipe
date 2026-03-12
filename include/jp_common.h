@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #define JP_PATH_MAX 4096
+#define BYTES_IN_KB 1024
 #define MIN(x, y)   (((x) < (y)) ? (x) : (y))
 
 #ifdef __has_builtin
@@ -19,9 +20,6 @@
  */
 #define HAS_BUILTIN(built_in) __has_builtin(built_in)
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
 #define HAS_BUILTIN(built_in) (0)
 #pragma message("cc: not supported (__has_builtin)")
 #endif
@@ -42,9 +40,6 @@
  */
 #define HAS_ATTRIBUTE(attr) __has_attribute(attr)
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
 #define HAS_ATTRIBUTE(attr) (0)
 #pragma message("cc: not supported (__has_attribute)")
 #endif
@@ -63,7 +58,7 @@
  *
  * @param cond The boolean condition assumed to be true.
  */
-#define JP_ASSUME(cond) __builtin_assume(cond)
+#define JP_ATTR_ASSUME(cond) __builtin_assume(cond)
 #elif HAS_BUILTIN(__builtin_unreachable)
 /**
  * @brief Provides a hint to the compiler that a condition is always true.
@@ -78,16 +73,13 @@
  *
  * @param cond The boolean condition assumed to be true.
  */
-#define JP_ASSUME(cond)              \
+#define JP_ATTR_ASSUME(cond)         \
     do {                             \
         if (!(cond))                 \
             __builtin_unreachable(); \
     } while (0)
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_ASSUME(cond) ((void) 0)
+#define JP_ATTR_ASSUME(cond) ((void) 0)
 #pragma message("cc: not supported (__builtin_assume || __builtin_unreachable)")
 #endif
 
@@ -100,7 +92,7 @@
  *
  * @param cond Condition expected to be true.
  */
-#define JP_LIKELY(cond)   __builtin_expect(!!(cond), 1)
+#define JP_ATTR_LIKELY(cond)   __builtin_expect(!!(cond), 1)
 /**
  * @brief Optimization hint for the "Error Path" (least likely execution path).
  *
@@ -110,16 +102,10 @@
  *
  * @param cond Condition expected to be false.
  */
-#define JP_UNLIKELY(cond) __builtin_expect(!!(cond), 0)
+#define JP_ATTR_UNLIKELY(cond) __builtin_expect(!!(cond), 0)
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_LIKELY(cond)   (cond)
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_UNLIKELY(cond) (cond)
+#define JP_ATTR_LIKELY(cond)   (cond)
+#define JP_ATTR_UNLIKELY(cond) (cond)
 #pragma message("cc: not supported (__builtin_expect)")
 #endif
 
@@ -128,19 +114,17 @@
  * @brief Hints that a function returns a newly allocated pointer.
  *
  * This attribute tells the compiler that the returned pointer cannot "alias" any other existing pointer.
- * It allows the optimizer to assume that memory pointed to by the return value is distinct from any other accessible memory.
+ * It allows the optimizer to assume that memory pointed to by the return value is distinct from any other accessible
+ * memory.
  *
  * This leads to significant optimizations in loop unrolling and instruction scheduling because the compiler
  * knows that writing to this new memory won't affect other variables.
  *
  * @note Best used for custom allocator wrappers or factory functions.
  */
-#define JP_MALLOC __attribute__((malloc))
+#define JP_ATTR_ALLOCATED __attribute__((malloc))
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_MALLOC
+#define JP_ATTR_ALLOCATED
 #pragma message("cc: attribute not supported (malloc)")
 #endif
 
@@ -152,12 +136,9 @@
  * the compiler will issue a warning (or an error with -Werror).
  * This is critical for functions returning error codes or allocated resources that must be managed.
  */
-#define JP_USE_RESULT __attribute__((warn_unused_result))
+#define JP_ATTR_USE_RETURN __attribute__((warn_unused_result))
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_USE_RESULT
+#define JP_ATTR_USE_RETURN
 #pragma message("cc: attribute not supported (warn_unused_result)")
 #endif
 
@@ -175,12 +156,9 @@
  *
  * @warning Do not use this if the function reads pointers, global variables, or volatile memory.
  */
-#define JP_CONST_FUNC __attribute__((const))
+#define JP_ATTR_CONST __attribute__((const))
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_CONST_FUNC
+#define JP_ATTR_CONST
 #pragma message("cc: attribute not supported (const)")
 #endif
 
@@ -194,12 +172,9 @@
  * @param fmt The index of the format string argument (1-based).
  * The arguments to check are assumed to start at (fmt + 1).
  */
-#define JP_PRINT_FUNC(fmt) __attribute__((format(printf, fmt, (fmt) + 1)))
+#define JP_ATTR_FORMAT(fmt) __attribute__((format(printf, fmt, (fmt) + 1)))
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_PRINT_FUNC(fmt)
+#define JP_ATTR_FORMAT(fmt)
 #pragma message("cc: attribute not supported (format)")
 #endif
 
@@ -213,12 +188,9 @@
  * 2. Variables used only in debug assertions (assert()).
  * 3. Stub functions intended for future use.
  */
-#define JP_UNUSED __attribute__((unused))
+#define JP_ATTR_UNUSED __attribute__((unused))
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_UNUSED
+#define JP_ATTR_UNUSED
 #pragma message("cc: attribute not supported (unused)")
 #endif
 
@@ -233,12 +205,9 @@
  * @param ... The indices of the arguments that are required to be non-null (1-based).
  * If no indices are provided, all pointer arguments are marked non-null.
  */
-#define JP_NONNULL_ARG(...) __attribute__((nonnull(__VA_ARGS__)))
+#define JP_ATTR_NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_NONNULL_ARG(...)
+#define JP_ATTR_NONNULL(...)
 #pragma message("cc: attribute not supported (nonnull)")
 #endif
 
@@ -254,7 +223,7 @@
  *
  * @param ptr_idx The 1-based index of the pointer argument.
  */
-#define JP_READ_PTR(ptr_idx)                 __attribute__((access(read_only, ptr_idx)))
+#define JP_ATTR_READONLY(ptr_idx)              __attribute__((access(read_only, ptr_idx)))
 /**
  * @brief Informs the compiler that a pointer is read-only and defines its bound.
  *
@@ -264,7 +233,7 @@
  * @param ptr_idx  The 1-based index of the pointer argument.
  * @param size_idx The 1-based index of the argument representing the buffer size.
  */
-#define JP_READ_PTR_SIZE(ptr_idx, size_idx)  __attribute__((access(read_only, ptr_idx, size_idx)))
+#define JP_ATTR_READONLY_N(ptr_idx, size_idx)  __attribute__((access(read_only, ptr_idx, size_idx)))
 /**
  * @brief Informs the compiler that a pointer argument is used for writing.
  *
@@ -276,7 +245,7 @@
  *
  * @param ptr_idx The 1-based index of the pointer argument.
  */
-#define JP_WRITE_PTR(ptr_idx)                __attribute__((access(write_only, ptr_idx)))
+#define JP_ATTR_WRITEONLY(ptr_idx)             __attribute__((access(write_only, ptr_idx)))
 /**
  * @brief Informs the compiler that a pointer is write-only and defines its bound.
  *
@@ -286,24 +255,12 @@
  * @param ptr_idx  The 1-based index of the pointer argument.
  * @param size_idx The 1-based index of the argument representing the buffer size.
  */
-#define JP_WRITE_PTR_SIZE(ptr_idx, size_idx) __attribute__((access(write_only, ptr_idx, size_idx)))
+#define JP_ATTR_WRITEONLY_N(ptr_idx, size_idx) __attribute__((access(write_only, ptr_idx, size_idx)))
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_READ_PTR(ptr_idx)
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_READ_PTR_SIZE(ptr_idx, size_idx)
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_WRITE_PTR(ptr_idx)
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_WRITE_PTR_SIZE(ptr_idx, size_idx)
+#define JP_ATTR_READONLY(ptr_idx)
+#define JP_ATTR_READONLY_N(ptr_idx, size_idx)
+#define JP_ATTR_WRITEONLY(ptr_idx)
+#define JP_ATTR_WRITEONLY_N(ptr_idx, size_idx)
 #pragma message("cc: attribute not supported (access)")
 #endif
 
@@ -319,12 +276,9 @@
  *
  * @param n The 1-based index of the file descriptor argument.
  */
-#define JP_FILE_DESC(n) __attribute__((fd_arg(n)))
+#define JP_ATTR_FD(n) __attribute__((fd_arg(n)))
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_FILE_DESC(n)
+#define JP_ATTR_FD(n)
 #pragma message("cc: attribute not supported (fd_arg)")
 #endif
 
@@ -332,19 +286,16 @@
 /**
  * @brief Marks an integer argument as a file descriptor opened for reading.
  *
- * This is a specialized version of JP_FILE_DESC. It informs the static
+ * This is a specialized version of JP_ATTR_FD. It informs the static
  * analyzer that the function expects a file descriptor with read permissions.
  * It helps catch logic errors where a write-only descriptor (e.g., opened with O_WRONLY)
  * is passed to a function intended for data input.
  *
  * @param n The 1-based index of the file descriptor argument.
  */
-#define JP_FILE_DESC_READ(n) __attribute__((fd_arg_read(n)))
+#define JP_ATTR_FD_READONLY(n) __attribute__((fd_arg_read(n)))
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_FILE_DESC_READ(n)
+#define JP_ATTR_FD_READONLY(n)
 #pragma message("cc: attribute not supported (fd_arg_read)")
 #endif
 
@@ -357,9 +308,6 @@
  */
 #define JP_FALLTHROUGH __attribute__((fallthrough))
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
 #define JP_FALLTHROUGH
 #pragma message("cc: attribute not supported (fallthrough)")
 #endif
@@ -381,9 +329,6 @@
  */
 #define JP_NONSTRING __attribute__((nonstring))
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
 #define JP_NONSTRING
 #pragma message("cc: attribute not supported (nonstring)")
 #endif
@@ -411,18 +356,18 @@
  * @brief Safely allocates memory/resource and returns on failure.
  *
  * Assigns 'expr' to 'var'. If the assignment fails (NULL), it executes 'return ret'.
- * Uses do-while(0) for statement safety and JP_UNLIKELY for branch optimization.
+ * Uses do-while(0) for statement safety and JP_ATTR_UNLIKELY for branch optimization.
  *
  * @param var  Target variable to store the allocation result.
  * @param expr The allocation expression (e.g., malloc, strdup).
  * @param ret  The value to return upon failure.
  */
-#define JP_ALLOC_OR_RET(var, expr, ret)   \
-    do {                                  \
-        (var) = (expr);                   \
-        if (JP_UNLIKELY((var) == NULL)) { \
-            return (ret);                 \
-        }                                 \
+#define JP_ALLOC(var, expr, ret)               \
+    do {                                       \
+        (var) = (expr);                        \
+        if (JP_ATTR_UNLIKELY((var) == NULL)) { \
+            return (ret);                      \
+        }                                      \
     } while (0)
 
 /**
@@ -436,7 +381,7 @@
  *
  * @param stm The expression or function call to evaluate.
  */
-#define JP_OK_OR_RET(stm)              \
+#define JP_VERIFY(stm)                 \
     do {                               \
         __typeof__(stm) __err = (stm); \
         if (__err != 0) {              \
@@ -462,17 +407,18 @@
  *
  * * When NDEBUG is not defined, this macro behaves like fprintf, adding a "[DEBUG]" prefix and a newline.
  *
- * * When NDEBUG is defined (Release mode), it evaluates to a no-op, ensuring zero runtime overhead and removing debug strings from the binary.
+ * * When NDEBUG is defined (Release mode), it evaluates to a no-op, ensuring zero runtime overhead and removing debug
+ * strings from the binary.
  *
  * @param fmt Format string (printf-style).
  * @param ... Variadic arguments for the format string.
  */
-#define JP_DEBUG(fmt, ...) fprintf(stdout, "[DEBUG] " fmt "\n", ##__VA_ARGS__)
+#define JP_LOG_DEBUG(fmt, ...) fprintf(stdout, "[DEBUG] " fmt "\n", ##__VA_ARGS__)
 #else
-/**
- * @brief This macro is currently disabled because the compiler/toolchain does not support the required attribute.
- */
-#define JP_DEBUG(fmt, ...) ((void) 0)
+#define JP_LOG_DEBUG(fmt, ...) ((void) 0)
 #endif
+
+#undef HAS_BUILTIN
+#undef HAS_ATTRIBUTE
 
 #endif  // JPIPE_JP_COMMON_H

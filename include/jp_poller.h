@@ -6,15 +6,15 @@
 
 typedef struct jp_poller jp_poller_t;
 
-JP_MALLOC
-JP_USE_RESULT
+JP_ATTR_ALLOCATED
+JP_ATTR_USE_RETURN
 jp_poller_t* jp_poller_create(int timeout);
 
-JP_NONNULL_ARG(1)
-JP_FILE_DESC_READ(2)
+JP_ATTR_NONNULL(1)
+JP_ATTR_FD_READONLY(2)
 jp_errno_t jp_poller_poll(jp_poller_t* poller, int fd);
 
-JP_NONNULL_ARG(1)
+JP_ATTR_NONNULL(1)
 jp_errno_t jp_poller_wait(jp_poller_t* poller);
 
 void jp_poller_destroy(jp_poller_t* poller);

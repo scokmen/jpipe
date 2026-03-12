@@ -41,7 +41,6 @@ int jp_test_compare_stdout(jp_test_fn printer, void* ctx, const char* template_f
     }
 
     dup2(fd, STDOUT_FILENO);
-
     printer(ctx);
     fflush(stdout);
     fsync(fd);
@@ -49,7 +48,12 @@ int jp_test_compare_stdout(jp_test_fn printer, void* ctx, const char* template_f
     close(fd);
     close(stdout_cache);
 
-    snprintf(cmd, sizeof(cmd), "sed 's|__APP_VERSION__|%s|g' %s | diff -u -bB --strip-trailing-cr - %s", JP_VERSION, actual_file, captured);
+    snprintf(cmd,
+             sizeof(cmd),
+             "sed 's|__APP_VERSION__|%s|g' %s | diff -u -bB --strip-trailing-cr - %s",
+             JP_CONF_VERSION,
+             actual_file,
+             captured);
 
     status = system(cmd);
     unlink(captured);

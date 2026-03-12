@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <fcntl.h>
 #include <jp_errno.h>
 #include <jp_poller.h>
@@ -18,10 +17,10 @@ jp_poller_t* jp_poller_create(int timeout) {
     if (fd == -1) {
         return NULL;
     }
-    JP_ALLOC_OR_RET(poller, malloc(sizeof(struct jp_poller)), NULL);
+    JP_ALLOC(poller, malloc(sizeof(struct jp_poller)), NULL);
     poller->fd    = fd;
     poller->event = (struct kevent) {0};
-    poller->ts    = (struct timespec) {.tv_sec = timeout / 1000, .tv_nsec = ((long) timeout % 1000) * 1000000};
+    poller->ts    = (struct timespec) {.tv_sec = timeout / 1000, .tv_nsec = (long) timeout % 1000 * 1000000};
     return poller;
 }
 
@@ -50,7 +49,7 @@ jp_errno_t jp_poller_wait(jp_poller_t* poller) {
     }
 
     if (n < 0) {
-        return (errno == EINTR || JP_IS_EAGAIN(errno)) ? JP_ETRYAGAIN : JP_EREAD_FAILED;
+        return errno == EINTR || JP_ERRNO_EAGAIN(errno) ? JP_ETRYAGAIN : JP_EREAD_FAILED;
     }
 
     if (poller->event.flags & EV_ERROR) {

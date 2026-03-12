@@ -18,12 +18,12 @@ typedef struct {
     jp_field_t** fields;
 } jp_field_set_t;
 
-JP_MALLOC
-JP_USE_RESULT
+JP_ATTR_ALLOCATED
+JP_ATTR_USE_RETURN
 jp_field_set_t* jp_field_set_create(size_t cap);
 
-JP_NONNULL_ARG(1, 2)
-JP_READ_PTR(2)
+JP_ATTR_NONNULL(1, 2)
+JP_ATTR_READONLY(2)
 jp_errno_t jp_field_set_add(jp_field_set_t* set, const char* kv);
 
 void jp_field_set_destroy(jp_field_set_t* set);

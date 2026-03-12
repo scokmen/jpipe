@@ -78,7 +78,7 @@ help:
 	@echo ""
 	@echo "⚙️ Build Targets:"
 	@echo "  make debug                  : Standard debug build (default)"
-	@echo "  make release                : Optimized release build (no tests)"
+	@echo "  make release                : Optimized release build"
 	@echo "  make relwithdeb             : Optimized release build with debug symbols"
 	@echo "  make debug-asan             : Debug build with Address Sanitizer"
 	@echo "  make debug-tsan             : Debug build with Thread Sanitizer"

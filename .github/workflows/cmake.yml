@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  BUILD_TYPE: Debug
-
 jobs:
   build:
     name: Build & Tests
@@ -28,13 +25,13 @@ jobs:
         env:
           CC: ${{matrix.compiler}}
           ASAN_OPTIONS: "detect_leaks=1:exitcode=1"
-        run: make test-asan-flow CC=${{matrix.compiler}}
+        run: make test-asan-flow
 
       - name: Thread Sanitizer Flow
         env:
           CC: ${{matrix.compiler}}
           TSAN_OPTIONS: "halt_on_error=1"
-        run: setarch $(uname -m) -R make test-tsan-flow CC=${{matrix.compiler}}
+        run: setarch $(uname -m) -R make test-tsan-flow
   
   analyze:
     name: Code Quality
@@ -58,7 +55,7 @@ jobs:
       - name: Coverage Flow
         env:
           CC: gcc
-        run: make coverage CC=gcc
+        run: make coverage
 
       - name: Code Formatting Flow
         run: make format
@@ -73,4 +70,4 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           format: lcov
-          file: build/coverage_filtered.info
+          file: build_current/coverage_filtered.info

@@ -34,71 +34,72 @@ typedef struct {
 } worker_arg_t;
 
 static jp_errno_t display_help(void) {
-    JP_LOG("Usage: jpipe run [options]\n");
-    JP_LOG("Execute the data processing engine with the following configurations:\n");
-    JP_LOG("Options:");
-    JP_LOG("  -c, --chunk-size  <size>     Chunk size (e.g., 16kb, 64kb). Range: 1kb-128kb  (default: 16kb).");
-    JP_LOG("  -b, --buffer-size <count>    Max pending operations. Range: 1-1024 (default: 64).");
-    JP_LOG("  -p, --policy      <type>     Overflow policy: 'wait' or 'drop' (default: wait).");
-    JP_LOG("  -o, --out-dir     <path>     Output directory (default: current dir).");
-    JP_LOG("  -f, --field       key=value  Additional field to the JSON output. Can be used multiple times.");
-    JP_LOG("  -n, --dry-run                Dry run.");
-    JP_LOG("  -h, --help                   Show this help message.\n");
-    JP_LOG("Field Options:");
-    JP_LOG("  -f, --field \"key=value\"   Add a field to the JSON output.\n");
-    JP_LOG("  Key Rules:");
-    JP_LOG("    - Must contain only: 'a-z', 'A-Z', '0-9', '_' and '-'.");
-    JP_LOG("    - Maximum length: 64 characters.\n");
-    JP_LOG("  Value Type Inference:");
-    JP_LOG("    - key=123        -> Number  (no quotes in JSON).");
-    JP_LOG("    - key=true|false -> Boolean (no quotes in JSON).");
-    JP_LOG("    - key=string     -> String.");
-    JP_LOG("    - key=\"string\"   -> String.");
-    JP_LOG("    - key=\"123\"      -> Forced string.");
-    JP_LOG("    - key=\"true\"     -> Forced string.");
-    JP_LOG("    - key=\"str=ng\"   -> String.");
-    JP_LOG("    - key=str=ng     -> Invalid field.\n");
-    JP_LOG("  Example:");
-    JP_LOG("    Input : jpipe -f \"id=101\" -f \"name=app\" -f \"active=true\" -f \"ver=1.2.0\"");
-    JP_LOG("    Output: {\"id\": 101, \"name\": \"app\", \"active\": true, \"ver\": \"1.2.0\"}");
+    JP_LOG_INFO("Usage: jpipe run [options]\n");
+    JP_LOG_INFO("Execute the data processing engine with the following configurations:\n");
+    JP_LOG_INFO("Options:");
+    JP_LOG_INFO("  -c, --chunk-size  <size>     Chunk size (e.g., 16kb, 64kb). Range: 1kb-128kb  (default: 16kb).");
+    JP_LOG_INFO("  -b, --buffer-size <count>    Max pending operations. Range: 1-1024 (default: 64).");
+    JP_LOG_INFO("  -p, --policy      <type>     Overflow policy: 'wait' or 'drop' (default: wait).");
+    JP_LOG_INFO("  -o, --output      <path>     Output directory (default: current dir).");
+    JP_LOG_INFO("  -f, --field       key=value  Additional field to the JSON output. Can be used multiple times.");
+    JP_LOG_INFO("  -n, --dry-run                Dry run.");
+    JP_LOG_INFO("  -q, --quiet                  Display less output.");
+    JP_LOG_INFO("  -h, --help                   Show this help message.\n");
+    JP_LOG_INFO("Field Options:");
+    JP_LOG_INFO("  -f, --field \"key=value\"   Add a field to the JSON output.\n");
+    JP_LOG_INFO("  Key Rules:");
+    JP_LOG_INFO("    - Must contain only: 'a-z', 'A-Z', '0-9', '_' and '-'.");
+    JP_LOG_INFO("    - Maximum length: 64 characters.\n");
+    JP_LOG_INFO("  Value Type Inference:");
+    JP_LOG_INFO("    - key=123        -> Number  (no quotes in JSON).");
+    JP_LOG_INFO("    - key=true|false -> Boolean (no quotes in JSON).");
+    JP_LOG_INFO("    - key=string     -> String.");
+    JP_LOG_INFO("    - key=\"string\"   -> String.");
+    JP_LOG_INFO("    - key=\"123\"      -> Forced string.");
+    JP_LOG_INFO("    - key=\"true\"     -> Forced string.");
+    JP_LOG_INFO("    - key=\"str=ng\"   -> String.");
+    JP_LOG_INFO("    - key=str=ng     -> Invalid field.\n");
+    JP_LOG_INFO("  Example:");
+    JP_LOG_INFO("    Input : jpipe -f \"id=101\" -f \"name=app\" -f \"active=true\" -f \"ver=1.2.0\"");
+    JP_LOG_INFO("    Output: {\"id\": 101, \"name\": \"app\", \"active\": true, \"ver\": \"1.2.0\"}");
     return 0;
 }
 
 static void display_summary(worker_arg_t* args) {
-    double estimated_mem_usage = ((double) args->chunk_size * (double) args->buffer_size) / (BYTES_IN_KB * BYTES_IN_KB);
+    double estimated_mem_usage = (double) args->chunk_size * (double) args->buffer_size / (BYTES_IN_KB * BYTES_IN_KB);
 
-    JP_LOG("[jpipe]: Configuration Summary\n");
-    JP_LOG("[Runtime Parameters]");
-    JP_LOG("• Chunk Size   (-c) : %zu KB", (args->chunk_size / BYTES_IN_KB));
-    JP_LOG("• Buffer Size  (-b) : %zu", args->buffer_size);
-    JP_LOG("• Output Dir   (-o) : %s", args->out_dir);
-    JP_LOG("• Policy       (-p) : %s", args->policy == JP_QUEUE_POLICY_WAIT ? "WAIT" : "DROP");
+    JP_LOG_MSG("Application is starting...\n");
+    JP_LOG_MSG("[Runtime Parameters]");
+    JP_LOG_MSG("• Chunk Size   (-c) : %zu KB", (args->chunk_size / BYTES_IN_KB));
+    JP_LOG_MSG("• Buffer Size  (-b) : %zu", args->buffer_size);
+    JP_LOG_MSG("• Output Dir   (-o) : %s", args->out_dir);
+    JP_LOG_MSG("• Policy       (-p) : %s", args->policy == JP_QUEUE_POLICY_WAIT ? "WAIT" : "DROP");
     if (args->fields->len > 0) {
-        JP_LOG("• Fields       (-f) :");
+        JP_LOG_MSG("• Fields       (-f) :");
         for (size_t i = 0; i < args->fields->len; i++) {
-            JP_LOG("     %zu. %-32s= %-32s", i + 1, args->fields->fields[i]->key, args->fields->fields[i]->val);
+            JP_LOG_MSG("     %zu. %-32s= %-32s", i + 1, args->fields->fields[i]->key, args->fields->fields[i]->val);
         }
     }
-    JP_LOG("\n[Resource Utilization]");
-    JP_LOG("• Memory Usage      :  ~%.2f MB", estimated_mem_usage);
-    JP_LOG("\nThese values are based on user-provided parameters.");
-    JP_LOG(
-        "Memory usage is an approximation; operating system overhead and thread stack allocations are not included.");
+    JP_LOG_MSG("\n[Resource Utilization]");
+    JP_LOG_MSG("• Memory Usage      :  ~%.2f MB", estimated_mem_usage);
+    JP_LOG_MSG("\n* These values are based on user-provided parameters.");
+    JP_LOG_MSG(
+        "* Memory usage is an approximation;"
+        "operating system overhead and thread stack allocations are not included.\n");
 }
 
 static jp_errno_t set_out_dir(const char* arg, worker_arg_t* args) {
     size_t len = 0;
     JP_FREE(args->out_dir);
     if (arg == NULL) {
-        return jp_errno_log_err_format(JP_EMISSING_CMD, "Output path is empty.");
+        return jp_errno_log_err_format(JP_EMISSING_CMD, "Path is empty.");
     }
     len = strlen(arg);
     if (len == 0) {
-        return jp_errno_log_err_format(JP_EMISSING_CMD, "Output path is empty.");
+        return jp_errno_log_err_format(JP_EMISSING_CMD, "Path is empty.");
     }
     if (len > JP_PATH_MAX) {
-        return jp_errno_log_err_format(
-            JP_EMISSING_CMD, "Output path is too long. Maximum allowed path size: %d.", JP_PATH_MAX);
+        return jp_errno_log_err_format(JP_EMISSING_CMD, "Path is too long. Maximum allowed length: %d.", JP_PATH_MAX);
     }
     JP_ALLOC_ERRNO(args->out_dir, strdup(arg));
     return 0;
@@ -107,13 +108,13 @@ static jp_errno_t set_out_dir(const char* arg, worker_arg_t* args) {
 static jp_errno_t set_field(const char* arg, worker_arg_t* args) {
     jp_errno_t err;
     if (arg == NULL) {
-        return jp_errno_log_err_format(JP_EINV_FIELD_KEY, "Field key/value is empty");
+        return jp_errno_log_err_format(JP_EINV_FIELD_KEY, "Field is invalid.");
     }
 
     JP_ATTR_ASSUME(args->fields != NULL);
     err = jp_field_set_add(args->fields, arg);
     if (err) {
-        return jp_errno_log_err_format(err, "Field key/value is invalid: '%s'", arg);
+        return jp_errno_log_err_format(err, "Field is invalid: '%s'", arg);
     }
     return 0;
 }
@@ -126,22 +127,22 @@ static jp_errno_t set_chunk_size(const char* arg, worker_arg_t* args) {
     errno = 0;
     param = strtoull(arg, &end_ptr, 10);
 
-    if (errno == ERANGE) {
-        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Chunk size format is incorrect: '%.32s'.", arg);
+    if (errno == ERANGE || errno == EINVAL) {
+        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Size is invalid: '%.32s'.", arg);
     }
 
     if (end_ptr == arg) {
-        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Chunk size is empty: '%.32s'.", arg);
+        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Size is invalid: '%.32s'.", arg);
     }
 
     if (*end_ptr != '\0' && !strcmp(end_ptr, "kb") && param <= JP_WRK_CHUNK_SIZE_MAX / BYTES_IN_KB) {
-        chunk_size += (param * BYTES_IN_KB);
+        chunk_size += param * BYTES_IN_KB;
     } else {
-        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Chunk size value is invalid: '%.32s'.", arg);
+        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Size is invalid: '%.32s'.", arg);
     }
 
     if (chunk_size < JP_WRK_CHUNK_SIZE_MIN || chunk_size > JP_WRK_CHUNK_SIZE_MAX) {
-        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Chunk size value is invalid: '%.32s'.", arg);
+        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Size is invalid: '%.32s'.", arg);
     }
     args->chunk_size = chunk_size;
     return 0;
@@ -154,12 +155,12 @@ static jp_errno_t set_buffer_size(const char* arg, worker_arg_t* args) {
     errno = 0;
     param = strtoull(arg, &end_ptr, 10);
 
-    if (errno == ERANGE || end_ptr == arg || *end_ptr != '\0') {
-        return jp_errno_log_err_format(JP_EBUFFER_SIZE, "Buffer size format is incorrect: '%.32s'.", arg);
+    if (errno == ERANGE || errno == EINVAL || end_ptr == arg || *end_ptr != '\0') {
+        return jp_errno_log_err_format(JP_EBUFFER_SIZE, "Size is invalid: '%.32s'.", arg);
     }
 
     if (param < JP_WRK_BUFFER_SIZE_MIN || param > JP_WRK_BUFFER_SIZE_MAX) {
-        return jp_errno_log_err_format(JP_EBUFFER_SIZE, "Buffer size format invalid: '%.32s'.", arg);
+        return jp_errno_log_err_format(JP_EBUFFER_SIZE, "Size is invalid: '%.32s'.", arg);
     }
 
     args->buffer_size = (size_t) param;
@@ -177,11 +178,11 @@ static jp_errno_t set_policy(const char* arg, worker_arg_t* args) {
         return 0;
     }
 
-    return jp_errno_log_err_format(JP_EOVERFLOW_POLICY, "Overflow policy is invalid: '%.32s'.", arg);
+    return jp_errno_log_err_format(JP_EOVERFLOW_POLICY, "Policy is invalid: '%.32s'.", arg);
 }
 
 static jp_errno_t handle_unknown_argument(const char* cmd) {
-    return jp_errno_log_err_format(JP_EUNKNOWN_RUN_CMD, "Invalid or incomplete [run] command: '%.32s'.", cmd);
+    return jp_errno_log_err_format(JP_EUNKNOWN_RUN_CMD, "Invalid or incomplete command: '%.32s'.", cmd);
 }
 
 static jp_errno_t create_and_normalize_out_dir(worker_arg_t* args) {
@@ -212,15 +213,15 @@ static jp_errno_t create_and_normalize_out_dir(worker_arg_t* args) {
     }
 
     if (mkdir(tmp, 0755) != 0 && errno != EEXIST) {
-        return jp_errno_log_err_format(JP_EOUT_DIR, "Could not create the output directory: '%s'.", tmp);
+        return jp_errno_log_err_format(JP_EOUT_DIR, "Could not create the directory: '%s'.", tmp);
     }
 
     if (stat(tmp, &st) != 0 || !S_ISDIR(st.st_mode)) {
-        return jp_errno_log_err_format(JP_EOUT_DIR, "The target path is not a directory: '%s'.", tmp);
+        return jp_errno_log_err_format(JP_EOUT_DIR, "The target is not a directory: '%s'.", tmp);
     }
 
     if (access(tmp, W_OK) != 0) {
-        return jp_errno_log_err_format(JP_EOUT_DIR, "The target path is inaccessible: '%s'.", tmp);
+        return jp_errno_log_err_format(JP_EOUT_DIR, "The target is inaccessible: '%s'.", tmp);
     }
 
     if (realpath(tmp, absolute_path) == NULL) {
@@ -245,7 +246,7 @@ static int get_field_args_count(int argc, char* argv[]) {
 static jp_errno_t init_worker_args(int argc, char* argv[], worker_arg_t* args) {
     int fields = get_field_args_count(argc, argv);
     if (fields > JP_WRK_FIELDS_MAX) {
-        return jp_errno_log_err_format(JP_ETOO_MANY_FIELD, "Too many 'fields' specified: '%d'", fields);
+        return jp_errno_log_err_format(JP_ETOO_MANY_FIELD, "Too many fields specified: '%d'", fields);
     }
     JP_ALLOC_ERRNO(args->fields, jp_field_set_create((size_t) fields));
     return 0;
@@ -263,12 +264,13 @@ static jp_errno_t collect_cli_args(int argc, char* argv[], worker_arg_t* args) {
                                            {"buffer-size", required_argument, 0, 'b'},
                                            {"policy", required_argument, 0, 'p'},
                                            {"field", required_argument, 0, 'f'},
-                                           {"out-dir", required_argument, 0, 'o'},
-                                           {"dry-run", required_argument, 0, 'n'},
+                                           {"output", required_argument, 0, 'o'},
+                                           {"dry-run", no_argument, 0, 'n'},
+                                           {"quiet", no_argument, 0, 'q'},
                                            {"help", no_argument, 0, 'h'},
                                            {0, 0, 0, 0}};
 
-    while ((option = getopt_long(argc, argv, ":c:b:p:o:f:hn", long_options, NULL)) != -1) {
+    while ((option = getopt_long(argc, argv, ":c:b:p:o:f:hnq", long_options, NULL)) != -1) {
         switch (option) {
             case 'c':
                 JP_VERIFY(set_chunk_size(optarg, args));
@@ -285,6 +287,9 @@ static jp_errno_t collect_cli_args(int argc, char* argv[], worker_arg_t* args) {
             case 'n':
                 args->dry_run = true;
                 break;
+            case 'q':
+                JP_CONF_SILENT_SET(true);
+                break;
             case 'f':
                 JP_VERIFY(set_field(optarg, args));
                 break;
@@ -293,7 +298,7 @@ static jp_errno_t collect_cli_args(int argc, char* argv[], worker_arg_t* args) {
             case ':':
                 JP_FALLTHROUGH;
             case '?':
-                JP_VERIFY(handle_unknown_argument(argv[optind - 1]));
+                JP_VERIFY(handle_unknown_argument((optind < argc) ? argv[optind] : argv[argc - 1]));
                 break;
             default: {
             }

@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
+jp_conf_t jp_config = {.silent = JP_CONF_SILENT_DEF};
+
 jp_errno_t jp_cmd_exec(int cmdc, jp_cmd_t* cmds, int argc, char* argv[]) {
     if (argc < 2) {
         return jp_errno_log_err_format(JP_EMISSING_CMD, "Missing or incomplete command.");
@@ -19,26 +21,26 @@ jp_errno_t jp_cmd_exec(int cmdc, jp_cmd_t* cmds, int argc, char* argv[]) {
 }
 
 jp_errno_t jp_cmd_help(JP_ATTR_UNUSED int argc, JP_ATTR_UNUSED char* argv[]) {
-    JP_LOG("Usage: jpipe <command> [options]\n");
-    JP_LOG(
+    JP_LOG_INFO("Usage: jpipe <command> [options]\n");
+    JP_LOG_INFO(
         "A lightweight C pipe-to-JSON logger designed for high-performance stream capture and extensible metadata "
         "injection.\n");
-    JP_LOG("Commands:");
-    JP_LOG("  run        Process data with configurable options.");
-    JP_LOG("  version    Display version information.");
-    JP_LOG("  help       Show this help message.\n");
-    JP_LOG("Use 'jpipe <command> --help' for more information on a specific command.\n");
-    JP_LOG("Examples:");
-    JP_LOG("  # Capture stream with 1MB chunks to a specific directory");
-    JP_LOG("  cat data.log | jpipe run -c 1mb -o /tmp/output\n");
-    JP_LOG("  # High-throughput capture with a larger buffer");
-    JP_LOG("  tail -f /var/log/syslog | jpipe run -b 128 -c 64kb");
-    JP_LOG("\nDocumentation & Issues:");
-    JP_LOG("  https://github.com/scoekmen/jpipe");
+    JP_LOG_INFO("Commands:");
+    JP_LOG_INFO("  run        Process data with configurable options.");
+    JP_LOG_INFO("  version    Display version information.");
+    JP_LOG_INFO("  help       Show this help message.\n");
+    JP_LOG_INFO("Use 'jpipe <command> --help' for more information on a specific command.\n");
+    JP_LOG_INFO("Examples:");
+    JP_LOG_INFO("  # Capture stream with 1MB chunks to a specific directory");
+    JP_LOG_INFO("  cat data.log | jpipe run -c 1mb -o /tmp/output\n");
+    JP_LOG_INFO("  # High-throughput capture with a larger buffer");
+    JP_LOG_INFO("  tail -f /var/log/syslog | jpipe run -b 128 -c 64kb");
+    JP_LOG_INFO("\nDocumentation & Issues:");
+    JP_LOG_INFO("  https://github.com/scoekmen/jpipe");
     return 0;
 }
 
 jp_errno_t jp_cmd_version(JP_ATTR_UNUSED int argc, JP_ATTR_UNUSED char* argv[]) {
-    JP_LOG("v%.16s", JP_CONF_VERSION);
+    JP_LOG_INFO("v%.16s", JP_CONF_VERSION);
     return 0;
 }

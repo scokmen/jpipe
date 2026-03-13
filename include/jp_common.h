@@ -1,6 +1,7 @@
 #ifndef JPIPE_JP_COMMON_H
 #define JPIPE_JP_COMMON_H
 
+#include <jp_config.h>
 #include <stdio.h>
 
 #define JP_PATH_MAX 4096
@@ -399,7 +400,26 @@
  * @param fmt Format string (printf-style).
  * @param ... Variadic arguments for the format string.
  */
-#define JP_LOG(fmt, ...) fprintf(stdout, fmt "\n", ##__VA_ARGS__)
+#define JP_LOG_INFO(fmt, ...) fprintf(stdout, fmt "\n", ##__VA_ARGS__)
+
+/**
+ * @brief Conditional logging macro for runtime messages.
+ *
+ * Unlike JP_LOG_INFO, this macro is suppressible via the runtime 'quiet' configuration.
+ * It appends a newline to every message for consistent formatting.
+ * It uses the GNU '##' extension to safely handle cases where no variadic
+ * arguments are provided, preventing trailing comma compilation errors.
+ *
+ * @param fmt Format string (printf-style).
+ * @param ... Variadic arguments for the format string.
+ */
+#define JP_LOG_MSG(fmt, ...)                          \
+    ({                                                \
+        if (!JP_CONF_SILENT_GET()) {                  \
+            fprintf(stdout, fmt "\n", ##__VA_ARGS__); \
+        }                                             \
+        (void) 0;                                     \
+    })
 
 #ifndef NDEBUG
 /**

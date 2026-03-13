@@ -1,10 +1,22 @@
 #ifndef JPIPE_JP_CONFIG_H
 #define JPIPE_JP_CONFIG_H
 
+#include <stdbool.h>
+
 #define JP_CONF_PROJECT_NAME  "@PROJECT_NAME@"
 #define JP_CONF_VERSION       "@PROJECT_VERSION@"
 #define JP_CONF_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
 #define JP_CONF_VERSION_MINOR @PROJECT_VERSION_MINOR@
 #define JP_CONF_VERSION_PATCH @PROJECT_VERSION_PATCH@
+
+#define JP_CONF_SILENT_DEF    false
+#define JP_CONF_SILENT_SET(x) (jp_config.silent = (x))
+#define JP_CONF_SILENT_GET()  (jp_config.silent)
+
+typedef struct {
+    bool silent;
+} jp_conf_t;
+
+extern jp_conf_t jp_config;
 
 #endif // JPIPE_JP_CONFIG_H

@@ -41,7 +41,7 @@ jp_errno_t jp_errno_log_err_format(jp_errno_t err, const char* fmt, ...) {
 
     if (err_code > 0) {
         fprintf(
-            stderr, "    " R_YEL "└─ Caused By: " R_RST "System Error (E%d): %.256s\n", err_code, strerror(err_code));
+            stderr, "  " R_YEL "└─ Caused By: " R_RST "System Error (E%d): %.256s\n", err_code, strerror(err_code));
     }
     fflush(stderr);
     return err;

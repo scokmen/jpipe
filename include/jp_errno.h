@@ -53,7 +53,7 @@
     XX(EMISSING_CMD, "Missing command. Please use 'jpipe --help' to see available commands.")               \
     XX(EUNKNOWN_CMD, "Unknown command. Please use 'jpipe --help' to see available commands.")               \
     XX(EUNKNOWN_RUN_CMD, "Unknown [run] argument. Please use 'jpipe run --help' to see available options.") \
-    XX(ECHUNK_SIZE, "Chunk size must be between 1kb (1024B) and 64kb (131072B), default (16kb).")           \
+    XX(ECHUNK_SIZE, "Chunk size must be between 1kb (1024B) and 128kb (131072B), default (16kb).")          \
     XX(EBUFFER_SIZE, "Buffer size must be between 1 and 1024, (default: 64)")                               \
     XX(EOVERFLOW_POLICY, "Overflow policy must be 'wait' or 'drop', (default: wait).")                      \
     XX(EOUT_DIR, "Output directory is invalid, inaccessible or path too long.")                             \

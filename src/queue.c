@@ -35,7 +35,7 @@ jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size, jp_queue_policy_
 }
 
 jp_errno_t jp_queue_push_uncommitted(jp_queue_t* queue, jp_block_t** block) {
-    if (!atomic_load_explicit(&queue->active, memory_order_acquire)) {
+    if (JP_ATTR_UNLIKELY(!atomic_load_explicit(&queue->active, memory_order_acquire))) {
         return JP_ESHUTTING_DOWN;
     }
 

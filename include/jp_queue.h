@@ -4,7 +4,7 @@
 #include <jp_common.h>
 #include <jp_errno.h>
 #include <pthread.h>
-#include <stdbool.h>
+#include <stdatomic.h>
 
 typedef enum {
     JP_QUEUE_POLICY_WAIT = 0,
@@ -17,12 +17,12 @@ typedef struct {
 } jp_block_t;
 
 typedef struct {
-    bool active;
     size_t head;
     size_t tail;
-    size_t length;
     size_t capacity;
     size_t chunk_size;
+    atomic_bool active;
+    atomic_size_t length;
     pthread_mutex_t lock;
     pthread_cond_t not_empty;
     pthread_cond_t not_full;

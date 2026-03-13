@@ -9,7 +9,7 @@
 #define JP_CONF_VERSION_MINOR @PROJECT_VERSION_MINOR@
 #define JP_CONF_VERSION_PATCH @PROJECT_VERSION_PATCH@
 
-#define JP_CONF_SILENT_DEF    false
+#define JP_CONF_SILENT_DEF    (false)
 #define JP_CONF_SILENT_SET(x) (jp_config.silent = (x))
 #define JP_CONF_SILENT_GET()  (jp_config.silent)
 

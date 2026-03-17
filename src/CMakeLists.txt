@@ -19,6 +19,7 @@ add_library(jpipe_core STATIC
         command.c
         field.c
         errno.c
+        reader.c
         ${NON_PORTABLE_C_FILES}
 )
 

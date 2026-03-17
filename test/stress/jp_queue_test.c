@@ -10,9 +10,7 @@ typedef struct {
     jp_queue_t* queue;
 } test_ctx_t;
 
-typedef void* (*thread_handler)(void*);
-
-void* sequential_write(void* arg) {
+static void* reader_thread_wrapper(void* arg) {
     jp_errno_t err    = 0;
     test_ctx_t* ctx   = arg;
     jp_queue_t* queue = ctx->queue;
@@ -32,7 +30,7 @@ void* sequential_write(void* arg) {
     pthread_exit((void*) (uintptr_t) err);  // NOLINT(performance-no-int-to-ptr)
 }
 
-void* sequential_read(void* arg) {
+static void* sequential_read(void* arg) {
     int64_t sum       = 0;
     test_ctx_t* ctx   = arg;
     jp_queue_t* queue = ctx->queue;
@@ -46,15 +44,15 @@ void* sequential_read(void* arg) {
     pthread_exit((void*) (uintptr_t) sum);  // NOLINT(performance-no-int-to-ptr)
 }
 
-void jp_queue_run_with_args(thread_handler producer, thread_handler consumer, size_t capacity, int count) {
+static void jp_queue_run_with_args(size_t capacity, int count) {
     void *producer_result = NULL, *consumer_result = NULL;
     pthread_t prod_tid, cons_tid;
     jp_queue_t* queue = jp_queue_create(capacity, sizeof(int), JP_QUEUE_POLICY_WAIT);
     test_ctx_t ctx    = {.count = count, .queue = queue};
     int64_t expected  = (int64_t) count * (count + 1) / 2;
 
-    pthread_create(&prod_tid, NULL, producer, &ctx);
-    pthread_create(&cons_tid, NULL, consumer, &ctx);
+    pthread_create(&prod_tid, NULL, reader_thread_wrapper, &ctx);
+    pthread_create(&cons_tid, NULL, sequential_read, &ctx);
 
     pthread_join(prod_tid, &producer_result);
     JP_ASSERT_OK((int) (uintptr_t) producer_result);
@@ -66,9 +64,9 @@ void jp_queue_run_with_args(thread_handler producer, thread_handler consumer, si
 }
 
 int main(void) {
-    jp_queue_run_with_args(sequential_write, sequential_read, 1, 1000);
-    jp_queue_run_with_args(sequential_write, sequential_read, 2, 2000);
-    jp_queue_run_with_args(sequential_write, sequential_read, 8, 8000);
-    jp_queue_run_with_args(sequential_write, sequential_read, 16, 16000);
+    jp_queue_run_with_args(1, 1000);
+    jp_queue_run_with_args(2, 2000);
+    jp_queue_run_with_args(8, 8000);
+    jp_queue_run_with_args(16, 16000);
     return 0;
 }

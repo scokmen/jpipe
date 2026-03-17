@@ -43,7 +43,7 @@ static void test_jp_reader_stream_with_args(size_t capacity, size_t chunk_size, 
     JP_ASSERT_OK(pipe(fds));
     fcntl(fds[0], F_SETFL, O_NONBLOCK);
     test_ctx_t test_ctx        = {.queue = queue, .count = count};
-    jp_reader_ctx_t reader_ctx = {.input_stream = fds[0], .queue = queue, .chunk_size = BYTES_IN_KB};
+    jp_reader_ctx_t reader_ctx = {.input_stream = fds[0], .queue = queue, .chunk_size = chunk_size};
 
     pthread_create(&reader_thread, NULL, reader_thread_wrapper, &reader_ctx);
     pthread_create(&checker_thread, NULL, checker_thread_wrapper, &test_ctx);

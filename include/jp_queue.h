@@ -6,6 +6,15 @@
 #include <pthread.h>
 #include <stdatomic.h>
 
+/**
+ * @brief Identifies non-fatal, expected queue states.
+ *
+ * These signals indicate a controlled change in flow rather than a failure:
+ * - JP_ESHUTTING_DOWN: The system is performing a coordinated stop.
+ * - JP_EMSG_SHOULD_DROP: Flow control is active; data is discarded to prevent blocking.
+ */
+#define JP_QUEUE_IS_GRACEFUL_ERR(err) ((err) == JP_ESHUTTING_DOWN || (err) == JP_EMSG_SHOULD_DROP)
+
 typedef enum {
     JP_QUEUE_POLICY_WAIT = 0,
     JP_QUEUE_POLICY_DROP = 1

@@ -27,6 +27,7 @@ set(UNIT_TEST_SOURCES
         unit/jp_command_test.c
         unit/jp_worker_test.c
         unit/jp_queue_test.c
+        unit/jp_reader_test.c
 )
 
 foreach (source_file ${UNIT_TEST_SOURCES})
@@ -48,6 +49,7 @@ endforeach ()
 ###############################################
 set(STRESS_TEST_SOURCES
         stress/jp_queue_test.c
+        stress/jp_reader_test.c
 )
 
 foreach (source_file ${STRESS_TEST_SOURCES})

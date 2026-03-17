@@ -65,6 +65,7 @@
     } while (0)
 
 typedef jp_errno_t (*jp_test_fn)(void* ctx);
+typedef void* (*jp_test_thread_handler)(void*);
 
 JP_ATTR_NONNULL(1)
 JP_ATTR_WRITEONLY_N(1, 2)

@@ -17,7 +17,7 @@ jp_errno_t jp_reader_consume(jp_reader_ctx_t ctx) {
         err = JP_ENOMEMORY;
         goto clean_up;
     }
-    
+
     err = jp_poller_poll(poller, ctx.input_stream);
     if (err) {
         goto clean_up;

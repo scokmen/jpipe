@@ -15,10 +15,12 @@ assignees: ''
 
 ## 🧪 Benchmark Plan (Required for Performance)
 *How will we verify the improvement? (e.g., using `hyperfine` or `time`)*
-- [ ] Command: `cat large_file.json | jpipe ...`
-- [ ] Target: At least 10% reduction in processing time.
+
+- [ ] Command: `cat large_file.json | jpipe run ...`
+- [ ] Target: At least 2% reduction in processing time.
 
 ## 🏁 Checklist
+
 - [ ] No breaking changes to existing CLI flags.
 - [ ] Memory leak check performed.
 - [ ] Platform tested on (macOS/Linux).

@@ -15,8 +15,9 @@ assignees: ''
 
 ## 💻 CLI Usage Example
 *How should the command look?*
+
 ```bash
-cat log.txt | jpipe --custom-field "env=prod"
+cat log.txt | jpipe run --field "env=prod"
 ```
 
 ## ✅ Acceptance Criteria

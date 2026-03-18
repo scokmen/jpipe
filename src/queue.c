@@ -7,8 +7,8 @@ jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size, jp_queue_policy_
     jp_queue_t* queue;
 
     size_t blocks_offset = sizeof(jp_queue_t);
-    size_t area_offset   = blocks_offset + (capacity * sizeof(jp_block_t));
-    size_t total_size    = area_offset + (capacity * chunk_size);
+    size_t area_offset   = blocks_offset + capacity * sizeof(jp_block_t);
+    size_t total_size    = area_offset + capacity * chunk_size;
 
     JP_ALLOC(queue, malloc(total_size), NULL);
 

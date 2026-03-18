@@ -1,4 +1,5 @@
 #include <jp_common.h>
+#include <jp_config.h>
 #include <jp_errno.h>
 #include <jp_field.h>
 #include <stdbool.h>
@@ -34,7 +35,7 @@ static jp_field_t* create_field(const char* key, const char* val) {
 
 static jp_errno_t crete_field_from_kv(const char* kv, jp_field_t** field) {
     size_t key_len;
-    char key[JP_FIELD_MAX_KEY_LEN + 1];
+    char key[JP_CONF_FIELD_MAX_KEY + 1];
     char* eq = strchr(kv, '=');
 
     *field = NULL;
@@ -43,7 +44,7 @@ static jp_errno_t crete_field_from_kv(const char* kv, jp_field_t** field) {
     }
 
     key_len = (size_t) (eq - kv);
-    if (key_len > JP_FIELD_MAX_KEY_LEN) {
+    if (key_len > JP_CONF_FIELD_MAX_KEY) {
         return JP_EINV_FIELD_KEY;
     }
 

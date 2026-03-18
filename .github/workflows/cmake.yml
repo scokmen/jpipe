@@ -25,13 +25,13 @@ jobs:
         env:
           CC: ${{matrix.compiler}}
           ASAN_OPTIONS: "detect_leaks=1:exitcode=1"
-        run: make test-asan-flow
+        run: make test-with-asan
 
       - name: Thread Sanitizer Flow
         env:
           CC: ${{matrix.compiler}}
           TSAN_OPTIONS: "halt_on_error=1"
-        run: setarch $(uname -m) -R make test-tsan-flow
+        run: setarch $(uname -m) -R make test-with-tsan
   
   analyze:
     name: Code Quality

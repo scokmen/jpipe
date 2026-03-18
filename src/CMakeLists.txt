@@ -20,6 +20,7 @@ add_library(jpipe_core STATIC
         field.c
         errno.c
         reader.c
+        config.c
         ${NON_PORTABLE_C_FILES}
 )
 

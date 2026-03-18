@@ -13,7 +13,7 @@ CMAKE_FLAGS ?= -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=$(CC)
 
 .PHONY: all build clean clean-all help
 .PHONY: debug debug-asan debug-tsan release relwithdeb
-.PHONY: test test-asan-flow test-tsan-flow coverage format
+.PHONY: test test-with-asan test-with-tsan coverage format
 .PHONY: compile compile-ubuntu compile-debian docker-execute $(COMPILE_TARGETS)
 
 debug:      CMAKE_FLAGS = -DCMAKE_C_COMPILER=$(CC) -DCMAKE_BUILD_TYPE=Debug
@@ -38,16 +38,16 @@ test: debug
 	@echo "🧪 Testing: [target=debug]"
 	cd $(BUILD_DIR) && $(CTEST) --output-on-failure
 
-test-asan-flow: debug-asan
+test-with-asan: debug-asan
 	@echo "🧪 Testing: [target=debug-asan]"
-	cd $(BUILD_DIR) && $(CTEST) -L unit --output-on-failure
+	cd $(BUILD_DIR) && $(CTEST) --output-on-failure
 
-test-tsan-flow: debug-tsan
+test-with-tsan: debug-tsan
 	@echo "🧪 Testing: [target=debug-tsan]"
-	cd $(BUILD_DIR) && $(CTEST) -L stress --output-on-failure
+	cd $(BUILD_DIR) && $(CTEST) --output-on-failure
 
 coverage: test
-	@echo "📊 Reporting: [target=debug-asan]"
+	@echo "📊 Reporting: [target=debug]"
 	$(CMAKE) --build $(BUILD_DIR) --target coverage
 
 format:
@@ -59,7 +59,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 clean-all:
-	@echo "🧹 Cleaning: [dir=/$(BUILD_DIR)]"
+	@echo "🧹 Cleaning: [dir=./build_*]"
 	rm -rf ./build_*
 
 compile-ubuntu: $(filter compile-ubuntu-%,$(COMPILE_TARGETS))
@@ -84,9 +84,9 @@ help:
 	@echo "  make debug-tsan             : Debug build with Thread Sanitizer"
 	@echo ""
 	@echo "🧪 Test & Analysis:"
-	@echo "  make test                   : Run all standard tests"
-	@echo "  make test-asan-flow         : Run unit tests with Memory Sanitizer"
-	@echo "  make test-tsan-flow         : Run stress tests with Thread Sanitizer"
+	@echo "  make test                   : Run all tests"
+	@echo "  make test-with-asan         : Run all tests with Memory Sanitizer"
+	@echo "  make test-with-tsan         : Run all tests with Thread Sanitizer"
 	@echo "  make coverage               : Generate code coverage report"
 	@echo "  make format                 : Run clang-format"
 	@echo ""

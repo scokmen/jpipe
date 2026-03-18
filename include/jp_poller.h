@@ -10,7 +10,6 @@ JP_ATTR_ALLOCATED
 JP_ATTR_USE_RETURN
 jp_poller_t* jp_poller_create(int timeout);
 
-// TODO: Fix FD readonly issue (JP_ATTR_FD_READONLY(2))
 JP_ATTR_NONNULL(1)
 jp_errno_t jp_poller_poll(jp_poller_t* poller, int fd);
 

@@ -1,4 +1,5 @@
 #include <jp_command.h>
+#include <jp_config.h>
 #include <jp_worker.h>
 #include <stdlib.h>
 
@@ -9,6 +10,7 @@ static jp_cmd_t commands[] = {
 };
 
 int main(int argc, char* argv[]) {
+    jp_conf_initialize();
     jp_errno_t err = jp_cmd_exec(2, commands, argc, argv);
     if (err) {
         return EXIT_FAILURE;

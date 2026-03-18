@@ -47,7 +47,7 @@ void tear_up_test_dir(const char* base_path) {
 }
 
 jp_errno_t command_adapter(void* ctx) {
-    test_ctx_t* c = (test_ctx_t*) ctx;
+    test_ctx_t* c = ctx;
     return jp_wrk_exec(c->argc, c->argv);
 }
 
@@ -61,27 +61,6 @@ void test_jp_wrk_exec_help_command_long(void) {
     test_ctx_t ctx = {.argc = 2, .argv = {(char*) "run", (char*) "--help", NULL}};
     int status     = jp_test_compare_stdout(command_adapter, &ctx, "run_help_command_out.tmpl");
     JP_ASSERT_OK(status);
-}
-
-void test_jp_wrk_exec_quiet(void) {
-    test_case_t cases[] = {
-        {.argc = 3, .argv = {"jpipe", "-n", "-q", NULL}, .expected = 0},
-        {.argc = 3, .argv = {"jpipe", "-n", "--quiet", NULL}, .expected = 0},
-    };
-
-    jp_errno_t err;
-    int len = (sizeof(cases) / sizeof(cases[0]));
-    for (int i = 0; i < len; i++) {
-        optind = 1;
-        optarg = NULL;
-        opterr = 0;
-
-        JP_CONF_SILENT_SET(false);
-        err = jp_wrk_exec(cases[i].argc, (char**) cases[i].argv);
-
-        JP_ASSERT_EQ(cases[i].expected, err);
-        JP_ASSERT_EQ(true, JP_CONF_SILENT_GET());
-    }
 }
 
 void test_jp_wrk_exec_buffer_size(void) {
@@ -362,7 +341,6 @@ int main(void) {
     test_jp_wrk_exec_buffer_size();
     test_jp_wrk_exec_policy();
     test_jp_wrk_exec_output();
-    test_jp_wrk_exec_quiet();
     test_jp_wrk_exec_fields();
     test_jp_wrk_exec_invalid_command();
     test_jp_wrk_exec_output_enotdir();

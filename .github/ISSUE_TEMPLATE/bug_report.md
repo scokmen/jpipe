@@ -13,14 +13,14 @@ assignees: ''
 ## 💻 Environment
 - **OS:** [e.g. macOS Sonoma, Ubuntu 22.04]
 - **Shell:** [e.g. zsh, bash, fish]
-- **jpipe Version:** [e.g. v0.1.2 or commit hash]
+- **Version:** [e.g. v0.1.2 or commit hash]
 
 ## 🛠 Steps to Reproduce
 *How can we see the error? Please provide a sample input if possible.*
 
 ```bash
 # Example command that fails:
-cat log.txt | jpipe --custom-field "env=prod"
+cat log.txt | jpipe run --field "env=prod"
 ```
 
 ## 📋 Terminal Output (including Errors)

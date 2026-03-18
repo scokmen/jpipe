@@ -4,10 +4,6 @@
 #include <jp_config.h>
 #include <stdio.h>
 
-#define JP_PATH_MAX 4096
-#define BYTES_IN_KB 1024
-#define MIN(x, y)   (((x) < (y)) ? (x) : (y))
-
 #ifdef __has_builtin
 /**
  * @brief Compiler-agnostic check for built-in function support.
@@ -265,41 +261,6 @@
 #pragma message("cc: attribute not supported (access)")
 #endif
 
-#if HAS_ATTRIBUTE(fd_arg)
-/**
- * @brief Marks an integer argument as a file descriptor.
- *
- * This attribute allows the compiler's static analyzer to track the lifecycle of file descriptors.
- * It helps detect common bugs such as:
- * 1. Passing an invalid or closed file descriptor.
- * 2. Performing I/O operations on a file descriptor that wasn't properly opened.
- * 3. Resource leaks (forgetting to close a descriptor).
- *
- * @param n The 1-based index of the file descriptor argument.
- */
-#define JP_ATTR_FD(n) __attribute__((fd_arg(n)))
-#else
-#define JP_ATTR_FD(n)
-#pragma message("cc: attribute not supported (fd_arg)")
-#endif
-
-#if HAS_ATTRIBUTE(fd_arg_read)
-/**
- * @brief Marks an integer argument as a file descriptor opened for reading.
- *
- * This is a specialized version of JP_ATTR_FD. It informs the static
- * analyzer that the function expects a file descriptor with read permissions.
- * It helps catch logic errors where a write-only descriptor (e.g., opened with O_WRONLY)
- * is passed to a function intended for data input.
- *
- * @param n The 1-based index of the file descriptor argument.
- */
-#define JP_ATTR_FD_READONLY(n) __attribute__((fd_arg_read(n)))
-#else
-#define JP_ATTR_FD_READONLY(n)
-#pragma message("cc: attribute not supported (fd_arg_read)")
-#endif
-
 #if HAS_ATTRIBUTE(fallthrough)
 /**
  * @brief Indicates that a switch case fall-through is intentional.
@@ -307,9 +268,9 @@
  * Prevents the compiler from issuing a warning when a 'case' block does not end with a 'break' or 'return'.
  * This clarifies intent to both the compiler's static analyzer and other developers.
  */
-#define JP_FALLTHROUGH __attribute__((fallthrough))
+#define JP_ATTR_FALLTHROUGH __attribute__((fallthrough))
 #else
-#define JP_FALLTHROUGH
+#define JP_ATTR_FALLTHROUGH
 #pragma message("cc: attribute not supported (fallthrough)")
 #endif
 
@@ -425,9 +386,8 @@
 /**
  * @brief Conditionally prints debug information to stdout.
  *
- * * When NDEBUG is not defined, this macro behaves like fprintf, adding a "[DEBUG]" prefix and a newline.
- *
- * * When NDEBUG is defined (Release mode), it evaluates to a no-op, ensuring zero runtime overhead and removing debug
+ * - When NDEBUG is not defined, this macro behaves like fprintf, adding a "[DEBUG]" prefix and a newline.
+ * - When NDEBUG is defined (Release mode), it evaluates to a no-op, ensuring zero runtime overhead and removing debug
  * strings from the binary.
  *
  * @param fmt Format string (printf-style).

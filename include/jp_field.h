@@ -4,8 +4,6 @@
 #include <jp_common.h>
 #include <jp_errno.h>
 
-#define JP_FIELD_MAX_KEY_LEN 32
-
 typedef struct {
     size_t key_len;
     const char* key;

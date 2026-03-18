@@ -38,8 +38,9 @@ option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
 # JPipe: Generated Headers
 ###############################################
 configure_file(
-        "${CMAKE_SOURCE_DIR}/gen/jp_config.h.in"
+        "${CMAKE_SOURCE_DIR}/include/jp_config.h.in"
         "${CMAKE_BINARY_DIR}/generated/jp_config.h"
+        @ONLY
 )
 
 ###############################################

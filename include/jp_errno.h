@@ -1,8 +1,23 @@
 #ifndef JPIPE_JP_ERRNO_H
 #define JPIPE_JP_ERRNO_H
 
-#include <errno.h>
 #include <jp_common.h>
+#include <errno.h>
+
+/**
+ * @brief Portable check for "Resource Temporarily Unavailable" errors.
+ *
+ * In POSIX programming, non-blocking I/O operations may return EAGAIN or
+ * EWOULDBLOCK when no data is available. While most modern systems define
+ * them as the same value, some architectures treat them as distinct.
+ * This macro abstracts that difference, ensuring that the application
+ * correctly identifies "try again" scenarios regardless of the platform.
+ *
+ * @param err The error code to check (usually from 'errno').
+ * 
+ * @return Non-zero (true) if the error is EAGAIN or EWOULDBLOCK, zero otherwise.
+ */
+#define JP_ERRNO_EAGAIN(err) ((err) == EAGAIN || (EAGAIN != EWOULDBLOCK && (err) == EWOULDBLOCK))
 
 /**
  * @brief Attempts allocation, logs an error on failure, and returns the error code.
@@ -15,39 +30,7 @@
  * @param expr The allocation expression (e.g., malloc, calloc, strdup).
  * @return Returns the result of jp_errno_log_err(JP_ENOMEMORY) on failure.
  */
-#define JP_ALLOC_ERRNO(var, expr) JP_ALLOC(var, expr, jp_errno_log_err(JP_ENOMEMORY))
-
-#if (EAGAIN == EWOULDBLOCK)
-/**
- * @brief Portable check for "Resource Temporarily Unavailable" errors.
- *
- * In POSIX programming, non-blocking I/O operations may return EAGAIN or
- * EWOULDBLOCK when no data is available. While most modern systems define
- * them as the same value, some architectures treat them as distinct.
- *
- * This macro abstracts that difference, ensuring that the application
- * correctly identifies "try again" scenarios regardless of the platform.
- *
- * @param err The error code to check (usually from 'errno').
- * @return Non-zero (true) if the error is EAGAIN or EWOULDBLOCK, zero otherwise.
- */
-#define JP_ERRNO_EAGAIN(err) ((err) == EAGAIN)
-#else
-/**
- * @brief Portable check for "Resource Temporarily Unavailable" errors.
- *
- * In POSIX programming, non-blocking I/O operations may return EAGAIN or
- * EWOULDBLOCK when no data is available. While most modern systems define
- * them as the same value, some architectures treat them as distinct.
- *
- * This macro abstracts that difference, ensuring that the application
- * correctly identifies "try again" scenarios regardless of the platform.
- *
- * @param err The error code to check (usually from 'errno').
- * @return Non-zero (true) if the error is EAGAIN or EWOULDBLOCK, zero otherwise.
- */
-#define JP_ERRNO_EAGAIN(err) ((err) == EAGAIN || (err) == EWOULDBLOCK)
-#endif
+#define JP_ERRNO_ALLOC(var, expr) JP_ALLOC(var, expr, jp_errno_log_err(JP_ENOMEMORY))
 
 #define JP_ERRNO_MAP(XX)                                                                                    \
     XX(EMISSING_CMD, "Missing command. Please use 'jpipe --help' to see available commands.")               \

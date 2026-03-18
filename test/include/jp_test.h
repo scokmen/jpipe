@@ -2,7 +2,6 @@
 #define JPIPE_JP_TEST_H
 
 #include <jp_errno.h>
-#include <stddef.h>
 
 /**
  * @brief Reports a test failure and terminates execution.

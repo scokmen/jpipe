@@ -1,4 +1,4 @@
-#include <assert.h>
+#include <errno.h>
 #include <jp_poller.h>
 #include <jp_queue.h>
 #include <jp_reader.h>

@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <fcntl.h>
 #include <jp_errno.h>
 #include <jp_poller.h>

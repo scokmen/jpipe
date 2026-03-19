@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <getopt.h>
 #include <jp_command.h>
 #include <jp_errno.h>
@@ -6,6 +5,7 @@
 #include <jp_queue.h>
 #include <jp_reader.h>
 #include <jp_worker.h>
+#include <jp_writer.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -307,7 +307,7 @@ static jp_errno_t finalize_worker_args(worker_ctx_t* ctx) {
     return 0;
 }
 
-static void* producer_thread_init(void* data) {
+static void* consumer_thread_init(void* data) {
     const worker_ctx_t* args   = data;
     jp_reader_ctx_t reader_ctx = {
         .chunk_size   = args->chunk_size,
@@ -318,32 +318,14 @@ static void* producer_thread_init(void* data) {
     pthread_exit((void*) (uintptr_t) err);  // NOLINT(performance-no-int-to-ptr)
 }
 
-static void* consumer_thread_init(void* data) {
-    jp_errno_t err = 0;
-    jp_block_t* block;
-    const worker_ctx_t* args = data;
-    unsigned char* buffer    = malloc(args->chunk_size);
-    if (buffer == NULL) {
-        err = JP_ENOMEMORY;
-        goto clean_up;
-    }
-
-    while (true) {
-        err = jp_queue_pop_uncommitted(args->queue, &block);
-        if (err) {
-            break;
-        }
-        jp_queue_pop_commit(args->queue);
-    }
-
-clean_up:
-    if (JP_QUEUE_IS_GRACEFUL_ERR(err)) {
-        err = 0;
-    } else {
-        jp_errno_log_err(err);
-    }
-    JP_FREE(buffer);
-    jp_queue_finalize(args->queue);
+static void* producer_thread_init(void* data) {
+    const worker_ctx_t* args   = data;
+    jp_writer_ctx_t writer_ctx = {
+        .chunk_size = args->chunk_size,
+        .queue      = args->queue,
+        .output_dir = args->out_dir,
+    };
+    jp_errno_t err = jp_writer_produce(writer_ctx);
     pthread_exit((void*) (uintptr_t) err);  // NOLINT(performance-no-int-to-ptr)
 }
 
@@ -367,8 +349,8 @@ static jp_errno_t orchestrate_threads(worker_ctx_t* ctx) {
     int err = 0, join_err = 0, t_size = 0;
     void* thread_result;
     sigset_t set;
-    worker_thread_t threads[3] = {{.func = producer_thread_init, .running = false, .detached = false},
-                                  {.func = consumer_thread_init, .running = false, .detached = false},
+    worker_thread_t threads[3] = {{.func = consumer_thread_init, .running = false, .detached = false},
+                                  {.func = producer_thread_init, .running = false, .detached = false},
                                   {.func = watcher_thread_init, .running = false, .detached = true}};
 
     sigemptyset(&set);

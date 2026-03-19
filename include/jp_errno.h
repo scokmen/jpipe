@@ -1,8 +1,8 @@
 #ifndef JPIPE_JP_ERRNO_H
 #define JPIPE_JP_ERRNO_H
 
-#include <jp_common.h>
 #include <errno.h>
+#include <jp_common.h>
 
 /**
  * @brief Portable check for "Resource Temporarily Unavailable" errors.
@@ -14,7 +14,7 @@
  * correctly identifies "try again" scenarios regardless of the platform.
  *
  * @param err The error code to check (usually from 'errno').
- * 
+ *
  * @return Non-zero (true) if the error is EAGAIN or EWOULDBLOCK, zero otherwise.
  */
 #define JP_ERRNO_EAGAIN(err) ((err) == EAGAIN || (EAGAIN != EWOULDBLOCK && (err) == EWOULDBLOCK))

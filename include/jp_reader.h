@@ -1,6 +1,8 @@
 #ifndef JPIPE_JP_READER_H
 #define JPIPE_JP_READER_H
 
+#include <jp_errno.h>
+
 typedef struct {
     size_t chunk_size;
     jp_queue_t* queue;

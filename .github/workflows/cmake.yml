@@ -18,23 +18,23 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install
+      - name: Install OS Packages
         run: sudo apt-get update && sudo apt-get install -y clang gcc llvm
 
-      - name: Address Sanitizer Flow
+      - name: Test With Address Sanitizer
         env:
           CC: ${{matrix.compiler}}
           ASAN_OPTIONS: "detect_leaks=1:exitcode=1"
         run: make test-with-asan
 
-      - name: Thread Sanitizer Flow
+      - name: Test With Thread Sanitizer
         env:
           CC: ${{matrix.compiler}}
           TSAN_OPTIONS: "halt_on_error=1"
         run: setarch $(uname -m) -R make test-with-tsan
   
   analyze:
-    name: Code Quality
+    name: Code Quality & Reporting
     runs-on: ubuntu-latest
     permissions:
       security-events: write
@@ -42,30 +42,36 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install
-        run: sudo apt-get update && sudo apt-get install -y clang gcc llvm lcov gcovr
+      - name: Install OS Packages
+        run: sudo apt-get update && sudo apt-get install -y clang gcc llvm lcov gcovr cppcheck
 
-      - name: CodeQL Initialization
+      - name: Initialize Github/CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: c-cpp
           config-file: .github/codeql/codeql-config.yml
           build-mode: manual
 
-      - name: Coverage Flow
+      - name: Calculate Coverage
         env:
           CC: gcc
         run: make coverage
 
-      - name: Code Formatting Flow
+      - name: Run CppCheck/Inform
+        run: make check-and-inform
+
+      - name: Run CppCheck/Enforce
+        run: make check-and-enforce
+
+      - name: Check Code Formatting
         run: make format
 
-      - name: CodeQL Reporting
+      - name: Report Github/CodeQL Output
         uses: github/codeql-action/analyze@v4
         with:
           category: "/language:c-cpp"
 
-      - name: Coverage Reporting
+      - name: Report Coverage Output
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<def format="2">
+    <define name="__has_attribute(x)" value="1"/>
+    <define name="__has_builtin(x)" value="1"/>
+    <define name="__builtin_expect(cond, ret)" value="(cond)"/>
+</def>

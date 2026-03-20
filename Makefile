@@ -13,7 +13,7 @@ CMAKE_FLAGS ?= -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=$(CC)
 
 .PHONY: all build clean clean-all help
 .PHONY: debug debug-asan debug-tsan release relwithdeb
-.PHONY: test test-with-asan test-with-tsan coverage format
+.PHONY: test test-with-asan test-with-tsan coverage format check-and-inform check-and-enforce
 .PHONY: compile compile-ubuntu compile-debian docker-execute $(COMPILE_TARGETS)
 
 debug:      CMAKE_FLAGS = -DCMAKE_C_COMPILER=$(CC) -DCMAKE_BUILD_TYPE=Debug
@@ -54,6 +54,14 @@ format:
 	@echo "🔬 Formatting: [target=all]"
 	$(CMAKE) --build $(BUILD_DIR) --target format
 
+check-and-inform:
+	@echo "🔬 Checking: [target=all]"
+	$(CMAKE) --build $(BUILD_DIR) --target check-and-inform
+
+check-and-enforce:
+	@echo "🔬 Checking: [target=all]"
+	$(CMAKE) --build $(BUILD_DIR) --target check-and-enforce
+
 clean:
 	@echo "🧹 Cleaning: [dir=/$(BUILD_DIR)]"
 	rm -rf $(BUILD_DIR)
@@ -89,6 +97,8 @@ help:
 	@echo "  make test-with-tsan         : Run all tests with Thread Sanitizer"
 	@echo "  make coverage               : Generate code coverage report"
 	@echo "  make format                 : Run clang-format"
+	@echo "  make check-and-inform       : Run cppcheck w/style,performance,portability,warning,information"
+	@echo "  make check-end-enforce      : Run cppcheck w/performance,portability,warning"
 	@echo ""
 	@echo "🐳 Docker & Multi-Compiler:"
 	@echo "  make compile                : Build all OS (Ubuntu & Debian) and GCC versions [10-13]"

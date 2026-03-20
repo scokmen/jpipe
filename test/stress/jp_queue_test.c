@@ -10,7 +10,7 @@ typedef struct {
     jp_queue_t* queue;
 } test_ctx_t;
 
-static void* reader_thread_wrapper(void* arg) {
+static void* sequential_write(void* arg) {
     jp_errno_t err    = 0;
     test_ctx_t* ctx   = arg;
     jp_queue_t* queue = ctx->queue;
@@ -51,7 +51,7 @@ static void jp_queue_run_with_args(size_t capacity, int count) {
     test_ctx_t ctx    = {.count = count, .queue = queue};
     int64_t expected  = (int64_t) count * (count + 1) / 2;
 
-    pthread_create(&prod_tid, NULL, reader_thread_wrapper, &ctx);
+    pthread_create(&prod_tid, NULL, sequential_write, &ctx);
     pthread_create(&cons_tid, NULL, sequential_read, &ctx);
 
     pthread_join(prod_tid, &producer_result);

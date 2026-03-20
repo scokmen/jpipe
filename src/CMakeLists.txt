@@ -40,6 +40,7 @@ target_link_libraries(jpipe_core
 # JPipe: Clang-Tidy & Clang-Format
 ###############################################
 init_clang_format()
+init_cppcheck()
 init_clang_tidy(jpipe_core)
 
 ###############################################

@@ -36,7 +36,7 @@ static jp_field_t* create_field(const char* key, const char* val) {
 static jp_errno_t crete_field_from_kv(const char* kv, jp_field_t** field) {
     size_t key_len;
     char key[JP_CONF_FIELD_MAX_KEY + 1];
-    char* eq = strchr(kv, '=');
+    const char* eq = strchr(kv, '=');
 
     *field = NULL;
     if (eq == NULL || eq == kv) {

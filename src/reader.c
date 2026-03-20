@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <jp_poller.h>
 #include <jp_queue.h>
 #include <jp_reader.h>
@@ -10,7 +9,7 @@ jp_errno_t jp_reader_consume(jp_reader_ctx_t ctx) {
     ssize_t read_len      = 0;
     jp_block_t* block     = NULL;
     void* target_buffer   = NULL;
-    unsigned char* buffer = malloc(ctx.chunk_size);
+    unsigned char* buffer = calloc(1, ctx.chunk_size);
     jp_poller_t* poller   = jp_poller_create(100);
 
     if (buffer == NULL || poller == NULL) {

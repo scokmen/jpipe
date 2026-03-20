@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <jp_errno.h>
 #include <jp_poller.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <sys/event.h>
 #include <unistd.h>

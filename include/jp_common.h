@@ -295,6 +295,25 @@
 #pragma message("cc: attribute not supported (nonstring)")
 #endif
 
+#if !defined(NDEBUG) && HAS_ATTRIBUTE(weak)
+/**
+ * @brief Marks a function as "weak" to allow mocking in test environments.
+ *
+ * This macro enables the 'weak' compiler attribute only when NOT in a Release
+ * build (i.e., NDEBUG is not defined) and if the compiler supports it.
+ *
+ * - In Debug/Test: The function is marked as weak, meaning the linker will
+ * prioritize any other "strong" definition of the same function (e.g., a Mock).
+ * - In Release (NDEBUG): The macro expands to nothing. This ensures that
+ * duplicate function definitions trigger a "multiple definition" linker error,
+ * preventing accidental test code leakage into production.
+ */
+#define JP_ATTR_WEAK __attribute__((weak))
+#else
+#define JP_ATTR_WEAK
+#pragma message("cc: is not debug or attribute not supported (weak)")
+#endif
+
 /**
  * @brief Safely frees a pointer and sets it to NULL.
  *

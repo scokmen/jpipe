@@ -19,49 +19,22 @@ target_link_libraries(test_utils PRIVATE
         jpipe_settings
 )
 
+SET(TEST_DEPENDENCIES
+        jpipe_core
+        test_utils
+        jpipe_settings)
+
 ###############################################
 # JPipe: Unit Tests
 ###############################################
-set(UNIT_TEST_SOURCES
-        unit/jp_field_test.c
-        unit/jp_command_test.c
-        unit/jp_worker_test.c
-        unit/jp_queue_test.c
-        unit/jp_reader_test.c
-)
-
-foreach (source_file ${UNIT_TEST_SOURCES})
-    get_filename_component(raw_name ${source_file} NAME_WE)
-    set(test_target "unit_test_${raw_name}")
-    add_executable(${test_target} ${source_file})
-    target_link_libraries(${test_target}
-            PRIVATE
-            jpipe_core
-            test_utils
-            jpipe_settings
-    )
-    add_test(NAME ${test_target} COMMAND ${test_target})
-    set_tests_properties(${test_target} PROPERTIES LABELS "unit")
-endforeach ()
+init_test("unit" unit/jp_field_test.c "${TEST_DEPENDENCIES}")
+init_test("unit" unit/jp_command_test.c "${TEST_DEPENDENCIES}")
+init_test("unit" unit/jp_queue_test.c "${TEST_DEPENDENCIES}")
+init_test("unit" unit/jp_reader_test.c "${TEST_DEPENDENCIES}")
+init_test("unit" unit/jp_worker_test.c "${TEST_DEPENDENCIES}")
 
 ###############################################
 # JPipe: Stress Tests
 ###############################################
-set(STRESS_TEST_SOURCES
-        stress/jp_queue_test.c
-        stress/jp_reader_test.c
-)
-
-foreach (source_file ${STRESS_TEST_SOURCES})
-    get_filename_component(raw_name ${source_file} NAME_WE)
-    set(test_target "stress_test_${raw_name}")
-    add_executable(${test_target} ${source_file})
-    target_link_libraries(${test_target}
-            PRIVATE
-            jpipe_core
-            test_utils
-            jpipe_settings
-    )
-    add_test(NAME ${test_target} COMMAND ${test_target})
-    set_tests_properties(${test_target} PROPERTIES LABELS "stress")
-endforeach ()
+init_test("stress" stress/jp_queue_test.c "${TEST_DEPENDENCIES}")
+init_test("stress" stress/jp_reader_test.c "${TEST_DEPENDENCIES}")

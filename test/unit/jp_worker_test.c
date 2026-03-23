@@ -1,7 +1,9 @@
 #include <getopt.h>
 #include <jp_errno.h>
+#include <jp_reader.h>
 #include <jp_test.h>
 #include <jp_worker.h>
+#include <jp_writer.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -17,6 +19,19 @@ typedef struct {
     int argc;
     char* argv[10];
 } test_ctx_t;
+
+jp_errno_t reader_err = 0;
+jp_errno_t writer_err = 0;
+
+jp_errno_t jp_reader_consume(jp_reader_ctx_t ctx) {
+    jp_queue_finalize(ctx.queue);
+    return reader_err;
+}
+
+jp_errno_t jp_writer_produce(jp_writer_ctx_t ctx) {
+    jp_queue_finalize(ctx.queue);
+    return writer_err;
+}
 
 void tear_up_test_dir(const char* base_path) {
     char os_sub_path[JP_PATH_MAX];
@@ -165,7 +180,7 @@ void test_jp_wrk_exec_chunk_size(void) {
     };
 
     jp_errno_t err;
-    int len = (sizeof(cases) / sizeof(cases[0]));
+    int len = sizeof(cases) / sizeof(cases[0]);
     for (int i = 0; i < len; i++) {
         optind = 1;
         optarg = NULL;
@@ -334,6 +349,42 @@ void test_jp_wrk_exec_no_err(void) {
     JP_ASSERT_OK(err);
 }
 
+void test_jp_wrk_exec_no_reader_failed(void) {
+    jp_errno_t err;
+    char tmp_dir[JP_PATH_MAX];
+    char output[JP_PATH_MAX + 64];
+
+    jp_test_get_sandbox(tmp_dir, sizeof(tmp_dir));
+    snprintf(output, sizeof(output), "%s/happy_path-2", tmp_dir);
+
+    const char* args[8] = {"run", "-o", output, "-b", "100", "-c", "2kb", NULL};
+
+    reader_err = JP_EREAD_FAILED;
+    writer_err = 0;
+    tear_up_test_dir(tmp_dir);
+    err = jp_wrk_exec(7, (char**) args);
+
+    JP_ASSERT_EQ(JP_ERUN_FAILED, err);
+}
+
+void test_jp_wrk_exec_no_writer_failed(void) {
+    jp_errno_t err;
+    char tmp_dir[JP_PATH_MAX];
+    char output[JP_PATH_MAX + 64];
+
+    jp_test_get_sandbox(tmp_dir, sizeof(tmp_dir));
+    snprintf(output, sizeof(output), "%s/happy_path-3", tmp_dir);
+
+    const char* args[8] = {"run", "-o", output, "-b", "100", "-c", "2kb", NULL};
+
+    reader_err = 0;
+    writer_err = JP_ENOMEMORY;
+    tear_up_test_dir(tmp_dir);
+    err = jp_wrk_exec(7, (char**) args);
+
+    JP_ASSERT_EQ(JP_ERUN_FAILED, err);
+}
+
 int main(void) {
     test_jp_wrk_exec_help_command_short();
     test_jp_wrk_exec_help_command_long();
@@ -348,5 +399,6 @@ int main(void) {
     test_jp_wrk_exec_output_target_enotdir();
     test_jp_wrk_exec_output_target_readonly();
     test_jp_wrk_exec_no_err();
+    test_jp_wrk_exec_no_reader_failed();
     return EXIT_SUCCESS;
 }

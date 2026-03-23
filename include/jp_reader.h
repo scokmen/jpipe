@@ -2,6 +2,7 @@
 #define JPIPE_JP_READER_H
 
 #include <jp_errno.h>
+#include <jp_queue.h>
 
 typedef struct {
     size_t chunk_size;
@@ -9,6 +10,7 @@ typedef struct {
     int input_stream;
 } jp_reader_ctx_t;
 
+JP_ATTR_WEAK
 jp_errno_t jp_reader_consume(jp_reader_ctx_t ctx);
 
 #endif  // JPIPE_JP_READER_H

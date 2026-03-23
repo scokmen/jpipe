@@ -183,11 +183,23 @@ function(init_coverage_flags TARGET)
                 COMMAND ${LCOV_BINARY} --capture --initial --directory . --output-file base.info
                 COMMAND ${LCOV_BINARY} -capture --directory . --output-file test.info
                 COMMAND ${LCOV_BINARY} --add-tracefile base.info --add-tracefile test.info --output-file total.info
-                COMMAND ${LCOV_BINARY} --remove total.info '*/test/*' --output-file coverage_filtered.info
+                COMMAND ${LCOV_BINARY} --remove total.info '/usr/*' '*/test/*' --output-file coverage_filtered.info
                 COMMAND ${GCOVR_BINARY} -r ${CMAKE_SOURCE_DIR} . --exclude '.*/test/.*' --print-summary
                 WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
                 COMMENT "[coverage]: analysing..."
         )
         message(STATUS "[coverage]: targeted >> [target=coverage]")
     endif ()
+endfunction()
+
+function(init_test LABEL SOURCE LIBRARIES)
+    get_filename_component(raw_name ${SOURCE} NAME_WE)
+    set(test_target "${LABEL}_test_${raw_name}")
+
+    add_executable(${test_target} ${SOURCE})
+    target_link_libraries(${test_target} PRIVATE ${LIBRARIES})
+    
+    add_test(NAME ${test_target} COMMAND ${test_target})
+    set_tests_properties(${test_target} PROPERTIES LABELS ${LABEL})
+    message(STATUS "[test]: ${test_target}")
 endfunction()

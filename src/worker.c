@@ -385,8 +385,11 @@ clean_up:
             if (join_err) {
                 jp_errno_log_err_format(JP_ERUN_FAILED, "%s", strerror(join_err));
             }
-            err                = (int) (uintptr_t) thread_result;
-            threads[i].running = false;
+            const int thread_err = (int) (uintptr_t) thread_result;
+            threads[i].running   = false;
+            if (thread_err > 0) {
+                err = thread_err;
+            }
         }
     }
 

@@ -12,7 +12,6 @@ typedef struct {
     jp_field_set_t* fields;
 } jp_writer_ctx_t;
 
-JP_ATTR_WEAK
 jp_errno_t jp_writer_produce(jp_writer_ctx_t ctx);
 
 #endif  // JPIPE_JP_WRITER_H

@@ -1,6 +1,7 @@
 #include <jp_writer.h>
 #include <stdlib.h>
 
+JP_ATTR_WEAK
 jp_errno_t jp_writer_produce(jp_writer_ctx_t ctx) {
     jp_errno_t err = 0;
     jp_block_t* block;

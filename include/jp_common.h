@@ -220,7 +220,7 @@
  *
  * @param ptr_idx The 1-based index of the pointer argument.
  */
-#define JP_ATTR_READONLY(ptr_idx)              __attribute__((access(read_only, ptr_idx)))
+#define JP_ATTR_READ_ONLY(ptr_idx)              __attribute__((access(read_only, ptr_idx)))
 /**
  * @brief Informs the compiler that a pointer is read-only and defines its bound.
  *
@@ -230,7 +230,7 @@
  * @param ptr_idx  The 1-based index of the pointer argument.
  * @param size_idx The 1-based index of the argument representing the buffer size.
  */
-#define JP_ATTR_READONLY_N(ptr_idx, size_idx)  __attribute__((access(read_only, ptr_idx, size_idx)))
+#define JP_ATTR_READ_ONLY_N(ptr_idx, size_idx)  __attribute__((access(read_only, ptr_idx, size_idx)))
 /**
  * @brief Informs the compiler that a pointer argument is used for writing.
  *
@@ -242,7 +242,7 @@
  *
  * @param ptr_idx The 1-based index of the pointer argument.
  */
-#define JP_ATTR_WRITEONLY(ptr_idx)             __attribute__((access(write_only, ptr_idx)))
+#define JP_ATTR_WRITE_ONLY(ptr_idx)             __attribute__((access(write_only, ptr_idx)))
 /**
  * @brief Informs the compiler that a pointer is write-only and defines its bound.
  *
@@ -252,12 +252,12 @@
  * @param ptr_idx  The 1-based index of the pointer argument.
  * @param size_idx The 1-based index of the argument representing the buffer size.
  */
-#define JP_ATTR_WRITEONLY_N(ptr_idx, size_idx) __attribute__((access(write_only, ptr_idx, size_idx)))
+#define JP_ATTR_WRITE_ONLY_N(ptr_idx, size_idx) __attribute__((access(write_only, ptr_idx, size_idx)))
 #else
-#define JP_ATTR_READONLY(ptr_idx)
-#define JP_ATTR_READONLY_N(ptr_idx, size_idx)
-#define JP_ATTR_WRITEONLY(ptr_idx)
-#define JP_ATTR_WRITEONLY_N(ptr_idx, size_idx)
+#define JP_ATTR_READ_ONLY(ptr_idx)
+#define JP_ATTR_READ_ONLY_N(ptr_idx, size_idx)
+#define JP_ATTR_WRITE_ONLY(ptr_idx)
+#define JP_ATTR_WRITE_ONLY_N(ptr_idx, size_idx)
 #pragma message("cc: attribute not supported (access)")
 #endif
 
@@ -289,9 +289,9 @@
  *
  * Useful for fixed-width protocol headers, tags, or database fields.
  */
-#define JP_NONSTRING __attribute__((nonstring))
+#define JP_ATTR_BUFFER __attribute__((nonstring))
 #else
-#define JP_NONSTRING
+#define JP_ATTR_BUFFER
 #pragma message("cc: attribute not supported (nonstring)")
 #endif
 

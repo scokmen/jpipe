@@ -21,7 +21,7 @@ JP_ATTR_USE_RETURN
 jp_field_set_t* jp_field_set_create(size_t cap);
 
 JP_ATTR_NONNULL(1, 2)
-JP_ATTR_READONLY(2)
+JP_ATTR_READ_ONLY(2)
 jp_errno_t jp_field_set_add(jp_field_set_t* set, const char* kv);
 
 void jp_field_set_destroy(jp_field_set_t* set);

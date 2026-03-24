@@ -13,20 +13,20 @@ typedef struct {
 } jp_cmd_t;
 
 JP_ATTR_NONNULL(2, 3, 4)
-JP_ATTR_READONLY_N(2, 1)
+JP_ATTR_READ_ONLY_N(2, 1)
 uint8_t jp_cmd_count(int argc, char* argv[], const char* cmd_short, const char* cmd_long);
 
 JP_ATTR_NONNULL(2, 4)
-JP_ATTR_READONLY_N(4, 3)
-JP_ATTR_READONLY_N(2, 1)
+JP_ATTR_READ_ONLY_N(4, 3)
+JP_ATTR_READ_ONLY_N(2, 1)
 jp_errno_t jp_cmd_exec(int cmdc, jp_cmd_t* cmds, int argc, char* argv[]);
 
 JP_ATTR_NONNULL(2)
-JP_ATTR_READONLY_N(2, 1)
+JP_ATTR_READ_ONLY_N(2, 1)
 jp_errno_t jp_cmd_help(int argc, char* argv[]);
 
 JP_ATTR_NONNULL(2)
-JP_ATTR_READONLY_N(2, 1)
+JP_ATTR_READ_ONLY_N(2, 1)
 jp_errno_t jp_cmd_version(int argc, char* argv[]);
 
 #endif  // JPIPE_JP_COMMAND_H

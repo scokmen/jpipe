@@ -67,7 +67,7 @@ typedef jp_errno_t (*jp_test_fn)(void* ctx);
 typedef void* (*jp_test_thread_handler)(void*);
 
 JP_ATTR_NONNULL(1)
-JP_ATTR_WRITEONLY_N(1, 2)
+JP_ATTR_WRITE_ONLY_N(1, 2)
 void jp_test_get_sandbox(char* buffer, size_t size);
 
 JP_ATTR_NONNULL(2, 3)

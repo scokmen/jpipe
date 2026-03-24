@@ -21,7 +21,7 @@ typedef enum {
 } jp_queue_policy_t;
 
 typedef struct {
-    unsigned char* data JP_NONSTRING;
+    unsigned char* data JP_ATTR_BUFFER;
     size_t length;
 } jp_block_t;
 
@@ -37,7 +37,7 @@ typedef struct {
     pthread_cond_t not_full;
     jp_queue_policy_t policy;
     jp_block_t* blocks;
-    unsigned char* area JP_NONSTRING;
+    unsigned char* area JP_ATTR_BUFFER;
 } jp_queue_t;
 
 JP_ATTR_ALLOCATED

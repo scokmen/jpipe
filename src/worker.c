@@ -6,6 +6,7 @@
 #include <jp_reader.h>
 #include <jp_worker.h>
 #include <jp_writer.h>
+#include <limits.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -13,15 +14,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-typedef void* (*worker_func)(void*);
-
-typedef struct {
-    bool running;
-    bool detached;
-    pthread_t tid;
-    worker_func func;
-} worker_thread_t;
 
 typedef struct {
     int input_stream;
@@ -234,7 +226,7 @@ static jp_errno_t create_and_normalize_out_dir(worker_ctx_t* ctx) {
 }
 
 static jp_errno_t init_worker_args(int argc, char* argv[], worker_ctx_t* ctx) {
-    uint8_t field_arg_count = jp_cmd_count(argc, argv, "-f", "--field");
+    const uint8_t field_arg_count = jp_cmd_count(argc, argv, "-f", "--field");
     if (field_arg_count > JP_CONF_FIELDS_MAX) {
         return jp_errno_log_err_format(JP_ETOO_MANY_FIELD, "Too many fields specified: '%d'", field_arg_count);
     }
@@ -258,7 +250,7 @@ static jp_errno_t collect_cli_args(int argc, char* argv[], worker_ctx_t* ctx) {
                                            {"no-color", no_argument, 0, 'C'},
                                            {0, 0, 0, 0}};
 
-    while ((option = getopt_long(argc, argv, ":c:b:p:o:f:hnq", long_options, NULL)) != -1) {
+    while ((option = getopt_long(argc, argv, ":c:b:p:o:f:hnqC", long_options, NULL)) != -1) {
         switch (option) {
             case 'c':
                 JP_VERIFY(set_chunk_size(optarg, ctx));
@@ -308,31 +300,45 @@ static jp_errno_t finalize_worker_args(worker_ctx_t* ctx) {
 }
 
 static void* consumer_thread_init(void* data) {
-    const worker_ctx_t* args   = data;
-    jp_reader_ctx_t reader_ctx = {
+    const worker_ctx_t* args         = data;
+    const jp_reader_ctx_t reader_ctx = {
         .chunk_size   = args->chunk_size,
         .queue        = args->queue,
         .input_stream = args->input_stream,
     };
-    jp_errno_t err = jp_reader_consume(reader_ctx);
-    pthread_exit((void*) (uintptr_t) err);  // NOLINT(performance-no-int-to-ptr)
+
+    jp_errno_t* result = malloc(sizeof(jp_errno_t));
+    if (result == NULL) {
+        jp_errno_log_err(JP_ENOMEMORY);
+        pthread_exit(NULL);
+    }
+
+    *result = jp_reader_consume(reader_ctx);
+    pthread_exit(result);
 }
 
 static void* producer_thread_init(void* data) {
-    const worker_ctx_t* args   = data;
-    jp_writer_ctx_t writer_ctx = {
+    const worker_ctx_t* args         = data;
+    const jp_writer_ctx_t writer_ctx = {
         .chunk_size = args->chunk_size,
         .queue      = args->queue,
         .output_dir = args->out_dir,
     };
-    jp_errno_t err = jp_writer_produce(writer_ctx);
-    pthread_exit((void*) (uintptr_t) err);  // NOLINT(performance-no-int-to-ptr)
+
+    jp_errno_t* result = malloc(sizeof(jp_errno_t));
+    if (result == NULL) {
+        jp_errno_log_err(JP_ENOMEMORY);
+        pthread_exit(NULL);
+    }
+
+    *result = jp_writer_produce(writer_ctx);
+    pthread_exit(result);
 }
 
 static void* watcher_thread_init(void* data) {
     int sig;
     sigset_t set;
-    worker_ctx_t* args = data;
+    const worker_ctx_t* args = data;
 
     sigemptyset(&set);
     sigaddset(&set, SIGINT);
@@ -345,55 +351,76 @@ static void* watcher_thread_init(void* data) {
     pthread_exit(NULL);
 }
 
-static jp_errno_t orchestrate_threads(worker_ctx_t* ctx) {
-    int err = 0, join_err = 0, t_size = 0;
+static jp_errno_t join_worker_thread(const pthread_t thread_id) {
     void* thread_result;
+    const int err = pthread_join(thread_id, &thread_result);
+    if (err) {
+        return jp_errno_log_err_format(JP_ERUN_FAILED, "%s", strerror(err));
+    }
+    if (thread_result == NULL || thread_result == PTHREAD_CANCELED) {
+        return 0;
+    }
+    const jp_errno_t thread_value = *(jp_errno_t*) thread_result;
+    free(thread_result);
+    return thread_value;
+}
+
+static jp_errno_t orchestrate_threads(worker_ctx_t* ctx) {
+    int err = 0;
     sigset_t set;
-    worker_thread_t threads[3] = {{.func = consumer_thread_init, .running = false, .detached = false},
-                                  {.func = producer_thread_init, .running = false, .detached = false},
-                                  {.func = watcher_thread_init, .running = false, .detached = true}};
+    pthread_attr_t attr;
+    struct sched_param param;
+    pthread_t consumer_thread, producer_thread, watcher_thread;
+    uint8_t flags = 0x0;
 
     sigemptyset(&set);
     sigaddset(&set, SIGTERM);
     sigaddset(&set, SIGINT);
     pthread_sigmask(SIG_BLOCK, &set, NULL);
 
-    t_size = sizeof(threads) / sizeof(threads[0]);
-    for (int i = 0; i < t_size; i++) {
-        err = pthread_create(&threads[i].tid, NULL, threads[i].func, ctx);
-        if (err) {
-            goto clean_up;
-        }
-        threads[i].running = true;
-        if (!threads[i].detached) {
-            continue;
-        }
-        err = pthread_detach(threads[i].tid);
-        if (err) {
-            goto clean_up;
-        }
+    pthread_attr_init(&attr);
+
+    err = pthread_create(&consumer_thread, &attr, consumer_thread_init, ctx);
+    if (err) {
+        goto clean_up;
     }
+    flags = flags | 0x1;
+
+    err = pthread_create(&producer_thread, &attr, producer_thread_init, ctx);
+    if (err) {
+        goto clean_up;
+    }
+    flags = flags | 0x2;
+
+    param.sched_priority = 0;
+    pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    pthread_attr_setschedpolicy(&attr, SCHED_OTHER);
+    pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+    pthread_attr_setschedparam(&attr, &param);
+
+    err = pthread_create(&watcher_thread, &attr, watcher_thread_init, ctx);
 
 clean_up:
     if (err) {
         jp_errno_log_err_format(JP_ERUN_FAILED, "%s", strerror(err));
-    }
-
-    for (int i = 0; i < t_size; i++) {
-        if (threads[i].running && !threads[i].detached) {
-            join_err = pthread_join(threads[i].tid, &thread_result);
-            if (join_err) {
-                jp_errno_log_err_format(JP_ERUN_FAILED, "%s", strerror(join_err));
-            }
-            const int thread_err = (int) (uintptr_t) thread_result;
-            threads[i].running   = false;
-            if (thread_err > 0) {
-                err = thread_err;
-            }
+        jp_queue_finalize(ctx->queue);
+        if (flags & 0x01) {
+            pthread_cancel(consumer_thread);
         }
+        if (flags & 0x02) {
+            pthread_cancel(producer_thread);
+        }
+    }
+    if (flags & 0x1) {
+        err += (int) join_worker_thread(consumer_thread);
+    }
+    if (flags & 0x2) {
+        err += (int) join_worker_thread(producer_thread);
     }
 
     jp_queue_finalize(ctx->queue);
+    pthread_attr_destroy(&attr);
     return err ? JP_ERUN_FAILED : 0;
 }
 

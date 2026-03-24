@@ -25,7 +25,7 @@ jp_errno_t jp_reader_consume(jp_reader_ctx_t ctx) {
 
     while (true) {
         err = jp_poller_wait(poller);
-        if (err == JP_EREAD_FAILED) {
+        if (JP_ATTR_UNLIKELY(err == JP_EREAD_FAILED)) {
             break;
         }
         if (err == JP_ETRYAGAIN) {

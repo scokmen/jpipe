@@ -1,4 +1,5 @@
 #include <jp_command.h>
+#include <jp_config.h>
 #include <jp_test.h>
 #include <stdio.h>
 #include <stdlib.h>

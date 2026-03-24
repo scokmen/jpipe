@@ -323,7 +323,7 @@
  * @note The cast to (void*) ensures compatibility with various pointer types
  * and avoids potential warnings with 'const' pointers.
  *
- * @param ptr The pointer to be freed (must be an lvalue).
+ * @param ptr The pointer to be freed (must be a lvalue).
  */
 #define JP_FREE(ptr)             \
     do {                         \

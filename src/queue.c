@@ -5,10 +5,9 @@
 
 jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size, jp_queue_policy_t policy) {
     jp_queue_t* queue;
-
-    size_t blocks_offset = sizeof(jp_queue_t);
-    size_t area_offset   = blocks_offset + capacity * sizeof(jp_block_t);
-    size_t total_size    = area_offset + capacity * chunk_size;
+    const size_t blocks_offset = sizeof(jp_queue_t);
+    const size_t area_offset   = blocks_offset + capacity * sizeof(jp_block_t);
+    const size_t total_size    = area_offset + capacity * chunk_size;
 
     JP_ALLOC(queue, malloc(total_size), NULL);
 
@@ -106,6 +105,11 @@ void jp_queue_pop_commit(jp_queue_t* queue) {
 }
 
 void jp_queue_finalize(jp_queue_t* queue) {
+    if (!atomic_load_explicit(&queue->active, memory_order_acquire)) {
+        JP_LOG_DEBUG("[QUEUE]: Queue was already finalized.");
+        return;
+    }
+    JP_LOG_DEBUG("[QUEUE]: Queue is being finalized.");
     pthread_mutex_lock(&queue->lock);
     atomic_store_explicit(&queue->active, false, memory_order_release);
     pthread_cond_broadcast(&queue->not_empty);

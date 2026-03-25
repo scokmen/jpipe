@@ -106,7 +106,7 @@ void test_jp_wrk_exec_buffer_size(void) {
     };
 
     jp_errno_t err;
-    int len = (sizeof(cases) / sizeof(cases[0]));
+    int len = sizeof(cases) / sizeof(cases[0]);
     for (int i = 0; i < len; i++) {
         optind = 1;
         optarg = NULL;

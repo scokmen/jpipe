@@ -32,6 +32,7 @@ init_test("unit" unit/jp_command_test.c "${TEST_DEPENDENCIES}")
 init_test("unit" unit/jp_queue_test.c "${TEST_DEPENDENCIES}")
 init_test("unit" unit/jp_reader_test.c "${TEST_DEPENDENCIES}")
 init_test("unit" unit/jp_worker_test.c "${TEST_DEPENDENCIES}")
+init_test("unit" unit/jp_json_test.c "${TEST_DEPENDENCIES}")
 
 ###############################################
 # JPipe: Stress Tests

@@ -43,9 +43,9 @@ void test_jp_field_set_add_set_is_full(void) {
     JP_ASSERT_EQ(JP_ETOO_MANY_FIELD, jp_field_set_add(set, "key-3=value-3"));
 
     JP_ASSERT_EQ(2, set->len);
-    JP_ASSERT_OK(memcmp(set->fields[0]->key, "key-1", set->fields[0]->key_len));
+    JP_ASSERT_OK(strcmp(set->fields[0]->key, "key-1"));
     JP_ASSERT_OK(memcmp(set->fields[0]->val, "value-1", set->fields[0]->val_len));
-    JP_ASSERT_OK(memcmp(set->fields[1]->key, "key-2", set->fields[1]->key_len));
+    JP_ASSERT_OK(strcmp(set->fields[1]->key, "key-2"));
     JP_ASSERT_OK(memcmp(set->fields[1]->val, "value-2", set->fields[1]->val_len));
 
     jp_field_set_destroy(set);
@@ -58,7 +58,7 @@ void test_jp_field_set_add_key_exists(void) {
     JP_ASSERT_OK(jp_field_set_add(set, "key-1=value-1"));
     JP_ASSERT_OK(jp_field_set_add(set, "key-1=value-1"));
     JP_ASSERT_EQ(1, set->len);
-    JP_ASSERT_OK(memcmp(set->fields[0]->key, "key-1", set->fields[0]->key_len));
+    JP_ASSERT_OK(strcmp(set->fields[0]->key, "key-1"));
     JP_ASSERT_OK(memcmp(set->fields[0]->val, "value-1", set->fields[0]->val_len));
 
     jp_field_set_destroy(set);
@@ -87,7 +87,7 @@ void test_jp_field_set_add_valid_keys(void) {
     for (int i = 0; i < len; i++) {
         err = jp_field_set_add(set, cases[i].kv);
         JP_ASSERT_EQ(cases[i].expected, err);
-        JP_ASSERT_OK(memcmp(set->fields[i]->key, cases[i].key, set->fields[i]->key_len));
+        JP_ASSERT_OK(strcmp(set->fields[i]->key, cases[i].key));
         JP_ASSERT_OK(memcmp(set->fields[i]->val, cases[i].value, set->fields[i]->val_len));
     }
 

@@ -1,4 +1,3 @@
-#include <getopt.h>
 #include <jp_errno.h>
 #include <jp_queue.h>
 #include <jp_reader.h>

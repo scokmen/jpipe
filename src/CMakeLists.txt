@@ -22,6 +22,7 @@ add_library(jpipe_core STATIC
         reader.c
         writer.c
         config.c
+        json.c
         ${NON_PORTABLE_C_FILES}
 )
 

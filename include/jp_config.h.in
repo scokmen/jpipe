@@ -62,6 +62,7 @@
 #define JP_CONF_OUTDIR_DEF      "."
 #define JP_CONF_FIELDS_MAX      32
 #define JP_CONF_FIELD_MAX_KEY   32
+#define JP_CONF_FIELD_MAX_VAL   512
 
 typedef struct {
     bool silent;

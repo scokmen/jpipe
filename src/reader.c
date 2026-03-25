@@ -33,12 +33,12 @@ jp_errno_t jp_reader_consume(jp_reader_ctx_t ctx) {
         }
         while (true) {
             err = jp_queue_push_uncommitted(ctx.queue, &block);
-            if (err == JP_ESHUTTING_DOWN) {
+            if (JP_ATTR_UNLIKELY(err == JP_ESHUTTING_DOWN)) {
                 goto clean_up;
             }
             target_buffer = err == JP_EMSG_SHOULD_DROP ? buffer : block->data;
             read_len      = read(ctx.input_stream, target_buffer, ctx.chunk_size);
-            if (read_len == 0) {
+            if (JP_ATTR_UNLIKELY(read_len == 0)) {
                 goto clean_up;
             }
             if (read_len < 0) {

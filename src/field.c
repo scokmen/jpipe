@@ -19,23 +19,21 @@ static bool is_valid_field_key(const char* start, const char* end) {
     return true;
 }
 
-static jp_field_t* create_field(const char* key, const char* val) {
+static jp_field_t* create_field(const char* kv, size_t key_len, size_t val_len) {
     jp_field_t* field;
-    size_t key_len = strlen(key);
-    size_t val_len = strlen(val);
 
-    JP_ALLOC(field, malloc(sizeof(jp_field_t) + key_len + val_len + 2), NULL);
+    JP_ALLOC(field, malloc(sizeof(jp_field_t) + key_len + val_len), NULL);
     field->key     = (const char*) field + sizeof(jp_field_t);
-    field->val     = field->key + key_len + 1;
     field->key_len = key_len;
-    memcpy((void*) field->key, key, key_len + 1);
-    memcpy((void*) field->val, val, val_len + 1);
+    field->val     = field->key + key_len;
+    field->val_len = val_len;
+    memcpy((void*) field->key, kv, key_len);
+    memcpy((void*) field->val, kv + key_len + 1, val_len);
     return field;
 }
 
 static jp_errno_t crete_field_from_kv(const char* kv, jp_field_t** field) {
-    size_t key_len;
-    char key[JP_CONF_FIELD_MAX_KEY + 1];
+    size_t key_len, val_len;
     const char* eq = strchr(kv, '=');
 
     *field = NULL;
@@ -44,18 +42,17 @@ static jp_errno_t crete_field_from_kv(const char* kv, jp_field_t** field) {
     }
 
     key_len = (size_t) (eq - kv);
-    if (key_len > JP_CONF_FIELD_MAX_KEY) {
+    val_len = strlen(kv) - key_len - 1;
+    if (key_len == 0 || key_len > JP_CONF_FIELD_MAX_KEY) {
         return JP_EINV_FIELD_KEY;
     }
-
+    if (val_len == 0 || val_len > JP_CONF_FIELD_MAX_VAL) {
+        return JP_EINV_FIELD_VAL;
+    }
     if (!is_valid_field_key(kv, eq)) {
         return JP_EINV_FIELD_KEY;
     }
-
-    memcpy(key, kv, key_len);
-    key[key_len] = '\0';
-
-    JP_ALLOC(*field, create_field(key, eq + 1), JP_ENOMEMORY);
+    JP_ALLOC(*field, create_field(kv, key_len, val_len), JP_ENOMEMORY);
     return 0;
 }
 

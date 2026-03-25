@@ -6,8 +6,9 @@
 
 typedef struct {
     size_t key_len;
-    const char* key;
-    const char* val;
+    size_t val_len;
+    const char* key JP_ATTR_BUFFER;
+    const char* val JP_ATTR_BUFFER;
 } jp_field_t;
 
 typedef struct {

@@ -32,21 +32,22 @@
  */
 #define JP_ERRNO_ALLOC(var, expr) JP_ALLOC(var, expr, jp_errno_log_err(JP_ENOMEMORY))
 
-#define JP_ERRNO_MAP(XX)                                                                                    \
-    XX(EMISSING_CMD, "Missing command. Please use 'jpipe --help' to see available commands.")               \
-    XX(EUNKNOWN_CMD, "Unknown command. Please use 'jpipe --help' to see available commands.")               \
-    XX(EUNKNOWN_RUN_CMD, "Unknown [run] argument. Please use 'jpipe run --help' to see available options.") \
-    XX(ECHUNK_SIZE, "Chunk size must be between 1kb (1024B) and 128kb (131072B), default (16kb).")          \
-    XX(EBUFFER_SIZE, "Buffer size must be between 1 and 1024, (default: 64)")                               \
-    XX(EOVERFLOW_POLICY, "Overflow policy must be 'wait' or 'drop', (default: wait).")                      \
-    XX(EOUT_DIR, "Output directory is invalid, inaccessible or path too long.")                             \
-    XX(ETOO_MANY_FIELD, "Too many fields. Maximum allowed field number is 32.")                             \
-    XX(EINV_FIELD_KEY, "Invalid key. The key must be at most 64 character (allowed: a-z, A-Z, 0-9, _, -).") \
-    XX(ERUN_FAILED, "An error occurred. Cannot run the application.")                                       \
-    XX(ESHUTTING_DOWN, "The application is shutting down.")                                                 \
-    XX(EMSG_SHOULD_DROP, "Message was dropped.")                                                            \
-    XX(EREAD_FAILED, "Cannot read the incoming stream.")                                                    \
-    XX(ETRYAGAIN, "Try again later.")                                                                       \
+#define JP_ERRNO_MAP(XX)                                                                                          \
+    XX(EMISSING_CMD, "Missing command. Please use 'jpipe --help' to see available commands.")                     \
+    XX(EUNKNOWN_CMD, "Unknown command. Please use 'jpipe --help' to see available commands.")                     \
+    XX(EUNKNOWN_RUN_CMD, "Unknown [run] argument. Please use 'jpipe run --help' to see available options.")       \
+    XX(ECHUNK_SIZE, "Chunk size must be between 1kb (1024B) and 128kb (131072B), default (16kb).")                \
+    XX(EBUFFER_SIZE, "Buffer size must be between 1 and 1024, (default: 64)")                                     \
+    XX(EOVERFLOW_POLICY, "Overflow policy must be 'wait' or 'drop', (default: wait).")                            \
+    XX(EOUT_DIR, "Output directory is invalid, inaccessible or path too long.")                                   \
+    XX(ETOO_MANY_FIELD, "Too many fields. Maximum allowed field number is 32.")                                   \
+    XX(EINV_FIELD_KEY, "Invalid field key. The key must be at most 64 character (allowed: a-z, A-Z, 0-9, _, -).") \
+    XX(EINV_FIELD_VAL, "Invalid field value. The key must be at most 512 byte.")                                  \
+    XX(ERUN_FAILED, "An error occurred. Cannot run the application.")                                             \
+    XX(ESHUTTING_DOWN, "The application is shutting down.")                                                       \
+    XX(EMSG_SHOULD_DROP, "Message was dropped.")                                                                  \
+    XX(EREAD_FAILED, "Cannot read the incoming stream.")                                                          \
+    XX(ETRYAGAIN, "Try again later.")                                                                             \
     XX(ENOMEMORY, "Could not allocate memory.")
 
 typedef enum {

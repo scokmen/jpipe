@@ -58,7 +58,8 @@ static jp_errno_t display_help(void) {
 }
 
 static void display_summary(worker_ctx_t* ctx) {
-    double estimated_mem_usage = (double) ctx->chunk_size * (double) ctx->buffer_size / (BYTES_IN_KB * BYTES_IN_KB);
+    const double estimated_mem_usage =
+        (double) ctx->chunk_size * (double) ctx->buffer_size / (BYTES_IN_KB * BYTES_IN_KB);
 
     JP_LOG_MSG("Application is starting...\n");
     JP_LOG_MSG("[Runtime Parameters]");
@@ -69,7 +70,12 @@ static void display_summary(worker_ctx_t* ctx) {
     if (ctx->fields->len > 0) {
         JP_LOG_MSG("• Fields       (-f) :");
         for (size_t i = 0; i < ctx->fields->len; i++) {
-            JP_LOG_MSG("     %zu. %-32s= %-32s", i + 1, ctx->fields->fields[i]->key, ctx->fields->fields[i]->val);
+            JP_LOG_MSG("     %zu. %-32.*s= %-32.*s",
+                       i + 1,
+                       (int) ctx->fields->fields[i]->key_len,
+                       ctx->fields->fields[i]->key,
+                       (int) ctx->fields->fields[i]->val_len,
+                       ctx->fields->fields[i]->val);
         }
     }
     JP_LOG_MSG("\n[Resource Utilization]");

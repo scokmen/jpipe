@@ -223,9 +223,6 @@ size_t jp_json_value_encoder(const unsigned char* restrict src,
     return dst_ptr;
 }
 
-JP_ATTR_NONNULL(1, 2)
-JP_ATTR_ALLOCATED
-JP_ATTR_USE_RETURN
 unsigned char* jp_json_postfix_encoder(JP_ATTR_UNUSED const jp_field_set_t* field_set, size_t* dst_len) {
     *dst_len = 3;
     return (unsigned char*) strdup("\"}\n");

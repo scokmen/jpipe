@@ -1,5 +1,6 @@
 #include <getopt.h>
 #include <jp_command.h>
+#include <jp_encoder.h>
 #include <jp_errno.h>
 #include <jp_field.h>
 #include <jp_queue.h>
@@ -44,13 +45,11 @@ static jp_errno_t display_help(void) {
     JP_LOG_INFO("    - Maximum length: 64 characters.");
     JP_LOG_INFO("\n  Value Type Inference:");
     JP_LOG_INFO("    - key=123        -> Number  (no quotes in JSON).");
+    JP_LOG_INFO("    - key=1e+10      -> Number  (no quotes in JSON).");
     JP_LOG_INFO("    - key=true|false -> Boolean (no quotes in JSON).");
     JP_LOG_INFO("    - key=string     -> String.");
-    JP_LOG_INFO("    - key=\"string\"   -> String.");
     JP_LOG_INFO("    - key=\"123\"      -> Forced string.");
     JP_LOG_INFO("    - key=\"true\"     -> Forced string.");
-    JP_LOG_INFO("    - key=\"str=ng\"   -> String.");
-    JP_LOG_INFO("    - key=str=ng     -> Invalid field.");
     JP_LOG_INFO("\n  Example:");
     JP_LOG_INFO("    Input : jpipe -f \"id=101\" -f \"name=app\" -f \"active=true\" -f \"ver=1.2.0\"");
     JP_LOG_INFO("    Output: {\"id\": 101, \"name\": \"app\", \"active\": true, \"ver\": \"1.2.0\"}");
@@ -75,7 +74,7 @@ static void display_summary(worker_ctx_t* ctx) {
                        (int) ctx->fields->fields[i]->key_len,
                        ctx->fields->fields[i]->key,
                        (int) ctx->fields->fields[i]->val_len,
-                       ctx->fields->fields[i]->val);
+                       (char*) ctx->fields->fields[i]->val);
         }
     }
     JP_LOG_MSG("\n[Resource Utilization]");
@@ -325,11 +324,11 @@ static void* consumer_thread_init(void* data) {
 
 static void* producer_thread_init(void* data) {
     const worker_ctx_t* args         = data;
-    const jp_writer_ctx_t writer_ctx = {
-        .chunk_size = args->chunk_size,
-        .queue      = args->queue,
-        .output_dir = args->out_dir,
-    };
+    const jp_writer_ctx_t writer_ctx = {.chunk_size = args->chunk_size,
+                                        .queue      = args->queue,
+                                        .output_dir = args->out_dir,
+                                        .fields     = args->fields,
+                                        .encoder    = jp_encoder_json};
 
     jp_errno_t* result = malloc(sizeof(jp_errno_t));
     if (result == NULL) {

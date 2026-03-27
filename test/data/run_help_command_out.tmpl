@@ -20,13 +20,11 @@ Field Options:
 
   Value Type Inference:
     - key=123        -> Number  (no quotes in JSON).
+    - key=1e+10      -> Number  (no quotes in JSON).
     - key=true|false -> Boolean (no quotes in JSON).
     - key=string     -> String.
-    - key="string"   -> String.
     - key="123"      -> Forced string.
     - key="true"     -> Forced string.
-    - key="str=ng"   -> String.
-    - key=str=ng     -> Invalid field.
 
   Example:
     Input : jpipe -f "id=101" -f "name=app" -f "active=true" -f "ver=1.2.0"

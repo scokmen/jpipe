@@ -295,6 +295,46 @@
 #pragma message("cc: attribute not supported (nonstring)")
 #endif
 
+#if HAS_ATTRIBUTE(hot)
+/**
+ * @brief Marks a function as a "hot" execution path.
+ *
+ * This attribute informs the compiler that the function is very frequently called.
+ * The optimizer will:
+ * 1. Place the function's machine code in a special "hot" section of the binary to improve instruction cache (i-cache)
+ * locality.
+ * 2. More aggressively attempt to inline functions called within this function.
+ * 3. Prioritize optimizations that favor execution speed over binary size for this specific function.
+ *
+ * Useful for main processing loops, escape functions, or core parsing logic.
+ */
+#define JP_ATTR_HOT __attribute__((hot))
+#else
+#define JP_ATTR_HOT
+#pragma message("cc: attribute not supported (hot)")
+#endif
+
+#if HAS_ATTRIBUTE(leaf)
+/**
+ * @brief Specifies that the function is a "leaf" function in the call graph.
+ *
+ * A leaf function does not call any other functions from the current compilation unit
+ * that might call back into the caller (directly or indirectly).
+ *
+ * This allows the compiler to:
+ * 1. Assume that no global variables or memory pointed to by arguments will be
+ * modified by "hidden" side effects during the call.
+ * 2. Keep local variables in registers across the function call, as it's guaranteed no re-entrancy will occur.
+ *
+ * @warning Do not use this if the function calls any external library functions or pointers-to-functions
+ * that could potentially modify the state of the current module.
+ */
+#define JP_ATTR_LEAF __attribute__((leaf))
+#else
+#define JP_ATTR_LEAF
+#pragma message("cc: attribute not supported (leaf)")
+#endif
+
 #if !defined(NDEBUG) && HAS_ATTRIBUTE(weak)
 /**
  * @brief Marks a function as "weak" to allow mocking in test environments.

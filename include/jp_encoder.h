@@ -16,6 +16,7 @@ typedef struct {
     jp_encode_prefix prefix_encoder;
     jp_encode_value value_encoder;
     jp_encode_postfix postfix_encoder;
+    size_t escaping_mul;
 } jp_encoder_t;
 
 extern const jp_encoder_t jp_encoder_json;

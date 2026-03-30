@@ -4,6 +4,8 @@
 #include <jp_common.h>
 #include <jp_field.h>
 
+#define JP_JSON_ESCAPE_MUL 6
+
 JP_ATTR_NONNULL(1, 2)
 JP_ATTR_ALLOCATED
 JP_ATTR_USE_RETURN

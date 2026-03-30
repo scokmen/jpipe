@@ -5,7 +5,8 @@
 
 const jp_encoder_t jp_encoder_json = {.prefix_encoder  = jp_json_prefix_encoder,
                                       .value_encoder   = jp_json_value_encoder,
-                                      .postfix_encoder = jp_json_postfix_encoder};
+                                      .postfix_encoder = jp_json_postfix_encoder,
+                                      .escaping_mul    = JP_JSON_ESCAPE_MUL};
 
 typedef enum {
     JSON_NUM_STATE_START,
@@ -155,14 +156,14 @@ unsigned char* jp_json_prefix_encoder(const jp_field_set_t* field_set, size_t* d
     unsigned char* metadata = NULL;
 
     for (size_t i = 0; i < field_set->len; i++) {
-        prefix_size += field_set->fields[i]->key_len + field_set->fields[i]->val_len * 6 + 6;
+        prefix_size += field_set->fields[i]->key_len + field_set->fields[i]->val_len * JP_JSON_ESCAPE_MUL + 6;
     }
 
     JP_ALLOC(metadata, malloc(sizeof(unsigned char) * prefix_size), NULL);
     metadata[json_ptr++] = '{';
     for (size_t i = 0; i < field_set->len; i++) {
         const jp_field_t* field = field_set->fields[i];
-        bool is_json_str        = is_json_string_literal(field->val, field->val_len);
+        const bool is_json_str  = is_json_string_literal(field->val, field->val_len);
 
         metadata[json_ptr++] = '\"';
         memcpy(metadata + json_ptr, field->key, field->key_len);

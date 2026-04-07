@@ -2,12 +2,13 @@
 #include <jp_config.h>
 #include <jp_errno.h>
 #include <jp_field.h>
+#include <jp_memory.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
-static bool is_valid_field_key(const char* start, const char* end) {
+static inline bool is_valid_field_key(const char* start, const char* end) {
     unsigned char c;
     while (start < end) {
         c = (unsigned char) *start++;
@@ -20,12 +21,10 @@ static bool is_valid_field_key(const char* start, const char* end) {
 }
 
 static jp_field_t* create_field(const char* kv, size_t key_len, size_t val_len) {
-    jp_field_t* field;
+    jp_field_t* field = jp_mem_malloc(sizeof(jp_field_t) + key_len + val_len + 2);
+    char* key         = (char*) field + sizeof(jp_field_t);
 
-    JP_ALLOC(field, malloc(sizeof(jp_field_t) + key_len + val_len + 2), NULL);
-    char* key = (char*) field + sizeof(jp_field_t);
     memcpy((void*) key, kv, key_len + val_len + 2);
-
     key[key_len]               = '\0';
     key[key_len + val_len + 1] = '\0';
     field->key                 = key;
@@ -54,21 +53,15 @@ static jp_errno_t crete_field_from_kv(const char* kv, jp_field_t** field) {
     if (!is_valid_field_key(kv, eq)) {
         return JP_EINV_FIELD_KEY;
     }
-    JP_ALLOC(*field, create_field(kv, key_len, val_len), JP_ENOMEMORY);
+    *field = create_field(kv, key_len, val_len);
     return 0;
 }
 
-static void destroy_field(jp_field_t* field) {
-    JP_FREE(field);
-}
-
 jp_field_set_t* jp_field_set_create(size_t cap) {
-    jp_field_set_t* set;
-    JP_ALLOC(set, malloc(sizeof(jp_field_set_t) + cap * sizeof(jp_field_t*)), NULL);
-
-    set->len    = 0;
-    set->cap    = cap;
-    set->fields = (jp_field_t**) (set + 1);
+    jp_field_set_t* set = jp_mem_malloc(sizeof(jp_field_set_t) + cap * sizeof(jp_field_t*));
+    set->len            = 0;
+    set->cap            = cap;
+    set->fields         = (jp_field_t**) (set + 1);
     return set;
 }
 
@@ -82,7 +75,7 @@ jp_errno_t jp_field_set_add(jp_field_set_t* set, const char* kv) {
     for (size_t i = 0; i < set->len; i++) {
         field = set->fields[i];
         if (field->key_len == new_field->key_len && !memcmp(field->key, new_field->key, new_field->key_len)) {
-            destroy_field(field);
+            JP_FREE(field);
             set->fields[i] = new_field;
             return 0;
         }
@@ -97,7 +90,7 @@ void jp_field_set_destroy(jp_field_set_t* set) {
         return;
     }
     for (size_t i = 0; i < set->len; i++) {
-        destroy_field(set->fields[i]);
+        JP_FREE(set->fields[i]);
     }
     free(set);
 }

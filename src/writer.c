@@ -1,4 +1,5 @@
 #include <jp_common.h>
+#include <jp_memory.h>
 #include <jp_writer.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,24 +10,14 @@ JP_ATTR_WEAK
 jp_errno_t jp_writer_produce(jp_writer_ctx_t ctx) {
     jp_errno_t err = 0;
     jp_block_t* block;
-    size_t prefix_len, postfix_len, block_len;
+    size_t block_len;
     size_t buf_len = ctx.chunk_size * ctx.encoder.escaping_mul;
     struct iovec iov[3];
     unsigned char *start_ptr, *end_ptr, *newline_ptr;
-    unsigned char* encoded_value         = malloc(buf_len);
-    unsigned const char* encoded_prefix  = ctx.encoder.prefix_encoder(ctx.fields, &prefix_len);
-    unsigned const char* encoded_postfix = ctx.encoder.postfix_encoder(ctx.fields, &postfix_len);
-
-    if (encoded_value == NULL || encoded_prefix == NULL || encoded_postfix == NULL) {
-        err = JP_ENOMEMORY;
-        goto clean_up;
-    }
-
-    iov[0].iov_base = (void*) encoded_prefix;
-    iov[0].iov_len  = prefix_len;
-    iov[1].iov_base = encoded_value;
-    iov[2].iov_base = (void*) encoded_postfix;
-    iov[2].iov_len  = postfix_len;
+    unsigned char* encoded_value = jp_mem_malloc(buf_len);
+    iov[0].iov_base              = ctx.encoder.prefix_encoder(ctx.fields, &iov[0].iov_len);
+    iov[2].iov_base              = ctx.encoder.postfix_encoder(ctx.fields, &iov[2].iov_len);
+    iov[1].iov_base              = encoded_value;
 
     while (true) {
         err = jp_queue_pop_uncommitted(ctx.queue, &block);
@@ -54,15 +45,12 @@ jp_errno_t jp_writer_produce(jp_writer_ctx_t ctx) {
         jp_queue_pop_commit(ctx.queue);
     }
 
-clean_up:
     if (JP_QUEUE_IS_GRACEFUL_ERR(err)) {
         err = 0;
-    } else {
-        jp_errno_log_err(err);
     }
-    JP_FREE(encoded_value);
-    JP_FREE(encoded_prefix);
-    JP_FREE(encoded_postfix);
+    JP_FREE(iov[0].iov_base);
+    JP_FREE(iov[1].iov_base);
+    JP_FREE(iov[2].iov_base);
     jp_queue_finalize(ctx.queue);
     return err;
 }

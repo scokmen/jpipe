@@ -35,12 +35,15 @@ static void* checker_thread_wrapper(void* arg) {
 
 static void test_jp_reader_stream_with_args(size_t capacity, size_t chunk_size, int count) {
     int fds[2];
+    jp_errno_t err = 0;
     pthread_t reader_thread, checker_thread;
     void *reader_result, *checker_result;
     const char* data  = "stream data\n";
-    jp_queue_t* queue = jp_queue_create(capacity, chunk_size, JP_QUEUE_POLICY_WAIT);
+    jp_queue_t* queue = jp_queue_create(capacity, chunk_size, JP_QUEUE_POLICY_WAIT, &err);
 
+    JP_ASSERT_OK(err);
     JP_ASSERT_OK(pipe(fds));
+
     fcntl(fds[0], F_SETFL, O_NONBLOCK);
     test_ctx_t test_ctx        = {.queue = queue, .count = count};
     jp_reader_ctx_t reader_ctx = {.input_stream = fds[0], .queue = queue, .chunk_size = chunk_size};

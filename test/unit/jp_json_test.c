@@ -1,5 +1,6 @@
 #include <jp_errno.h>
 #include <jp_json.h>
+#include <jp_memory.h>
 #include <jp_test.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,7 +59,7 @@ void test_jp_json_value_encoder_truncated(void) {
 
 void test_jp_json_prefix_encoder_empty(void) {
     size_t prefix_len                = 0;
-    jp_field_set_t* field_set  = jp_field_set_create(1);
+    jp_field_set_t* field_set        = jp_field_set_create(1);
     const unsigned char* line_prefix = jp_json_prefix_encoder(field_set, &prefix_len);
 
     JP_ASSERT_OK(memcmp((char*) line_prefix, "{\"msg\":", prefix_len));
@@ -69,6 +70,7 @@ void test_jp_json_prefix_encoder_empty(void) {
 void test_jp_json_prefix_encoder_ascii_field_values(void) {
     size_t prefix_len         = 0;
     jp_field_set_t* field_set = jp_field_set_create(8);
+
     JP_ASSERT_OK(jp_field_set_add(field_set, "env=prod"));
     JP_ASSERT_OK(jp_field_set_add(field_set, "host=https://www.example.com/"));
     JP_ASSERT_OK(jp_field_set_add(field_set, "version=1.2.3"));
@@ -77,7 +79,7 @@ void test_jp_json_prefix_encoder_ascii_field_values(void) {
     JP_ASSERT_OK(memcmp((char*) line_prefix,
                         "{\"env\":\"prod\",\"host\":\"https://www.example.com/\",\"version\":\"1.2.3\",\"msg\":",
                         prefix_len));
-    
+
     jp_field_set_destroy(field_set);
     JP_FREE(line_prefix);
 }
@@ -85,6 +87,7 @@ void test_jp_json_prefix_encoder_ascii_field_values(void) {
 void test_jp_json_prefix_encoder_non_ascii_field_values(void) {
     size_t prefix_len         = 0;
     jp_field_set_t* field_set = jp_field_set_create(8);
+
     JP_ASSERT_OK(jp_field_set_add(field_set, "label={ŵèéêëěẽēėęřțťþtýŷÿy}"));
     JP_ASSERT_OK(jp_field_set_add(field_set, "headers=h1\th2\th3"));
     JP_ASSERT_OK(jp_field_set_add(field_set, "version=\"v1-🧪\""));
@@ -94,7 +97,7 @@ void test_jp_json_prefix_encoder_non_ascii_field_values(void) {
         (char*) line_prefix,
         "{\"label\":\"{ŵèéêëěẽēėęřțťþtýŷÿy}\",\"headers\":\"h1\\th2\\th3\",\"version\":\"\\\"v1-🧪\\\"\",\"msg\":",
         prefix_len));
-    
+
     jp_field_set_destroy(field_set);
     JP_FREE(line_prefix);
 }
@@ -102,6 +105,7 @@ void test_jp_json_prefix_encoder_non_ascii_field_values(void) {
 void test_jp_json_prefix_encoder_type_inference_null(void) {
     size_t prefix_len         = 0;
     jp_field_set_t* field_set = jp_field_set_create(8);
+
     JP_ASSERT_OK(jp_field_set_add(field_set, "k1=null"));
     JP_ASSERT_OK(jp_field_set_add(field_set, "k2='null'"));
     JP_ASSERT_OK(jp_field_set_add(field_set, "k3= null"));
@@ -110,7 +114,7 @@ void test_jp_json_prefix_encoder_type_inference_null(void) {
 
     JP_ASSERT_OK(memcmp(
         (char*) line_prefix, "{\"k1\":null,\"k2\":\"'null'\",\"k3\":\" null\",\"k4\":\"null \",\"msg\":", prefix_len));
-    
+
     jp_field_set_destroy(field_set);
     JP_FREE(line_prefix);
 }
@@ -118,6 +122,7 @@ void test_jp_json_prefix_encoder_type_inference_null(void) {
 void test_jp_json_prefix_encoder_type_inference_bool_true(void) {
     size_t prefix_len         = 0;
     jp_field_set_t* field_set = jp_field_set_create(8);
+
     JP_ASSERT_OK(jp_field_set_add(field_set, "k1=true"));
     JP_ASSERT_OK(jp_field_set_add(field_set, "k2='true'"));
     JP_ASSERT_OK(jp_field_set_add(field_set, "k3=TRUE"));
@@ -126,7 +131,7 @@ void test_jp_json_prefix_encoder_type_inference_bool_true(void) {
 
     JP_ASSERT_OK(memcmp(
         (char*) line_prefix, "{\"k1\":true,\"k2\":\"'true'\",\"k3\":\"TRUE\",\"k4\":\" true\",\"msg\":", prefix_len));
-    
+
     jp_field_set_destroy(field_set);
     JP_FREE(line_prefix);
 }
@@ -134,6 +139,7 @@ void test_jp_json_prefix_encoder_type_inference_bool_true(void) {
 void test_jp_json_prefix_encoder_type_inference_bool_false(void) {
     size_t prefix_len         = 0;
     jp_field_set_t* field_set = jp_field_set_create(8);
+
     JP_ASSERT_OK(jp_field_set_add(field_set, "k1=false"));
     JP_ASSERT_OK(jp_field_set_add(field_set, "k2='false'"));
     JP_ASSERT_OK(jp_field_set_add(field_set, "k3=FALSE"));
@@ -143,7 +149,7 @@ void test_jp_json_prefix_encoder_type_inference_bool_false(void) {
     JP_ASSERT_OK(memcmp((char*) line_prefix,
                         "{\"k1\":false,\"k2\":\"'false'\",\"k3\":\"FALSE\",\"k4\":\" false\",\"msg\":",
                         prefix_len));
-    
+
     jp_field_set_destroy(field_set);
     JP_FREE(line_prefix);
 }
@@ -151,6 +157,7 @@ void test_jp_json_prefix_encoder_type_inference_bool_false(void) {
 void test_jp_json_prefix_encoder_type_inference_numbers_valid(void) {
     size_t prefix_len         = 0;
     jp_field_set_t* field_set = jp_field_set_create(8);
+
     JP_ASSERT_OK(jp_field_set_add(field_set, "k1=0"));
     JP_ASSERT_OK(jp_field_set_add(field_set, "k2=0.124"));
     JP_ASSERT_OK(jp_field_set_add(field_set, "k3=-0.34E12"));
@@ -159,7 +166,7 @@ void test_jp_json_prefix_encoder_type_inference_numbers_valid(void) {
 
     JP_ASSERT_OK(
         memcmp((char*) line_prefix, "{\"k1\":0,\"k2\":0.124,\"k3\":-0.34E12,\"k4\":12.22E+12,\"msg\":", prefix_len));
-    
+
     jp_field_set_destroy(field_set);
     JP_FREE(line_prefix);
 }
@@ -167,6 +174,7 @@ void test_jp_json_prefix_encoder_type_inference_numbers_valid(void) {
 void test_jp_json_prefix_encoder_type_inference_numbers_invalid(void) {
     size_t prefix_len         = 0;
     jp_field_set_t* field_set = jp_field_set_create(8);
+
     JP_ASSERT_OK(jp_field_set_add(field_set, "k1=.4"));
     JP_ASSERT_OK(jp_field_set_add(field_set, "k2=+3"));
     JP_ASSERT_OK(jp_field_set_add(field_set, "k3=123."));
@@ -176,7 +184,7 @@ void test_jp_json_prefix_encoder_type_inference_numbers_invalid(void) {
     JP_ASSERT_OK(memcmp((char*) line_prefix,
                         "{\"k1\":\".4\",\"k2\":\"+3\",\"k3\":\"123.\",\"k4\":\"12.22E+12.4\",\"msg\":",
                         prefix_len));
-    
+
     jp_field_set_destroy(field_set);
     JP_FREE(line_prefix);
 }

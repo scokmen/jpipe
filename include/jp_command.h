@@ -17,8 +17,8 @@ JP_ATTR_READ_ONLY_N(2, 1)
 uint8_t jp_cmd_count(int argc, char* argv[], const char* cmd_short, const char* cmd_long);
 
 JP_ATTR_NONNULL(2, 4)
-JP_ATTR_READ_ONLY_N(4, 3)
 JP_ATTR_READ_ONLY_N(2, 1)
+JP_ATTR_READ_ONLY_N(4, 3)
 jp_errno_t jp_cmd_exec(int cmdc, jp_cmd_t* cmds, int argc, char* argv[]);
 
 JP_ATTR_NONNULL(2)

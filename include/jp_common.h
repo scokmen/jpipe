@@ -335,6 +335,46 @@
 #pragma message("cc: attribute not supported (leaf)")
 #endif
 
+#if HAS_ATTRIBUTE(returns_nonnull)
+/**
+ * @brief Compiler hint guaranteeing that the function never returns a NULL pointer.
+ *
+ * This macro abstracts the `__attribute__((returns_nonnull))` GCC/Clang attribute.
+ * It provides the following benefits:
+ * 1. Static Analysis Optimization: Informs tools (Clang-Tidy, Coverity) that
+ * NULL-checks on the returned pointer are redundant.
+ * 2. Code Generation: Allows the compiler to omit branches that handle NULL
+ * return values, resulting in smaller and faster binaries.
+ * 3. Undefined Behavior Protection: Functions marked with this attribute that
+ * actually return NULL may trigger a trap or undefined behavior, ensuring
+ * strict adherence to the "allocate-or-die" policy.
+ */
+#define JP_ATTR_RET_NONNULL __attribute__((returns_nonnull))
+#else
+#define JP_ATTR_RET_NONNULL
+#pragma message("cc: attribute not supported (returns_nonnull)")
+#endif
+
+#if HAS_ATTRIBUTE(alloc_size)
+/**
+ * @brief Compiler hint for memory allocation size validation.
+ *
+ * This macro abstracts the `__attribute__((alloc_size(n)))` GCC/Clang attribute.
+ * It informs the compiler which argument(s) specify the size of the allocated
+ * memory block. This enables:
+ * 1. Enhanced static analysis (detecting potential buffer overflows).
+ * 2. Optimizations for `__builtin_object_size`.
+ * 3. Improved warnings for out-of-bounds access at compile time.
+ *
+ * @param ... One or two index positions (1-based) of the function arguments
+ * representing the allocation size (e.g., size for malloc, nmemb and size for calloc).
+ */
+#define JP_ATTR_ALLOCS(...) __attribute__((alloc_size(__VA_ARGS__)))
+#else
+#define JP_ATTR_ALLOCS(...)
+#pragma message("cc: attribute not supported (alloc_size)")
+#endif
+
 #if !defined(NDEBUG) && HAS_ATTRIBUTE(weak)
 /**
  * @brief Marks a function as "weak" to allow mocking in test environments.
@@ -353,43 +393,6 @@
 #define JP_ATTR_WEAK
 #pragma message("cc: is not debug or attribute not supported (weak)")
 #endif
-
-/**
- * @brief Safely frees a pointer and sets it to NULL.
- *
- * Checks if the pointer is not NULL before calling free(). After freeing,
- * it explicitly sets the pointer to NULL to prevent dangling pointer issues and accidental double-free errors.
- *
- * @note The cast to (void*) ensures compatibility with various pointer types
- * and avoids potential warnings with 'const' pointers.
- *
- * @param ptr The pointer to be freed (must be a lvalue).
- */
-#define JP_FREE(ptr)             \
-    do {                         \
-        if ((ptr) != NULL) {     \
-            free((void*) (ptr)); \
-            (ptr) = NULL;        \
-        }                        \
-    } while (0)
-
-/**
- * @brief Safely allocates memory/resource and returns on failure.
- *
- * Assigns 'expr' to 'var'. If the assignment fails (NULL), it executes 'return ret'.
- * Uses do-while(0) for statement safety and JP_ATTR_UNLIKELY for branch optimization.
- *
- * @param var  Target variable to store the allocation result.
- * @param expr The allocation expression (e.g., malloc, strdup).
- * @param ret  The value to return upon failure.
- */
-#define JP_ALLOC(var, expr, ret)               \
-    do {                                       \
-        (var) = (expr);                        \
-        if (JP_ATTR_UNLIKELY((var) == NULL)) { \
-            return (ret);                      \
-        }                                      \
-    } while (0)
 
 /**
  * @brief Executes a statement and returns its error code if it is non-zero.

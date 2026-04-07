@@ -4,6 +4,8 @@
 #include <errno.h>
 #include <jp_common.h>
 
+#define JP_ERRNO_STACK_MAX 1024
+
 /**
  * @brief Portable check for "Resource Temporarily Unavailable" errors.
  *
@@ -14,23 +16,77 @@
  * correctly identifies "try again" scenarios regardless of the platform.
  *
  * @param err The error code to check (usually from 'errno').
- *
  * @return Non-zero (true) if the error is EAGAIN or EWOULDBLOCK, zero otherwise.
  */
 #define JP_ERRNO_EAGAIN(err) ((err) == EAGAIN || (EAGAIN != EWOULDBLOCK && (err) == EWOULDBLOCK))
 
 /**
- * @brief Attempts allocation, logs an error on failure, and returns the error code.
+ * @brief Standard error (captures current errno) without additional formatting.
  *
- * This is a specialized version of JP_ALLOC. If the allocation (expr) results in NULL,
- * it logs a "Memory Exhausted" error using the logging system and returns the corresponding error code.
- * Ideal for high-level functions where failing an allocation must be reported to the logging system.
- *
- * @param var  Target variable to store the allocation result.
- * @param expr The allocation expression (e.g., malloc, calloc, strdup).
- * @return Returns the result of jp_errno_log_err(JP_ENOMEMORY) on failure.
+ * @param err The jp_errno_t error code.
+ * @return Returns the error code 'err'.
  */
-#define JP_ERRNO_ALLOC(var, expr) JP_ALLOC(var, expr, jp_errno_log_err(JP_ENOMEMORY))
+#define JP_ERRNO_RAISE(err) jp_errno_ctx_set((err), JP_ERRNO_SRC_NONE, 0, __FILE_NAME__, __LINE__)
+
+/**
+ * @brief Standard error (captures current errno) with a custom formatted message.
+ *
+ * @param err The jp_errno_t error code.
+ * @param fmt Format string (printf-style).
+ * @param ... Additional arguments for the format string.
+ * @return Returns the error code 'err'.
+ */
+#define JP_ERRNO_RAISEF(err, fmt, ...) \
+    jp_errno_ctx_setf((err), JP_ERRNO_SRC_NONE, 0, __FILE_NAME__, __LINE__, (fmt), ##__VA_ARGS__)
+
+/**
+ * @brief POSIX system error (captures current errno) without formatting.
+ *
+ * @param err The jp_errno_t error code.
+ * @param code POSIX return code.
+ * @return Returns the error code 'err'.
+ */
+#define JP_ERRNO_RAISE_POSIX(err, code) jp_errno_ctx_set((err), JP_ERRNO_SRC_POSIX, code, __FILE_NAME__, __LINE__)
+
+/**
+ * @brief POSIX system error (captures current errno) with a custom formatted context message.
+ *
+ * @param err The jp_errno_t error code.
+ * @param code POSIX return code.
+ * @param fmt Format string (printf-style).
+ * @param ... Additional arguments for the format string.
+ * @return Returns the error code 'err'.
+ */
+#define JP_ERRNO_RAISE_POSIXF(err, code, fmt, ...) \
+    jp_errno_ctx_setf((err), JP_ERRNO_SRC_POSIX, code, __FILE_NAME__, __LINE__, (fmt), ##__VA_ARGS__)
+
+/**
+ * @brief Mach kernel error (captures current errno) system error without formatting.
+ *
+ * @param err The jp_errno_t error code.
+ * @param kr The Mach kernel return code.
+ * @return Returns the error code 'err'.
+ */
+#define JP_ERRNO_RAISE_MACH(err, kr) jp_errno_ctx_set((err), JP_ERRNO_SRC_MACH, (int) (kr), __FILE_NAME__, __LINE__)
+
+/**
+ * @brief Mach kernel error (captures current errno) system error with a custom formatted context message.
+ *
+ * @param err The jp_errno_t error code.
+ * @param kr The Mach kernel return code.
+ * @param fmt Format string (printf-style).
+ * @param ... Additional arguments for the format string.
+ * @return Returns the error code 'err'.
+ */
+#define JP_ERRNO_RAISE_MACHF(err, kr, fmt, ...) \
+    jp_errno_ctx_setf((err), JP_ERRNO_SRC_MACH, (int) (kr), __FILE_NAME__, __LINE__, (fmt), ##__VA_ARGS__)
+
+/**
+ * @brief Resets or initializes the global error context to a clean state.
+ *
+ * @return Returns the error code 0.
+ */
+#define JP_ERRNO_CATCH() jp_errno_ctx_set(0, JP_ERRNO_SRC_NONE, 0, __FILE_NAME__, __LINE__)
 
 #define JP_ERRNO_MAP(XX)                                                                                          \
     XX(EMISSING_CMD, "Missing command. Please use 'jpipe --help' to see available commands.")                     \
@@ -43,12 +99,13 @@
     XX(ETOO_MANY_FIELD, "Too many fields. Maximum allowed field number is 32.")                                   \
     XX(EINV_FIELD_KEY, "Invalid field key. The key must be at most 64 character (allowed: a-z, A-Z, 0-9, _, -).") \
     XX(EINV_FIELD_VAL, "Invalid field value. The key must be at most 512 byte.")                                  \
-    XX(ERUN_FAILED, "An error occurred. Cannot run the application.")                                             \
     XX(ESHUTTING_DOWN, "The application is shutting down.")                                                       \
     XX(EMSG_SHOULD_DROP, "Message was dropped.")                                                                  \
-    XX(EREAD_FAILED, "Cannot read the incoming stream.")                                                          \
     XX(ETRYAGAIN, "Try again later.")                                                                             \
-    XX(ENOMEMORY, "Could not allocate memory.")
+    XX(ERUN_FAILED, "An error occurred. Cannot run the application.")                                             \
+    XX(ENOMEMORY, "Could not allocate memory.")                                                                   \
+    XX(EREAD_FAILED, "Cannot read the incoming stream.")                                                          \
+    XX(ESYS_ERR, "System error occurred.")
 
 typedef enum {
     JP_OK = 0,
@@ -57,12 +114,28 @@ typedef enum {
 #undef XX
 } jp_errno_t;
 
-jp_errno_t jp_errno_log_err(jp_errno_t err);
+typedef enum {
+    JP_ERRNO_SRC_NONE = 0,
+    JP_ERRNO_SRC_POSIX,
+    JP_ERRNO_SRC_MACH,
+} jp_errno_src_t;
 
-JP_ATTR_FORMAT(2)
-jp_errno_t jp_errno_log_err_format(jp_errno_t err, const char* fmt, ...);
+typedef struct {
+    int line;
+    int sys_err;
+    int std_err;
+    const char* file;
+    jp_errno_t err;
+    jp_errno_src_t src;
+    char stack[JP_ERRNO_STACK_MAX];
+} jp_errno_ctx_t;
 
-JP_ATTR_CONST
-const char* jp_errno_explain(jp_errno_t err);
+jp_errno_t jp_errno_ctx_set(jp_errno_t err, jp_errno_src_t src, int sys_err, const char* file, int line);
+
+JP_ATTR_FORMAT(6)
+jp_errno_t jp_errno_ctx_setf(
+    jp_errno_t err, jp_errno_src_t src, int sys_err, const char* file, int line, const char* fmt, ...);
+
+void jp_errno_ctx_dump(void);
 
 #endif  // JPIPE_JP_ERRNO_H

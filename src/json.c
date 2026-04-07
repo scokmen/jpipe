@@ -1,5 +1,6 @@
 #include <jp_encoder.h>
 #include <jp_json.h>
+#include <jp_memory.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -159,7 +160,7 @@ unsigned char* jp_json_prefix_encoder(const jp_field_set_t* field_set, size_t* d
         prefix_size += field_set->fields[i]->key_len + field_set->fields[i]->val_len * JP_JSON_ESCAPE_MUL + 6;
     }
 
-    JP_ALLOC(metadata, malloc(sizeof(unsigned char) * prefix_size), NULL);
+    metadata             = jp_mem_malloc(sizeof(unsigned char) * prefix_size);
     metadata[json_ptr++] = '{';
     for (size_t i = 0; i < field_set->len; i++) {
         const jp_field_t* field = field_set->fields[i];
@@ -226,5 +227,5 @@ size_t jp_json_value_encoder(const unsigned char* restrict src,
 
 unsigned char* jp_json_postfix_encoder(JP_ATTR_UNUSED const jp_field_set_t* field_set, size_t* dst_len) {
     *dst_len = 3;
-    return (unsigned char*) strdup("\"}\n");
+    return jp_mem_strdup("\"}\n");
 }

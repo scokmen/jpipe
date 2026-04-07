@@ -8,7 +8,8 @@ typedef struct jp_poller jp_poller_t;
 
 JP_ATTR_ALLOCATED
 JP_ATTR_USE_RETURN
-jp_poller_t* jp_poller_create(int timeout);
+JP_ATTR_NONNULL(2)
+jp_poller_t* jp_poller_create(int timeout, jp_errno_t* err);
 
 JP_ATTR_NONNULL(1)
 jp_errno_t jp_poller_poll(jp_poller_t* poller, int fd);

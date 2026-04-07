@@ -3,6 +3,7 @@
 #include <jp_encoder.h>
 #include <jp_errno.h>
 #include <jp_field.h>
+#include <jp_memory.h>
 #include <jp_queue.h>
 #include <jp_reader.h>
 #include <jp_worker.h>
@@ -88,32 +89,35 @@ static void display_summary(worker_ctx_t* ctx) {
 static jp_errno_t set_out_dir(const char* arg, worker_ctx_t* ctx) {
     size_t len = 0;
     JP_FREE(ctx->out_dir);
+
     if (arg == NULL) {
-        return jp_errno_log_err_format(JP_EMISSING_CMD, "Path is empty.");
+        return JP_ERRNO_RAISE(JP_EOUT_DIR);
     }
+
     len = strlen(arg);
     if (len == 0) {
-        return jp_errno_log_err_format(JP_EMISSING_CMD, "Path is empty.");
+        return JP_ERRNO_RAISE(JP_EOUT_DIR);
     }
     if (len > JP_PATH_MAX) {
-        return jp_errno_log_err_format(JP_EMISSING_CMD, "Path is too long. Maximum allowed length: %d.", JP_PATH_MAX);
+        return JP_ERRNO_RAISEF(JP_EOUT_DIR, "Path is too long. Maximum allowed length: %d", JP_PATH_MAX);
     }
-    JP_ERRNO_ALLOC(ctx->out_dir, strdup(arg));
+
+    ctx->out_dir = jp_mem_strdup(arg);
     return 0;
 }
 
 static jp_errno_t set_field(const char* arg, worker_ctx_t* ctx) {
-    jp_errno_t err;
     if (arg == NULL) {
-        return jp_errno_log_err_format(JP_EINV_FIELD_KEY, "Field is invalid.");
+        return JP_ERRNO_RAISE(JP_EINV_FIELD_KEY);
     }
 
     JP_ATTR_ASSUME(ctx->fields != NULL);
-    err = jp_field_set_add(ctx->fields, arg);
-    if (err) {
-        return jp_errno_log_err_format(err, "Field is invalid: '%s'", arg);
+
+    const jp_errno_t err = jp_field_set_add(ctx->fields, arg);
+    if (err == 0) {
+        return 0;
     }
-    return 0;
+    return err == JP_ETOO_MANY_FIELD ? JP_ERRNO_RAISE(err) : JP_ERRNO_RAISEF(err, "Field is invalid: \"%s\"", arg);
 }
 
 static jp_errno_t set_chunk_size(const char* arg, worker_ctx_t* ctx) {
@@ -121,25 +125,29 @@ static jp_errno_t set_chunk_size(const char* arg, worker_ctx_t* ctx) {
     size_t chunk_size        = 0;
     unsigned long long param = 0;
 
+    if (arg == NULL) {
+        return JP_ERRNO_RAISE(JP_ECHUNK_SIZE);
+    }
+
     errno = 0;
     param = strtoull(arg, &end_ptr, 10);
 
     if (errno == ERANGE || errno == EINVAL) {
-        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Size is invalid: '%.32s'.", arg);
+        return JP_ERRNO_RAISEF(JP_ECHUNK_SIZE, "Size is invalid: \"%.32s\"", arg);
     }
 
     if (end_ptr == arg) {
-        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Size is invalid: '%.32s'.", arg);
+        return JP_ERRNO_RAISEF(JP_ECHUNK_SIZE, "Size is invalid: \"%.32s\"", arg);
     }
 
     if (*end_ptr != '\0' && !strcmp(end_ptr, "kb") && param <= JP_CONF_CHUNK_SIZE_MAX / BYTES_IN_KB) {
         chunk_size += param * BYTES_IN_KB;
     } else {
-        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Size is invalid: '%.32s'.", arg);
+        return JP_ERRNO_RAISEF(JP_ECHUNK_SIZE, "Size is invalid: \"%.32s\"", arg);
     }
 
     if (chunk_size < JP_CONF_CHUNK_SIZE_MIN || chunk_size > JP_CONF_CHUNK_SIZE_MAX) {
-        return jp_errno_log_err_format(JP_ECHUNK_SIZE, "Size is invalid: '%.32s'.", arg);
+        return JP_ERRNO_RAISEF(JP_ECHUNK_SIZE, "Size is invalid: \"%.32s\"", arg);
     }
     ctx->chunk_size = chunk_size;
     return 0;
@@ -149,15 +157,19 @@ static jp_errno_t set_buffer_size(const char* arg, worker_ctx_t* ctx) {
     char* end_ptr;
     unsigned long long param = 0;
 
+    if (arg == NULL) {
+        return JP_ERRNO_RAISE(JP_EBUFFER_SIZE);
+    }
+
     errno = 0;
     param = strtoull(arg, &end_ptr, 10);
 
     if (errno == ERANGE || errno == EINVAL || end_ptr == arg || *end_ptr != '\0') {
-        return jp_errno_log_err_format(JP_EBUFFER_SIZE, "Size is invalid: '%.32s'.", arg);
+        return JP_ERRNO_RAISEF(JP_EBUFFER_SIZE, "Size is invalid: \"%.32s\"", arg);
     }
 
     if (param < JP_CONF_BUFFER_SIZE_MIN || param > JP_CONF_BUFFER_SIZE_MAX) {
-        return jp_errno_log_err_format(JP_EBUFFER_SIZE, "Size is invalid: '%.32s'.", arg);
+        return JP_ERRNO_RAISEF(JP_EBUFFER_SIZE, "Size is invalid: \"%.32s\"", arg);
     }
 
     ctx->buffer_size = (size_t) param;
@@ -165,21 +177,24 @@ static jp_errno_t set_buffer_size(const char* arg, worker_ctx_t* ctx) {
 }
 
 static jp_errno_t set_policy(const char* arg, worker_ctx_t* ctx) {
+    if (arg == NULL) {
+        return JP_ERRNO_RAISE(JP_EOVERFLOW_POLICY);
+    }
+
     if (!strcmp(arg, "wait")) {
         ctx->policy = JP_QUEUE_POLICY_WAIT;
         return 0;
     }
-
     if (!strcmp(arg, "drop")) {
         ctx->policy = JP_QUEUE_POLICY_DROP;
         return 0;
     }
 
-    return jp_errno_log_err_format(JP_EOVERFLOW_POLICY, "Policy is invalid: '%.32s'.", arg);
+    return JP_ERRNO_RAISEF(JP_EOVERFLOW_POLICY, "Policy is invalid: \"%.32s\"", arg);
 }
 
 static jp_errno_t handle_unknown_argument(const char* cmd) {
-    return jp_errno_log_err_format(JP_EUNKNOWN_RUN_CMD, "Invalid or incomplete command: '%.32s'.", cmd);
+    return JP_ERRNO_RAISEF(JP_EUNKNOWN_RUN_CMD, "Invalid or incomplete command: \"%.32s\"", cmd);
 }
 
 static jp_errno_t create_and_normalize_out_dir(worker_ctx_t* ctx) {
@@ -187,12 +202,10 @@ static jp_errno_t create_and_normalize_out_dir(worker_ctx_t* ctx) {
     char absolute_path[JP_PATH_MAX] = {0};
     char* p                         = NULL;
     struct stat st;
+    const char* output = ctx->out_dir != NULL ? ctx->out_dir : JP_CONF_OUTDIR_DEF;
 
-    if (ctx->out_dir == NULL) {
-        JP_ERRNO_ALLOC(ctx->out_dir, strdup(JP_CONF_OUTDIR_DEF));
-    }
-    size_t path_len = strlen(ctx->out_dir);
-    strncpy(tmp, ctx->out_dir, sizeof(tmp));
+    size_t path_len = strlen(output);
+    strncpy(tmp, output, sizeof(tmp));
 
     while (path_len > 1 && tmp[path_len - 1] == '/') {
         tmp[path_len - 1] = '\0';
@@ -203,39 +216,30 @@ static jp_errno_t create_and_normalize_out_dir(worker_ctx_t* ctx) {
         if (*p == '/') {
             *p = '\0';
             if (mkdir(tmp, 0755) != 0 && errno != EEXIST) {
-                return jp_errno_log_err_format(JP_EOUT_DIR, "Could not create the output directory: '%s'", tmp);
+                return JP_ERRNO_RAISEF(JP_EOUT_DIR, "Could not create the output directory: \"%128s\"", tmp);
             }
             *p = '/';
         }
     }
 
     if (mkdir(tmp, 0755) != 0 && errno != EEXIST) {
-        return jp_errno_log_err_format(JP_EOUT_DIR, "Could not create the directory: '%s'.", tmp);
+        return JP_ERRNO_RAISEF(JP_EOUT_DIR, "Could not create the directory: \"%128s\"", tmp);
     }
 
     if (stat(tmp, &st) != 0 || !S_ISDIR(st.st_mode)) {
-        return jp_errno_log_err_format(JP_EOUT_DIR, "The target is not a directory: '%s'.", tmp);
+        return JP_ERRNO_RAISEF(JP_EOUT_DIR, "The target is not a directory: \"%128s\"", tmp);
     }
 
     if (access(tmp, W_OK) != 0) {
-        return jp_errno_log_err_format(JP_EOUT_DIR, "The target is inaccessible: '%s'.", tmp);
+        return JP_ERRNO_RAISEF(JP_EOUT_DIR, "The target is inaccessible: \"%128s\"", tmp);
     }
 
     if (realpath(tmp, absolute_path) == NULL) {
-        return jp_errno_log_err_format(JP_EOUT_DIR, "Could not resolve absolute path: '%s'.", tmp);
+        return JP_ERRNO_RAISEF(JP_EOUT_DIR, "Could not resolve absolute path: \"%128s\"", tmp);
     }
 
     JP_FREE(ctx->out_dir);
-    JP_ERRNO_ALLOC(ctx->out_dir, strdup(absolute_path));
-    return 0;
-}
-
-static jp_errno_t init_worker_args(int argc, char* argv[], worker_ctx_t* ctx) {
-    const uint8_t field_arg_count = jp_cmd_count(argc, argv, "-f", "--field");
-    if (field_arg_count > JP_CONF_FIELDS_MAX) {
-        return jp_errno_log_err_format(JP_ETOO_MANY_FIELD, "Too many fields specified: '%d'", field_arg_count);
-    }
-    JP_ERRNO_ALLOC(ctx->fields, jp_field_set_create(field_arg_count));
+    ctx->out_dir = jp_mem_strdup(absolute_path);
     return 0;
 }
 
@@ -299,9 +303,20 @@ static jp_errno_t collect_cli_args(int argc, char* argv[], worker_ctx_t* ctx) {
 }
 
 static jp_errno_t finalize_worker_args(worker_ctx_t* ctx) {
+    jp_errno_t err = 0;
     JP_VERIFY(create_and_normalize_out_dir(ctx));
-    JP_ERRNO_ALLOC(ctx->queue, jp_queue_create(ctx->buffer_size, ctx->chunk_size, ctx->policy));
+    ctx->queue = jp_queue_create(ctx->buffer_size, ctx->chunk_size, ctx->policy, &err);
+    if (err || ctx->queue == NULL) {
+        return JP_ERRNO_RAISE(err ? err : JP_ENOMEMORY);
+    }
     return 0;
+}
+
+static void thread_cleanup(void* data) {
+    const worker_ctx_t* args = data;
+    jp_queue_finalize(args->queue);
+    jp_errno_ctx_dump();
+    JP_ERRNO_CATCH();
 }
 
 static void* consumer_thread_init(void* data) {
@@ -312,14 +327,13 @@ static void* consumer_thread_init(void* data) {
         .input_stream = args->input_stream,
     };
 
-    jp_errno_t* result = malloc(sizeof(jp_errno_t));
-    if (result == NULL) {
-        jp_errno_log_err(JP_ENOMEMORY);
-        pthread_exit(NULL);
-    }
+    pthread_cleanup_push(thread_cleanup, data);
 
-    *result = jp_reader_consume(reader_ctx);
+    jp_errno_t* result = jp_mem_malloc(sizeof(jp_errno_t));
+    *result            = jp_reader_consume(reader_ctx);
     pthread_exit(result);
+
+    pthread_cleanup_pop(1);
 }
 
 static void* producer_thread_init(void* data) {
@@ -330,14 +344,13 @@ static void* producer_thread_init(void* data) {
                                         .fields     = args->fields,
                                         .encoder    = jp_encoder_json};
 
-    jp_errno_t* result = malloc(sizeof(jp_errno_t));
-    if (result == NULL) {
-        jp_errno_log_err(JP_ENOMEMORY);
-        pthread_exit(NULL);
-    }
+    pthread_cleanup_push(thread_cleanup, data);
 
-    *result = jp_writer_produce(writer_ctx);
+    jp_errno_t* result = jp_mem_malloc(sizeof(jp_errno_t));
+    *result            = jp_writer_produce(writer_ctx);
     pthread_exit(result);
+
+    pthread_cleanup_pop(1);
 }
 
 static void* watcher_thread_init(void* data) {
@@ -360,7 +373,7 @@ static jp_errno_t join_worker_thread(const pthread_t thread_id) {
     void* thread_result;
     const int err = pthread_join(thread_id, &thread_result);
     if (err) {
-        return jp_errno_log_err_format(JP_ERUN_FAILED, "%s", strerror(err));
+        return JP_ERRNO_RAISE_POSIX(JP_ESYS_ERR, err);
     }
     if (thread_result == NULL || thread_result == PTHREAD_CANCELED) {
         return 0;
@@ -368,6 +381,13 @@ static jp_errno_t join_worker_thread(const pthread_t thread_id) {
     const jp_errno_t thread_value = *(jp_errno_t*) thread_result;
     free(thread_result);
     return thread_value;
+}
+
+static void cancel_worker_thread(const pthread_t thread_id) {
+    const int err = pthread_cancel(thread_id);
+    if (err) {
+        JP_ERRNO_RAISE_POSIX(JP_ESYS_ERR, err);
+    }
 }
 
 static jp_errno_t orchestrate_threads(worker_ctx_t* ctx) {
@@ -408,13 +428,13 @@ static jp_errno_t orchestrate_threads(worker_ctx_t* ctx) {
 
 clean_up:
     if (err) {
-        jp_errno_log_err_format(JP_ERUN_FAILED, "%s", strerror(err));
+        JP_ERRNO_RAISE_POSIX(JP_ESYS_ERR, err);
         jp_queue_finalize(ctx->queue);
         if (flags & 0x01) {
-            pthread_cancel(consumer_thread);
+            cancel_worker_thread(consumer_thread);
         }
         if (flags & 0x02) {
-            pthread_cancel(producer_thread);
+            cancel_worker_thread(producer_thread);
         }
     }
     if (flags & 0x1) {
@@ -436,15 +456,11 @@ jp_errno_t jp_wrk_exec(int argc, char* argv[]) {
         .buffer_size  = JP_CONF_BUFFER_SIZE_DEF,
         .chunk_size   = JP_CONF_CHUNK_SIZE_DEF,
         .out_dir      = NULL,
+        .fields       = jp_field_set_create(JP_CONF_FIELDS_MAX),
     };
 
     if (jp_cmd_count(argc, argv, "-h", "--help") > 0) {
         return display_help();
-    }
-
-    err = init_worker_args(argc, argv, &ctx);
-    if (err) {
-        goto clean_up;
     }
 
     err = collect_cli_args(argc, argv, &ctx);
@@ -466,5 +482,6 @@ clean_up:
     JP_FREE(ctx.out_dir);
     jp_field_set_destroy(ctx.fields);
     jp_queue_destroy(ctx.queue);
+    jp_errno_ctx_dump();
     return err;
 }

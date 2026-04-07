@@ -42,7 +42,8 @@ typedef struct {
 
 JP_ATTR_ALLOCATED
 JP_ATTR_USE_RETURN
-jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size, jp_queue_policy_t policy);
+JP_ATTR_NONNULL(4)
+jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size, jp_queue_policy_t policy, jp_errno_t* err);
 
 JP_ATTR_NONNULL(1, 2)
 jp_errno_t jp_queue_push_uncommitted(jp_queue_t* queue, jp_block_t** block);

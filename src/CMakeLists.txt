@@ -3,14 +3,12 @@
 ###############################################
 set(NON_PORTABLE_C_FILES "")
 
-if (FLAG_EPOLL)
-    message(STATUS "[polling]: sys/epoll.h")
-    list(APPEND NON_PORTABLE_C_FILES "poller/epoll.c")
-elseif (FLAG_KQUEUE)
-    message(STATUS "[polling]: sys/event.h")
+if (APPLE)
     list(APPEND NON_PORTABLE_C_FILES "poller/kqueue.c")
+elseif (UNIX)
+    list(APPEND NON_PORTABLE_C_FILES "poller/epoll.c")
 else ()
-    message(FATAL_ERROR "[polling]: Unsupported polling platform.")
+    message(FATAL_ERROR "Unsupported platform!")
 endif ()
 
 add_library(jpipe_core STATIC
@@ -23,6 +21,7 @@ add_library(jpipe_core STATIC
         writer.c
         config.c
         json.c
+        memory.c
         ${NON_PORTABLE_C_FILES}
 )
 

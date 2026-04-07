@@ -18,13 +18,16 @@ static void* thread_wrapper(void* arg) {
 
 static void test_jp_reader_stream(void) {
     int fds[2];
+    jp_errno_t err = 0;
     pthread_t thread;
     jp_block_t* block;
     void* thread_result;
     const char* data  = "stream data\n";
-    jp_queue_t* queue = jp_queue_create(16, BYTES_IN_KB, JP_QUEUE_POLICY_WAIT);
+    jp_queue_t* queue = jp_queue_create(16, BYTES_IN_KB, JP_QUEUE_POLICY_WAIT, &err);
 
+    JP_ASSERT_OK(err);
     JP_ASSERT_OK(pipe(fds));
+
     fcntl(fds[0], F_SETFL, O_NONBLOCK);
     jp_reader_ctx_t ctx = {.input_stream = fds[0], .queue = queue, .chunk_size = BYTES_IN_KB};
 
@@ -46,15 +49,18 @@ static void test_jp_reader_stream(void) {
 
 static void test_jp_reader_stream_drop(void) {
     int fds[2];
+    jp_errno_t err  = 0;
     size_t capacity = 4;
     pthread_t thread;
     jp_block_t* block;
     void* thread_result;
     size_t bytes_received = 0;
     const char* data      = "stream data\n";
-    jp_queue_t* queue     = jp_queue_create(capacity, BYTES_IN_KB, JP_QUEUE_POLICY_DROP);
+    jp_queue_t* queue     = jp_queue_create(capacity, BYTES_IN_KB, JP_QUEUE_POLICY_DROP, &err);
 
+    JP_ASSERT_OK(err);
     JP_ASSERT_OK(pipe(fds));
+
     fcntl(fds[0], F_SETFL, O_NONBLOCK);
     jp_reader_ctx_t ctx = {.input_stream = fds[0], .queue = queue, .chunk_size = BYTES_IN_KB};
 

@@ -11,9 +11,9 @@ typedef struct {
 } test_ctx_t;
 
 static void* sequential_write(void* arg) {
-    jp_errno_t err    = 0;
-    test_ctx_t* ctx   = arg;
-    jp_queue_t* queue = ctx->queue;
+    jp_errno_t err        = 0;
+    const test_ctx_t* ctx = arg;
+    jp_queue_t* queue     = ctx->queue;
     jp_block_t* block;
 
     for (int i = 0; i <= ctx->count; i++) {
@@ -31,9 +31,9 @@ static void* sequential_write(void* arg) {
 }
 
 static void* sequential_read(void* arg) {
-    int64_t sum       = 0;
-    test_ctx_t* ctx   = arg;
-    jp_queue_t* queue = ctx->queue;
+    int64_t sum           = 0;
+    const test_ctx_t* ctx = arg;
+    jp_queue_t* queue     = ctx->queue;
     jp_block_t* block;
 
     while (jp_queue_pop_uncommitted(queue, &block) == 0) {
@@ -46,11 +46,13 @@ static void* sequential_read(void* arg) {
 
 static void jp_queue_run_with_args(size_t capacity, int count) {
     void *producer_result = NULL, *consumer_result = NULL;
+    jp_errno_t err = 0;
     pthread_t prod_tid, cons_tid;
-    jp_queue_t* queue = jp_queue_create(capacity, sizeof(int), JP_QUEUE_POLICY_WAIT);
-    test_ctx_t ctx    = {.count = count, .queue = queue};
-    int64_t expected  = (int64_t) count * (count + 1) / 2;
+    jp_queue_t* queue      = jp_queue_create(capacity, sizeof(int), JP_QUEUE_POLICY_WAIT, &err);
+    test_ctx_t ctx         = {.count = count, .queue = queue};
+    const int64_t expected = (int64_t) count * (count + 1) / 2;
 
+    JP_ASSERT_OK(err);
     pthread_create(&prod_tid, NULL, sequential_write, &ctx);
     pthread_create(&cons_tid, NULL, sequential_read, &ctx);
 

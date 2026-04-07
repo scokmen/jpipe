@@ -1,5 +1,6 @@
 #include <jp_errno.h>
 #include <jp_field.h>
+#include <jp_memory.h>
 #include <jp_test.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,7 +25,7 @@ const char* generate_test_kv(const char* key, size_t val_len) {
 }
 
 void test_jp_field_set_create(void) {
-    size_t cap          = 10;
+    const size_t cap    = 10;
     jp_field_set_t* set = jp_field_set_create(cap);
 
     JP_ASSERT_EQ(cap, set->cap);
@@ -35,7 +36,7 @@ void test_jp_field_set_create(void) {
 }
 
 void test_jp_field_set_add_set_is_full(void) {
-    size_t cap          = 2;
+    const size_t cap    = 2;
     jp_field_set_t* set = jp_field_set_create(cap);
 
     JP_ASSERT_OK(jp_field_set_add(set, "key-1=value-1"));
@@ -52,7 +53,7 @@ void test_jp_field_set_add_set_is_full(void) {
 }
 
 void test_jp_field_set_add_key_exists(void) {
-    size_t cap          = 2;
+    const size_t cap    = 2;
     jp_field_set_t* set = jp_field_set_create(cap);
 
     JP_ASSERT_OK(jp_field_set_add(set, "key-1=value-1"));
@@ -65,10 +66,10 @@ void test_jp_field_set_add_key_exists(void) {
 }
 
 void test_jp_field_set_add_valid_keys(void) {
-    size_t cap          = 10;
+    const size_t cap    = 10;
     jp_field_set_t* set = jp_field_set_create(cap);
 
-    test_case_t cases[] = {
+    const test_case_t cases[] = {
         {.kv = "key1=value", .key = "key1", .value = "value", .expected = 0},
         {.kv = "key2=va", .key = "key2", .value = "va", .expected = 0},
         {.kv = "key3= ", .key = "key3", .value = " ", .expected = 0},
@@ -82,10 +83,9 @@ void test_jp_field_set_add_valid_keys(void) {
          .expected = 0},
     };
 
-    jp_errno_t err;
-    int len = sizeof(cases) / sizeof(cases[0]);
+    const int len = sizeof(cases) / sizeof(cases[0]);
     for (int i = 0; i < len; i++) {
-        err = jp_field_set_add(set, cases[i].kv);
+        const jp_errno_t err = jp_field_set_add(set, cases[i].kv);
         JP_ASSERT_EQ(cases[i].expected, err);
         JP_ASSERT_OK(strcmp(set->fields[i]->key, cases[i].key));
         JP_ASSERT_OK(memcmp(set->fields[i]->val, cases[i].value, set->fields[i]->val_len));
@@ -95,10 +95,10 @@ void test_jp_field_set_add_valid_keys(void) {
 }
 
 void test_jp_field_set_add_invalid_keys(void) {
-    size_t cap          = 10;
+    const size_t cap    = 10;
     jp_field_set_t* set = jp_field_set_create(cap);
 
-    test_case_t cases[] = {
+    const test_case_t cases[] = {
         {.kv = "", .expected = JP_EINV_FIELD_KEY},
         {.kv = "=", .expected = JP_EINV_FIELD_KEY},
         {.kv = "=value", .expected = JP_EINV_FIELD_KEY},
@@ -108,11 +108,10 @@ void test_jp_field_set_add_invalid_keys(void) {
         {.kv = "012345678901234567890123456789120=v", .expected = JP_EINV_FIELD_KEY},
     };
 
-    jp_errno_t err;
-    int len = sizeof(cases) / sizeof(cases[0]);
+    const int len = sizeof(cases) / sizeof(cases[0]);
     for (int i = 0; i < len; i++) {
         JP_ASSERT_NONNULL(cases[i].kv);
-        err = jp_field_set_add(set, cases[i].kv);
+        const jp_errno_t err = jp_field_set_add(set, cases[i].kv);
         JP_ASSERT_EQ(cases[i].expected, err);
     }
 
@@ -120,7 +119,7 @@ void test_jp_field_set_add_invalid_keys(void) {
 }
 
 void test_jp_field_set_add_value_lengths(void) {
-    size_t cap          = 10;
+    const size_t cap    = 10;
     jp_field_set_t* set = jp_field_set_create(cap);
 
     test_case_t cases[] = {
@@ -130,11 +129,10 @@ void test_jp_field_set_add_value_lengths(void) {
         {.kv = generate_test_kv("key-4", JP_CONF_FIELD_MAX_VAL + 1), .expected = JP_EINV_FIELD_VAL},
     };
 
-    jp_errno_t err;
-    int len = sizeof(cases) / sizeof(cases[0]);
+    const int len = sizeof(cases) / sizeof(cases[0]);
     for (int i = 0; i < len; i++) {
         JP_ASSERT_NONNULL(cases[i].kv);
-        err = jp_field_set_add(set, cases[i].kv);
+        const jp_errno_t err = jp_field_set_add(set, cases[i].kv);
         JP_ASSERT_EQ(cases[i].expected, err);
         JP_FREE(cases[i].kv);
     }

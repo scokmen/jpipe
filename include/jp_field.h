@@ -19,6 +19,7 @@ typedef struct {
 
 JP_ATTR_ALLOCATED
 JP_ATTR_USE_RETURN
+JP_ATTR_RET_NONNULL
 jp_field_set_t* jp_field_set_create(size_t cap);
 
 JP_ATTR_NONNULL(1, 2)

@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <jp_common.h>
 #include <jp_errno.h>
+#include <jp_memory.h>
 #include <jp_poller.h>
 #include <stdlib.h>
 #include <sys/epoll.h>
@@ -12,16 +13,15 @@ struct jp_poller {
     struct epoll_event events[1];
 };
 
-jp_poller_t* jp_poller_create(int timeout) {
-    jp_poller_t* poller;
-    int fd = epoll_create1(EPOLL_CLOEXEC);
+jp_poller_t* jp_poller_create(int timeout, jp_errno_t* err) {
+    const int fd = epoll_create1(EPOLL_CLOEXEC);
     if (fd == -1) {
+        *err = JP_ERRNO_RAISE_POSIX(JP_EREAD_FAILED, errno);
         return NULL;
     }
-
-    JP_ALLOC(poller, malloc(sizeof(struct jp_poller)), NULL);
-    poller->fd      = fd;
-    poller->timeout = timeout;
+    jp_poller_t* poller = jp_mem_malloc(sizeof(struct jp_poller));
+    poller->fd          = fd;
+    poller->timeout     = timeout;
     return poller;
 }
 
@@ -31,20 +31,20 @@ jp_errno_t jp_poller_poll(jp_poller_t* poller, int fd) {
     ev.data.fd = fd;
 
     if (epoll_ctl(poller->fd, EPOLL_CTL_ADD, fd, &ev) == -1) {
-        return JP_EREAD_FAILED;
+        return JP_ERRNO_RAISE_POSIX(JP_EREAD_FAILED, errno);
     }
     return 0;
 }
 
 jp_errno_t jp_poller_wait(jp_poller_t* poller) {
-    int n = epoll_wait(poller->fd, poller->events, 1, poller->timeout);
+    const int n = epoll_wait(poller->fd, poller->events, 1, poller->timeout);
 
     if (n == 0) {
         return JP_ETRYAGAIN;
     }
 
     if (n == -1) {
-        return errno == EINTR || JP_ERRNO_EAGAIN(errno) ? JP_ETRYAGAIN : JP_EREAD_FAILED;
+        return errno == EINTR || JP_ERRNO_EAGAIN(errno) ? JP_ETRYAGAIN : JP_ERRNO_RAISE_POSIX(JP_EREAD_FAILED, errno);
     }
 
     return 0;

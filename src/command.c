@@ -26,7 +26,7 @@ uint8_t jp_cmd_count(int argc, char* argv[], const char* cmd_short, const char* 
 jp_errno_t jp_cmd_exec(int cmdc, jp_cmd_t* cmds, int argc, char* argv[]) {
     init_global_flags(argc, argv);
     if (argc < 2) {
-        return jp_errno_log_err_format(JP_EMISSING_CMD, "Missing or incomplete command.");
+        return JP_ERRNO_RAISE(JP_EMISSING_CMD);
     }
 
     for (int i = 0; i < cmdc; i++) {
@@ -35,7 +35,7 @@ jp_errno_t jp_cmd_exec(int cmdc, jp_cmd_t* cmds, int argc, char* argv[]) {
         }
     }
 
-    return jp_errno_log_err_format(JP_EUNKNOWN_CMD, "Invalid or incomplete command: '%.32s'.", argv[1]);
+    return JP_ERRNO_RAISEF(JP_EUNKNOWN_CMD, "Invalid or incomplete command: \"%.32s\"", argv[1]);
 }
 
 jp_errno_t jp_cmd_help(JP_ATTR_UNUSED int argc, JP_ATTR_UNUSED char* argv[]) {

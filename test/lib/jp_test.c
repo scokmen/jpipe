@@ -24,18 +24,17 @@ void jp_test_get_sandbox(char* buffer, size_t size) {
 }
 
 int jp_test_compare_stdout(jp_test_fn printer, void* ctx, const char* template_file) {
-    int fd, stdout_cache, status;
     char cmd[JP_PATH_MAX * 3], actual_file[JP_PATH_MAX];
     char captured[] = "/tmp/tmp_stdout_dest_XXXXXXXX";
 
     snprintf(actual_file, JP_PATH_MAX, "%s/%s", JP_TEST_DATA_DIR, template_file);
 
-    stdout_cache = dup(STDOUT_FILENO);
+    const int stdout_cache = dup(STDOUT_FILENO);
     if (stdout_cache < 0) {
         exit(EXIT_FAILURE);
     }
 
-    fd = mkstemp(captured);
+    const int fd = mkstemp(captured);
     if (fd < 0) {
         exit(EXIT_FAILURE);
     }
@@ -55,7 +54,7 @@ int jp_test_compare_stdout(jp_test_fn printer, void* ctx, const char* template_f
              actual_file,
              captured);
 
-    status = system(cmd);
+    const int status = system(cmd);
     unlink(captured);
     return status;
 }

@@ -6,10 +6,12 @@
 #define ITEM_SIZE 4
 
 void test_jp_queue_push_pop(void) {
-    int data[ITEM_SIZE] = {1, 2, 3, 4};
-    jp_queue_t* q       = jp_queue_create(4, sizeof(int), JP_QUEUE_POLICY_WAIT);
+    jp_errno_t err            = 0;
+    const int data[ITEM_SIZE] = {1, 2, 3, 4};
+    jp_queue_t* q             = jp_queue_create(4, sizeof(int), JP_QUEUE_POLICY_WAIT, &err);
     jp_block_t *w_block, *r_block;
 
+    JP_ASSERT_OK(err);
     JP_ASSERT_EQ(ITEM_SIZE, q->capacity);
     for (size_t i = 0; i < ITEM_SIZE; i++) {
         JP_ASSERT_EQ(i, q->length);
@@ -32,10 +34,12 @@ void test_jp_queue_push_pop(void) {
 }
 
 void test_jp_queue_push_finalized_queue(void) {
-    int data[ITEM_SIZE] = {1, 2, 3, 4};
-    jp_queue_t* q       = jp_queue_create(4, sizeof(int), JP_QUEUE_POLICY_WAIT);
+    jp_errno_t err            = 0;
+    const int data[ITEM_SIZE] = {1, 2, 3, 4};
+    jp_queue_t* q             = jp_queue_create(4, sizeof(int), JP_QUEUE_POLICY_WAIT, &err);
     jp_block_t* w_block;
 
+    JP_ASSERT_OK(err);
     JP_ASSERT_EQ(ITEM_SIZE, q->capacity);
     for (size_t i = 0; i < 2; i++) {
         JP_ASSERT_OK(jp_queue_push_uncommitted(q, &w_block));
@@ -51,9 +55,12 @@ void test_jp_queue_push_finalized_queue(void) {
 }
 
 void test_jp_queue_pop_finalized_queue(void) {
-    int data[ITEM_SIZE] = {1, 2, 3, 4};
-    jp_queue_t* q       = jp_queue_create(4, sizeof(int), JP_QUEUE_POLICY_WAIT);
+    jp_errno_t err            = 0;
+    const int data[ITEM_SIZE] = {1, 2, 3, 4};
+    jp_queue_t* q             = jp_queue_create(4, sizeof(int), JP_QUEUE_POLICY_WAIT, &err);
     jp_block_t *w_block, *r_block;
+
+    JP_ASSERT_OK(err);
     JP_ASSERT_EQ(ITEM_SIZE, q->capacity);
     for (size_t i = 0; i < ITEM_SIZE; i++) {
         JP_ASSERT_OK(jp_queue_push_uncommitted(q, &w_block));
@@ -74,10 +81,12 @@ void test_jp_queue_pop_finalized_queue(void) {
 }
 
 void test_jp_queue_pop_policy_drop(void) {
-    int data[ITEM_SIZE] = {1, 2, 3, 4};
-    jp_queue_t* q       = jp_queue_create(2, sizeof(int), JP_QUEUE_POLICY_DROP);
+    jp_errno_t err            = 0;
+    const int data[ITEM_SIZE] = {1, 2, 3, 4};
+    jp_queue_t* q             = jp_queue_create(2, sizeof(int), JP_QUEUE_POLICY_DROP, &err);
     jp_block_t *w_block, *r_block;
 
+    JP_ASSERT_OK(err);
     JP_ASSERT_EQ(2, q->capacity);
     for (size_t i = 0; i < 2; i++) {
         JP_ASSERT_EQ(i, q->length);

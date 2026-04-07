@@ -44,12 +44,6 @@ configure_file(
 )
 
 ###############################################
-# JPipe: Platform Feature Flags
-###############################################
-check_include_file("sys/event.h" FLAG_KQUEUE)
-check_include_file("sys/epoll.h" FLAG_EPOLL)
-
-###############################################
 # JPipe: Initializers
 ###############################################
 add_library(jpipe_settings INTERFACE)

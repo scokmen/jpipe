@@ -30,19 +30,19 @@ jp_errno_t version_command_adapter(void* ctx) {
 }
 
 void test_jp_cmd_help(void) {
-    test_ctx_t ctx = {.argc = 0, .argv = NULL};
-    int status     = jp_test_compare_stdout(help_command_adapter, &ctx, "help_command_out.tmpl");
+    test_ctx_t ctx   = {.argc = 0, .argv = NULL};
+    const int status = jp_test_compare_stdout(help_command_adapter, &ctx, "help_command_out.tmpl");
     JP_ASSERT_OK(status);
 }
 
 void test_jp_cmd_version(void) {
-    test_ctx_t ctx = {.argc = 0, .argv = NULL};
-    int status     = jp_test_compare_stdout(version_command_adapter, &ctx, "version_command_out.tmpl");
+    test_ctx_t ctx   = {.argc = 0, .argv = NULL};
+    const int status = jp_test_compare_stdout(version_command_adapter, &ctx, "version_command_out.tmpl");
     JP_ASSERT_OK(status);
 }
 
 void test_jp_cmd_count(void) {
-    test_case_t cases[] = {
+    const test_case_t cases[] = {
         {.argc = 1, .argv = {"jpipe", NULL}, .expected = 0},
         {.argc = 2, .argv = {"jpipe", "-u", NULL}, .expected = 0},
         {.argc = 2, .argv = {"jpipe", "--unknown", NULL}, .expected = 0},
@@ -54,20 +54,19 @@ void test_jp_cmd_count(void) {
         {.argc = 3, .argv = {"jpipe", "--command", "c", NULL}, .expected = 1},
     };
 
-    int len = sizeof(cases) / sizeof(cases[0]);
+    const int len = sizeof(cases) / sizeof(cases[0]);
     for (int i = 0; i < len; i++) {
-        uint8_t count = jp_cmd_count(cases[i].argc, (char**) cases[i].argv, "-c", "--command");
+        const uint8_t count = jp_cmd_count(cases[i].argc, (char**) cases[i].argv, "-c", "--command");
         JP_ASSERT_EQ(cases[i].expected, count);
     }
 }
 
 void test_jp_cmd_exec(void) {
-    jp_errno_t err;
     jp_cmd_t commands[] = {
         {.code = "-c", .name = "--command", .handler = mock_command},
     };
 
-    test_case_t cases[] = {
+    const test_case_t cases[] = {
         {.argc = 1, .argv = {"jpipe", NULL}, .expected = JP_EMISSING_CMD},
         {.argc = 2, .argv = {"jpipe", "-u", NULL}, .expected = JP_EUNKNOWN_CMD},
         {.argc = 2, .argv = {"jpipe", "--unknown", NULL}, .expected = JP_EUNKNOWN_CMD},
@@ -75,9 +74,9 @@ void test_jp_cmd_exec(void) {
         {.argc = 2, .argv = {"jpipe", "--command", NULL}, .expected = JP_OK},
     };
 
-    int len = sizeof(cases) / sizeof(cases[0]);
+    const int len = sizeof(cases) / sizeof(cases[0]);
     for (int i = 0; i < len; i++) {
-        err = jp_cmd_exec(1, commands, cases[i].argc, (char**) cases[i].argv);
+        const jp_errno_t err = jp_cmd_exec(1, commands, cases[i].argc, (char**) cases[i].argv);
         JP_ASSERT_EQ(cases[i].expected, err);
     }
 }
@@ -85,12 +84,12 @@ void test_jp_cmd_exec(void) {
 void test_jp_cmd_quiet_flag(void) {
     jp_cmd_t commands[] = {};
 
-    test_case_t cases[] = {
+    const test_case_t cases[] = {
         {.argc = 2, .argv = {"jpipe", "-q", NULL}},
         {.argc = 2, .argv = {"jpipe", "--quiet", NULL}},
     };
 
-    int len = sizeof(cases) / sizeof(cases[0]);
+    const int len = sizeof(cases) / sizeof(cases[0]);
     for (int i = 0; i < len; i++) {
         JP_CONF_SILENT_SET(false);
         jp_cmd_exec(0, commands, cases[i].argc, (char**) cases[i].argv);
@@ -101,12 +100,12 @@ void test_jp_cmd_quiet_flag(void) {
 void test_jp_cmd_no_color_flag(void) {
     jp_cmd_t commands[] = {};
 
-    test_case_t cases[] = {
+    const test_case_t cases[] = {
         {.argc = 2, .argv = {"jpipe", "-C", NULL}},
         {.argc = 2, .argv = {"jpipe", "--no-color", NULL}},
     };
 
-    int len = sizeof(cases) / sizeof(cases[0]);
+    const int len = sizeof(cases) / sizeof(cases[0]);
     for (int i = 0; i < len; i++) {
         JP_CONF_NO_COLOR_SET(false);
         jp_cmd_exec(0, commands, cases[i].argc, (char**) cases[i].argv);

@@ -20,10 +20,7 @@
  */
 #define BYTES_IN_KB             1024
 #define TTY_STYLE_RED           "\x1b[31m"
-#define TTY_STYLE_YLW           "\x1b[33m"
-#define TTY_STYLE_CYN           "\x1b[36m"
-#define TTY_STYLE_BLD           "\x1b[1m"
-#define TTY_STYLE_CLR           "\x1b[0m"
+#define TTY_STYLE_RST           "\x1b[0m"
 
 /**
  * @section Project information.
@@ -44,10 +41,7 @@
 #define JP_CONF_NO_COLOR_SET(x) (jp_config.no_color = (x))
 #define JP_CONF_NO_COLOR_GET()  (jp_config.no_color)
 #define JP_TTY_RED              (JP_CONF_NO_COLOR_GET() ? "" : TTY_STYLE_RED)
-#define JP_TTY_YLW              (JP_CONF_NO_COLOR_GET() ? "" : TTY_STYLE_YLW)
-#define JP_TTY_CYN              (JP_CONF_NO_COLOR_GET() ? "" : TTY_STYLE_CYN)
-#define JP_TTY_BLD              (JP_CONF_NO_COLOR_GET() ? "" : TTY_STYLE_BLD)
-#define JP_TTY_RST              (JP_CONF_NO_COLOR_GET() ? "" : TTY_STYLE_CLR)
+#define JP_TTY_RST              (JP_CONF_NO_COLOR_GET() ? "" : TTY_STYLE_RST)
 
 /**
  * @section Project static configurations.

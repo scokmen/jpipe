@@ -1,3 +1,4 @@
+#include <jp_memory.h>
 #include <jp_poller.h>
 #include <jp_queue.h>
 #include <jp_reader.h>
@@ -10,15 +11,15 @@ jp_errno_t jp_reader_consume(jp_reader_ctx_t ctx) {
     ssize_t read_len      = 0;
     jp_block_t* block     = NULL;
     void* target_buffer   = NULL;
-    unsigned char* buffer = calloc(1, ctx.chunk_size);
-    jp_poller_t* poller   = jp_poller_create(100);
+    unsigned char* buffer = NULL;
+    jp_poller_t* poller   = jp_poller_create(100, &err);
 
-    if (buffer == NULL || poller == NULL) {
-        err = JP_ENOMEMORY;
+    if (err) {
         goto clean_up;
     }
 
-    err = jp_poller_poll(poller, ctx.input_stream);
+    buffer = jp_mem_calloc(1, ctx.chunk_size);
+    err    = jp_poller_poll(poller, ctx.input_stream);
     if (err) {
         goto clean_up;
     }
@@ -61,8 +62,6 @@ jp_errno_t jp_reader_consume(jp_reader_ctx_t ctx) {
 clean_up:
     if (err == 0 || JP_QUEUE_IS_GRACEFUL_ERR(err)) {
         err = 0;
-    } else {
-        jp_errno_log_err(err);
     }
     JP_FREE(buffer);
     jp_poller_destroy(poller);

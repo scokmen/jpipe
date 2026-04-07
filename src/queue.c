@@ -1,15 +1,15 @@
 #include <jp_common.h>
+#include <jp_memory.h>
 #include <jp_queue.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
-jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size, jp_queue_policy_t policy) {
-    jp_queue_t* queue;
+jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size, jp_queue_policy_t policy, jp_errno_t* err) {
+    int status                 = 0;
     const size_t blocks_offset = sizeof(jp_queue_t);
     const size_t area_offset   = blocks_offset + capacity * sizeof(jp_block_t);
     const size_t total_size    = area_offset + capacity * chunk_size;
-
-    JP_ALLOC(queue, malloc(total_size), NULL);
+    jp_queue_t* queue          = jp_mem_malloc(total_size);
 
     queue->capacity   = capacity;
     queue->chunk_size = chunk_size;
@@ -26,11 +26,35 @@ jp_queue_t* jp_queue_create(size_t capacity, size_t chunk_size, jp_queue_policy_
         queue->blocks[i].length = 0;
     }
 
-    pthread_mutex_init(&queue->lock, NULL);
-    pthread_cond_init(&queue->not_empty, NULL);
-    pthread_cond_init(&queue->not_full, NULL);
+    status = pthread_mutex_init(&queue->lock, NULL);
+    if (status != 0) {
+        *err = JP_ERRNO_RAISE_POSIX(JP_ESYS_ERR, status);
+        goto clean_up;
+    }
+
+    status = pthread_cond_init(&queue->not_empty, NULL);
+    if (status != 0) {
+        *err = JP_ERRNO_RAISE_POSIX(JP_ESYS_ERR, status);
+        goto clean_up_lock;
+    }
+
+    status = pthread_cond_init(&queue->not_full, NULL);
+    if (status != 0) {
+        *err = JP_ERRNO_RAISE_POSIX(JP_ESYS_ERR, status);
+        goto clean_up_cond;
+    }
 
     return queue;
+
+clean_up_cond:
+    pthread_cond_destroy(&queue->not_empty);
+
+clean_up_lock:
+    pthread_mutex_destroy(&queue->lock);
+
+clean_up:
+    JP_FREE(queue);
+    return NULL;
 }
 
 jp_errno_t jp_queue_push_uncommitted(jp_queue_t* queue, jp_block_t** block) {

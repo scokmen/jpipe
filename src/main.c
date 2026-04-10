@@ -12,6 +12,6 @@ static jp_cmd_t commands[] = {
 int main(int argc, char* argv[]) {
     jp_conf_initialize();
     const jp_errno_t err = jp_cmd_exec(2, commands, argc, argv);
-    jp_errno_ctx_dump();
+    JP_ERRNO_DUMP();
     return err ? EXIT_FAILURE : EXIT_SUCCESS;
 }

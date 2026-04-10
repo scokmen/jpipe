@@ -11,8 +11,8 @@
 #include <unistd.h>
 
 static void* thread_wrapper(void* arg) {
-    jp_reader_ctx_t* ctx = arg;
-    jp_errno_t err       = jp_reader_consume(*ctx);
+    const jp_reader_ctx_t* ctx = arg;
+    const jp_errno_t err       = jp_reader_consume(*ctx);
     return (void*) (uintptr_t) err;  // NOLINT(performance-no-int-to-ptr)
 }
 
@@ -33,7 +33,7 @@ static void test_jp_reader_stream(void) {
 
     pthread_create(&thread, NULL, thread_wrapper, &ctx);
 
-    ssize_t n = write(fds[1], data, strlen(data));
+    const ssize_t n = write(fds[1], data, strlen(data));
     JP_ASSERT_EQ(true, n >= 0);
 
     close(fds[1]);
@@ -49,8 +49,8 @@ static void test_jp_reader_stream(void) {
 
 static void test_jp_reader_stream_drop(void) {
     int fds[2];
-    jp_errno_t err  = 0;
-    size_t capacity = 4;
+    jp_errno_t err        = 0;
+    const size_t capacity = 4;
     pthread_t thread;
     jp_block_t* block;
     void* thread_result;
@@ -67,7 +67,7 @@ static void test_jp_reader_stream_drop(void) {
     pthread_create(&thread, NULL, thread_wrapper, &ctx);
 
     for (size_t i = 0; i < capacity * 4; i++) {
-        ssize_t n = write(fds[1], data, strlen(data));
+        const ssize_t n = write(fds[1], data, strlen(data));
         JP_ASSERT_EQ(true, n >= 0);
         usleep(1000);
     }

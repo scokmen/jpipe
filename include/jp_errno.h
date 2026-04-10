@@ -4,8 +4,6 @@
 #include <errno.h>
 #include <jp_common.h>
 
-#define JP_ERRNO_STACK_MAX 1024
-
 /**
  * @brief Portable check for "Resource Temporarily Unavailable" errors.
  *
@@ -21,7 +19,7 @@
 #define JP_ERRNO_EAGAIN(err) ((err) == EAGAIN || (EAGAIN != EWOULDBLOCK && (err) == EWOULDBLOCK))
 
 /**
- * @brief Standard error (captures current errno) without additional formatting.
+ * @brief Standard error without additional formatting.
  *
  * @param err The jp_errno_t error code.
  * @return Returns the error code 'err'.
@@ -29,7 +27,7 @@
 #define JP_ERRNO_RAISE(err) jp_errno_ctx_set((err), JP_ERRNO_SRC_NONE, 0, __FILE_NAME__, __LINE__)
 
 /**
- * @brief Standard error (captures current errno) with a custom formatted message.
+ * @brief Standard error with a custom formatted message.
  *
  * @param err The jp_errno_t error code.
  * @param fmt Format string (printf-style).
@@ -40,7 +38,7 @@
     jp_errno_ctx_setf((err), JP_ERRNO_SRC_NONE, 0, __FILE_NAME__, __LINE__, (fmt), ##__VA_ARGS__)
 
 /**
- * @brief POSIX system error (captures current errno) without formatting.
+ * @brief POSIX system error without formatting.
  *
  * @param err The jp_errno_t error code.
  * @param code POSIX return code.
@@ -49,7 +47,7 @@
 #define JP_ERRNO_RAISE_POSIX(err, code) jp_errno_ctx_set((err), JP_ERRNO_SRC_POSIX, code, __FILE_NAME__, __LINE__)
 
 /**
- * @brief POSIX system error (captures current errno) with a custom formatted context message.
+ * @brief POSIX system error with a custom formatted context message.
  *
  * @param err The jp_errno_t error code.
  * @param code POSIX return code.
@@ -61,7 +59,7 @@
     jp_errno_ctx_setf((err), JP_ERRNO_SRC_POSIX, code, __FILE_NAME__, __LINE__, (fmt), ##__VA_ARGS__)
 
 /**
- * @brief Mach kernel error (captures current errno) system error without formatting.
+ * @brief Mach kernel error system error without formatting.
  *
  * @param err The jp_errno_t error code.
  * @param kr The Mach kernel return code.
@@ -70,7 +68,7 @@
 #define JP_ERRNO_RAISE_MACH(err, kr) jp_errno_ctx_set((err), JP_ERRNO_SRC_MACH, (int) (kr), __FILE_NAME__, __LINE__)
 
 /**
- * @brief Mach kernel error (captures current errno) system error with a custom formatted context message.
+ * @brief Mach kernel error system error with a custom formatted context message.
  *
  * @param err The jp_errno_t error code.
  * @param kr The Mach kernel return code.
@@ -86,7 +84,12 @@
  *
  * @return Returns the error code 0.
  */
-#define JP_ERRNO_CATCH() jp_errno_ctx_set(0, JP_ERRNO_SRC_NONE, 0, __FILE_NAME__, __LINE__)
+#define JP_ERRNO_RESET() jp_errno_ctx_set(0, JP_ERRNO_SRC_NONE, 0, __FILE_NAME__, __LINE__)
+
+/**
+ * @brief Prints the global error context.
+ */
+#define JP_ERRNO_DUMP() jp_errno_ctx_print()
 
 #define JP_ERRNO_MAP(XX)                                                                                          \
     XX(EMISSING_CMD, "Missing command. Please use 'jpipe --help' to see available commands.")                     \
@@ -120,22 +123,12 @@ typedef enum {
     JP_ERRNO_SRC_MACH,
 } jp_errno_src_t;
 
-typedef struct {
-    int line;
-    int sys_err;
-    int std_err;
-    const char* file;
-    jp_errno_t err;
-    jp_errno_src_t src;
-    char stack[JP_ERRNO_STACK_MAX];
-} jp_errno_ctx_t;
-
 jp_errno_t jp_errno_ctx_set(jp_errno_t err, jp_errno_src_t src, int sys_err, const char* file, int line);
 
 JP_ATTR_FORMAT(6)
 jp_errno_t jp_errno_ctx_setf(
     jp_errno_t err, jp_errno_src_t src, int sys_err, const char* file, int line, const char* fmt, ...);
 
-void jp_errno_ctx_dump(void);
+void jp_errno_ctx_print(void);
 
 #endif  // JPIPE_JP_ERRNO_H

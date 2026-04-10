@@ -39,12 +39,12 @@
     } while (0)
 
 /**
- * @brief Asserts that a function or expression returns JP_OK (0).
+ * @brief Asserts that a function or expression returns 0.
  *
  * This is a specialized alias for JP_ASSERT_EQ(0, actual). It is used to verify that system calls,
  * library functions, or internal logic completed successfully without error codes.
  *
- * @param actual The return value to check (typically an int or jp_errno_t).
+ * @param actual The return value to check (typically an int).
  */
 #define JP_ASSERT_OK(actual) JP_ASSERT_EQ(0, actual)
 

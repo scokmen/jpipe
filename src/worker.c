@@ -307,7 +307,7 @@ static jp_errno_t finalize_worker_args(worker_ctx_t* ctx) {
     JP_VERIFY(create_and_normalize_out_dir(ctx));
     ctx->queue = jp_queue_create(ctx->buffer_size, ctx->chunk_size, ctx->policy, &err);
     if (err || ctx->queue == NULL) {
-        return JP_ERRNO_RAISE(err ? err : JP_ENOMEMORY);
+        return JP_ERRNO_RAISE(err ? err : JP_ESYS_ERR);
     }
     return 0;
 }
@@ -315,8 +315,8 @@ static jp_errno_t finalize_worker_args(worker_ctx_t* ctx) {
 static void thread_cleanup(void* data) {
     const worker_ctx_t* args = data;
     jp_queue_finalize(args->queue);
-    jp_errno_ctx_dump();
-    JP_ERRNO_CATCH();
+    JP_ERRNO_DUMP();
+    JP_ERRNO_RESET();
 }
 
 static void* consumer_thread_init(void* data) {
@@ -379,7 +379,7 @@ static jp_errno_t join_worker_thread(const pthread_t thread_id) {
         return 0;
     }
     const jp_errno_t thread_value = *(jp_errno_t*) thread_result;
-    free(thread_result);
+    JP_FREE(thread_result);
     return thread_value;
 }
 
@@ -429,7 +429,6 @@ static jp_errno_t orchestrate_threads(worker_ctx_t* ctx) {
 clean_up:
     if (err) {
         JP_ERRNO_RAISE_POSIX(JP_ESYS_ERR, err);
-        jp_queue_finalize(ctx->queue);
         if (flags & 0x01) {
             cancel_worker_thread(consumer_thread);
         }
@@ -451,19 +450,17 @@ clean_up:
 
 jp_errno_t jp_wrk_exec(int argc, char* argv[]) {
     jp_errno_t err   = 0;
-    worker_ctx_t ctx = {
-        .input_stream = STDIN_FILENO,
-        .buffer_size  = JP_CONF_BUFFER_SIZE_DEF,
-        .chunk_size   = JP_CONF_CHUNK_SIZE_DEF,
-        .out_dir      = NULL,
-        .fields       = jp_field_set_create(JP_CONF_FIELDS_MAX),
-    };
+    worker_ctx_t ctx = {.input_stream = STDIN_FILENO,
+                        .buffer_size  = JP_CONF_BUFFER_SIZE_DEF,
+                        .chunk_size   = JP_CONF_CHUNK_SIZE_DEF,
+                        .out_dir      = NULL};
 
     if (jp_cmd_count(argc, argv, "-h", "--help") > 0) {
         return display_help();
     }
 
-    err = collect_cli_args(argc, argv, &ctx);
+    ctx.fields = jp_field_set_create(JP_CONF_FIELDS_MAX);
+    err        = collect_cli_args(argc, argv, &ctx);
     if (err) {
         goto clean_up;
     }
@@ -482,6 +479,5 @@ clean_up:
     JP_FREE(ctx.out_dir);
     jp_field_set_destroy(ctx.fields);
     jp_queue_destroy(ctx.queue);
-    jp_errno_ctx_dump();
     return err;
 }

@@ -1,9 +1,9 @@
 function(init_compiler_flags TARGET)
     # TODO: Add distribution target specific compiler flags.
     target_compile_options(${TARGET} INTERFACE
-            $<$<CONFIG:Debug>: -g -O1>
+            $<$<CONFIG:Debug>: -g -O1 -fno-omit-frame-pointer>
             $<$<CONFIG:Release>: -O3 -flto -fomit-frame-pointer -march=native -DNDEBUG>
-            $<$<CONFIG:RelWithDebInfo>: -g -O2 -march=native -DNDEBUG>
+            $<$<CONFIG:RelWithDebInfo>: -g -O2 -fno-omit-frame-pointer -march=native -DNDEBUG>
     )
 
     set(SHARED_FLAGS
@@ -17,7 +17,6 @@ function(init_compiler_flags TARGET)
             -Wdouble-promotion
             -Werror
             -Wformat=2
-            -fno-omit-frame-pointer
     )
 
     set(CLANG_FLAGS

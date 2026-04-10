@@ -17,15 +17,15 @@ typedef struct {
 } test_ctx_t;
 
 static void* reader_thread_wrapper(void* arg) {
-    jp_reader_ctx_t* ctx = arg;
-    jp_errno_t err       = jp_reader_consume(*ctx);
+    const jp_reader_ctx_t* ctx = arg;
+    const jp_errno_t err       = jp_reader_consume(*ctx);
     return (void*) (uintptr_t) err;  // NOLINT(performance-no-int-to-ptr)
 }
 
 static void* checker_thread_wrapper(void* arg) {
     jp_block_t* block;
     size_t bytes_received = 0;
-    test_ctx_t* ctx       = arg;
+    const test_ctx_t* ctx = arg;
     while (jp_queue_pop_uncommitted(ctx->queue, &block) == 0) {
         bytes_received += block->length;
         jp_queue_pop_commit(ctx->queue);
@@ -52,7 +52,7 @@ static void test_jp_reader_stream_with_args(size_t capacity, size_t chunk_size, 
     pthread_create(&checker_thread, NULL, checker_thread_wrapper, &test_ctx);
 
     for (int i = 0; i < count; i++) {
-        ssize_t n = write(fds[1], data, strlen(data));
+        const ssize_t n = write(fds[1], data, strlen(data));
         JP_ASSERT_EQ(true, n >= 0);
     }
 

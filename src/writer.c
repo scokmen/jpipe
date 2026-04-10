@@ -35,11 +35,12 @@ jp_errno_t jp_writer_produce(jp_writer_ctx_t ctx) {
                 break;
             }
 
-            const size_t esc_len =
+            iov[1].iov_len =
                 ctx.encoder.value_encoder(start_ptr, (size_t) (newline_ptr - start_ptr), encoded_value, buf_len);
 
-            iov[1].iov_len = esc_len;
-            writev(STDOUT_FILENO, iov, 3);
+            if (writev(STDOUT_FILENO, iov, 3) < 0) {
+                // TODO: Handle error;
+            }
             start_ptr = newline_ptr + 1;
         }
         jp_queue_pop_commit(ctx.queue);

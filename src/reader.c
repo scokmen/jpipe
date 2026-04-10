@@ -49,7 +49,7 @@ jp_errno_t jp_reader_consume(jp_reader_ctx_t ctx) {
                 if (JP_ERRNO_EAGAIN(errno)) {
                     break;
                 }
-                err = JP_EREAD_FAILED;
+                err = JP_ERRNO_RAISE_POSIX(JP_EREAD_FAILED, errno);
                 goto clean_up;
             }
             if (err == 0) {

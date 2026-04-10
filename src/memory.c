@@ -9,7 +9,7 @@ void* jp_mem_malloc(size_t size) {
     void* p = malloc(size);
     if (JP_ATTR_UNLIKELY(p == NULL)) {
         JP_ERRNO_RAISE_POSIX(JP_ENOMEMORY, errno);
-        jp_errno_ctx_dump();
+        JP_ERRNO_DUMP();
         abort();
     }
     return p;
@@ -22,14 +22,13 @@ void* jp_mem_calloc(size_t count, size_t size) {
     void* p = calloc(count, size);
     if (JP_ATTR_UNLIKELY(p == NULL)) {
         JP_ERRNO_RAISE_POSIX(JP_ENOMEMORY, errno);
-        jp_errno_ctx_dump();
+        JP_ERRNO_DUMP();
         abort();
     }
     return p;
 }
 
 void* jp_mem_strdup(const char* src) {
-    JP_ATTR_ASSUME(src != NULL);
     const size_t len = strlen(src) + 1;
     char* p          = jp_mem_malloc(len);
     memcpy(p, src, len);

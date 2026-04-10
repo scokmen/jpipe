@@ -64,4 +64,4 @@ cmake-build-*
 .cache
 
 # Local tools
-/scripts
+/ci

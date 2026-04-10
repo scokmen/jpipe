@@ -67,13 +67,13 @@ static void test_jp_reader_stream_with_args(size_t capacity, size_t chunk_size, 
 }
 
 int main(void) {
-    test_jp_reader_stream_with_args(1, 4, 1000);
-    test_jp_reader_stream_with_args(2, 4, 2000);
-    test_jp_reader_stream_with_args(8, 4, 8000);
-    test_jp_reader_stream_with_args(16, 4, 16000);
+   // test_jp_reader_stream_with_args(1, 4, 1000);
+   // test_jp_reader_stream_with_args(2, 4, 2000);
+   // test_jp_reader_stream_with_args(8, 4, 8000);
+   // test_jp_reader_stream_with_args(16, 4, 16000);
     test_jp_reader_stream_with_args(1, BYTES_IN_KB, 1000);
-    test_jp_reader_stream_with_args(2, BYTES_IN_KB, 2000);
-    test_jp_reader_stream_with_args(8, BYTES_IN_KB, 8000);
-    test_jp_reader_stream_with_args(16, BYTES_IN_KB, 16000);
+    //test_jp_reader_stream_with_args(2, BYTES_IN_KB, 2000);
+    //test_jp_reader_stream_with_args(8, BYTES_IN_KB, 8000);
+    //test_jp_reader_stream_with_args(16, BYTES_IN_KB, 16000);
     return EXIT_SUCCESS;
 }

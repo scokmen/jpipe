@@ -7,10 +7,9 @@
 
 JP_ATTR_WEAK
 jp_errno_t jp_reader_consume(jp_reader_ctx_t ctx) {
-    jp_errno_t err        = 0;
+    jp_errno_t err = 0, queue_err = 0;
     ssize_t read_len      = 0;
     jp_block_t* block     = NULL;
-    void* target_buffer   = NULL;
     unsigned char* buffer = NULL;
     jp_poller_t* poller   = jp_poller_create(100, &err);
 
@@ -33,13 +32,36 @@ jp_errno_t jp_reader_consume(jp_reader_ctx_t ctx) {
             continue;
         }
         while (true) {
-            err = jp_queue_push_uncommitted(ctx.queue, &block);
-            if (JP_ATTR_UNLIKELY(err == JP_ESHUTTING_DOWN)) {
-                goto clean_up;
+            if (block == NULL) {
+                queue_err = jp_queue_push_uncommitted(ctx.queue, &block);
+                if (queue_err == 0) {
+                    block->length = 0;
+                }
+                if (JP_ATTR_UNLIKELY(queue_err == JP_ESHUTTING_DOWN)) {
+                    goto clean_up;
+                }
             }
-            target_buffer = err == JP_EMSG_SHOULD_DROP ? buffer : block->data;
-            read_len      = read(ctx.input_stream, target_buffer, ctx.chunk_size);
-            if (JP_ATTR_UNLIKELY(read_len == 0)) {
+            if (queue_err == JP_EMSG_SHOULD_DROP) {
+                read_len = read(ctx.input_stream, buffer, ctx.chunk_size);
+                if (read_len > 0) {
+                    continue;
+                }
+            } else {
+                read_len = read(ctx.input_stream, block->data + block->length, ctx.chunk_size - block->length);
+                if (JP_ATTR_LIKELY(read_len > 0)) {
+                    block->length += (size_t) read_len;
+                    if (block->length == ctx.chunk_size) {
+                        jp_queue_push_commit(ctx.queue);
+                        block = NULL;
+                        continue;
+                    }
+                }
+            }
+
+            if (read_len == 0) {
+                if (queue_err == 0 && block->length > 0) {
+                    jp_queue_push_commit(ctx.queue);
+                }
                 goto clean_up;
             }
             if (read_len < 0) {
@@ -47,14 +69,14 @@ jp_errno_t jp_reader_consume(jp_reader_ctx_t ctx) {
                     continue;
                 }
                 if (JP_ERRNO_EAGAIN(errno)) {
+                    if (queue_err == 0 && block->length > 0) {
+                        jp_queue_push_commit(ctx.queue);
+                        block = NULL;
+                    }
                     break;
                 }
                 err = JP_ERRNO_RAISE_POSIX(JP_EREAD_FAILED, errno);
                 goto clean_up;
-            }
-            if (err == 0) {
-                block->length = (size_t) read_len;
-                jp_queue_push_commit(ctx.queue);
             }
         }
     }

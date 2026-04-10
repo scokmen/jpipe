@@ -81,6 +81,7 @@ jp_errno_t jp_queue_push_uncommitted(jp_queue_t* queue, jp_block_t** block) {
     if (queue->policy == JP_QUEUE_POLICY_DROP &&
         atomic_load_explicit(&queue->length, memory_order_relaxed) >= queue->capacity) {
         pthread_mutex_unlock(&queue->lock);
+        block = NULL;
         return JP_EMSG_SHOULD_DROP;
     }
 

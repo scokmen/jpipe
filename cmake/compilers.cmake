@@ -2,7 +2,7 @@ function(init_compiler_flags TARGET)
     # TODO: Add distribution target specific compiler flags.
     target_compile_options(${TARGET} INTERFACE
             $<$<CONFIG:Debug>: -g -O1 -fno-omit-frame-pointer>
-            $<$<CONFIG:Release>: -O3 -flto -fomit-frame-pointer -march=native -DNDEBUG>
+            $<$<CONFIG:Release>: -O3  -fomit-frame-pointer -march=native -DNDEBUG>
             $<$<CONFIG:RelWithDebInfo>: -g -O2 -fno-omit-frame-pointer -march=native -DNDEBUG>
     )
 

@@ -9,12 +9,12 @@
 JP_ATTR_WEAK
 jp_errno_t jp_writer_produce(jp_writer_ctx_t ctx) {
     jp_errno_t err = 0;
-    jp_block_t* block;
-    size_t block_len;
-    size_t buf_len = ctx.chunk_size * ctx.encoder.escaping_mul;
+    jp_block_t *block, overflow = {0};
+    const size_t buf_len = ctx.chunk_size * ctx.encoder.escaping_mul;
     struct iovec iov[3];
-    unsigned char *start_ptr, *end_ptr, *newline_ptr;
+    unsigned char *start_ptr, *end_ptr, *delimiter;
     unsigned char* encoded_value = jp_mem_malloc(buf_len);
+    overflow.data                = jp_mem_malloc(ctx.chunk_size);
     iov[0].iov_base              = ctx.encoder.prefix_encoder(ctx.fields, &iov[0].iov_len);
     iov[2].iov_base              = ctx.encoder.postfix_encoder(ctx.fields, &iov[2].iov_len);
     iov[1].iov_base              = encoded_value;
@@ -24,24 +24,48 @@ jp_errno_t jp_writer_produce(jp_writer_ctx_t ctx) {
         if (err) {
             break;
         }
-        block_len = block->length;
         start_ptr = block->data;
-        end_ptr   = start_ptr + block_len;
+        end_ptr   = start_ptr + block->length;
         while (start_ptr < end_ptr) {
-            newline_ptr = memchr(start_ptr, '\n', (size_t) (end_ptr - start_ptr));
+            delimiter = memchr(start_ptr, '\n', (size_t) (end_ptr - start_ptr));
 
-            if (newline_ptr == NULL) {
-                // TODO: Handle overflow.
-                break;
+            if (overflow.length > 0) {
+                const size_t remaining_len =
+                    delimiter != NULL ? (size_t) (delimiter - start_ptr) : (size_t) (end_ptr - start_ptr);
+
+                const size_t copy_len = MIN(remaining_len, ctx.chunk_size - overflow.length);
+                memcpy(overflow.data + overflow.length, start_ptr, copy_len);
+                overflow.length += copy_len;
+                start_ptr       += copy_len;
+
+                if (delimiter != NULL || overflow.length == ctx.chunk_size) {
+                    iov[1].iov_len = ctx.encoder.value_encoder(overflow.data, overflow.length, encoded_value, buf_len);
+                    if (writev(STDOUT_FILENO, iov, 3) < 0) {
+                        // TODO: Handle error;
+                    }
+                    overflow.length = 0;
+                    if (delimiter != NULL && start_ptr == delimiter) {
+                        start_ptr++;
+                    }
+                }
+                continue;
+            }
+
+            if (delimiter == NULL) {
+                size_t remaining = (size_t) (end_ptr - start_ptr);
+                memcpy(overflow.data, start_ptr, remaining);
+                overflow.length = remaining;
+                start_ptr       = end_ptr;
+                continue;
             }
 
             iov[1].iov_len =
-                ctx.encoder.value_encoder(start_ptr, (size_t) (newline_ptr - start_ptr), encoded_value, buf_len);
+                ctx.encoder.value_encoder(start_ptr, (size_t) (delimiter - start_ptr), encoded_value, buf_len);
 
             if (writev(STDOUT_FILENO, iov, 3) < 0) {
                 // TODO: Handle error;
             }
-            start_ptr = newline_ptr + 1;
+            start_ptr = delimiter + 1;
         }
         jp_queue_pop_commit(ctx.queue);
     }
@@ -49,6 +73,7 @@ jp_errno_t jp_writer_produce(jp_writer_ctx_t ctx) {
     if (JP_QUEUE_IS_GRACEFUL_ERR(err)) {
         err = 0;
     }
+    JP_FREE(overflow.data);
     JP_FREE(iov[0].iov_base);
     JP_FREE(iov[1].iov_base);
     JP_FREE(iov[2].iov_base);

@@ -4,6 +4,9 @@
 #include <jp_config.h>
 #include <stdio.h>
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 #ifdef __has_builtin
 /**
  * @brief Compiler-agnostic check for built-in function support.

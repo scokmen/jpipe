@@ -4,6 +4,7 @@
 #include <jp_common.h>
 #include <jp_errno.h>
 #include <pthread.h>
+#include <stdalign.h>
 #include <stdatomic.h>
 
 /**
@@ -25,18 +26,19 @@ typedef struct {
     size_t length;
 } jp_block_t;
 
+// NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 typedef struct {
-    size_t head;
-    size_t tail;
-    size_t capacity;
+    alignas(64) size_t head;
+    alignas(64) size_t tail;
+    alignas(64) size_t capacity;
     size_t chunk_size;
-    atomic_bool active;
-    atomic_size_t length;
-    pthread_mutex_t lock;
+    alignas(64) atomic_bool active;
+    alignas(64) atomic_size_t length;
+    alignas(64) pthread_mutex_t lock;
     pthread_cond_t not_empty;
     pthread_cond_t not_full;
-    jp_queue_policy_t policy;
-    jp_block_t* blocks;
+    alignas(64) jp_queue_policy_t policy;
+    alignas(64) jp_block_t* blocks;
     unsigned char* area JP_ATTR_BUFFER;
 } jp_queue_t;
 

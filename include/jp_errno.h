@@ -108,6 +108,7 @@
     XX(ERUN_FAILED, "An error occurred. Cannot run the application.")                                             \
     XX(ENOMEMORY, "Could not allocate memory.")                                                                   \
     XX(EREAD_FAILED, "Cannot read the incoming stream.")                                                          \
+    XX(EWRITE_FAILED, "Cannot write the stream.")                                                                 \
     XX(ESYS_ERR, "System error occurred.")
 
 typedef enum {

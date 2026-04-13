@@ -1,4 +1,5 @@
 #include <jp_common.h>
+#include <jp_file.h>
 #include <jp_memory.h>
 #include <jp_writer.h>
 #include <stdlib.h>
@@ -6,12 +7,15 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
+#define IOV_VEC_COUNT 3
+
 JP_ATTR_WEAK
 jp_errno_t jp_writer_produce(jp_writer_ctx_t ctx) {
     jp_errno_t err = 0;
     jp_block_t *block, overflow = {0};
     const size_t buf_len = ctx.chunk_size * ctx.encoder.escaping_mul;
-    struct iovec iov[3];
+    struct iovec iov[IOV_VEC_COUNT];
+    jp_file_handler_t file_handler = {0};
     unsigned char *start_ptr, *end_ptr, *delimiter;
     unsigned char* encoded_value = jp_mem_malloc(buf_len);
     overflow.data                = jp_mem_malloc(ctx.chunk_size);
@@ -40,8 +44,9 @@ jp_errno_t jp_writer_produce(jp_writer_ctx_t ctx) {
 
                 if (delimiter != NULL || overflow.length == ctx.chunk_size) {
                     iov[1].iov_len = ctx.encoder.value_encoder(overflow.data, overflow.length, encoded_value, buf_len);
-                    if (writev(STDOUT_FILENO, iov, 3) < 0) {
-                        // TODO: Handle error;
+                    err            = jp_file_writev(&file_handler, iov, IOV_VEC_COUNT);
+                    if (err) {
+                        goto clean_up;
                     }
                     overflow.length = 0;
                     if (delimiter != NULL && start_ptr == delimiter) {
@@ -62,21 +67,23 @@ jp_errno_t jp_writer_produce(jp_writer_ctx_t ctx) {
             iov[1].iov_len =
                 ctx.encoder.value_encoder(start_ptr, (size_t) (delimiter - start_ptr), encoded_value, buf_len);
 
-            if (writev(STDOUT_FILENO, iov, 3) < 0) {
-                // TODO: Handle error;
+            err = jp_file_writev(&file_handler, iov, IOV_VEC_COUNT);
+            if (err) {
+                goto clean_up;
             }
             start_ptr = delimiter + 1;
         }
         jp_queue_pop_commit(ctx.queue);
     }
 
+clean_up:
     if (JP_QUEUE_IS_GRACEFUL_ERR(err)) {
         err = 0;
     }
+    for (int i = 0; i < IOV_VEC_COUNT; i++) {
+        JP_FREE(iov[i].iov_base);
+    }
     JP_FREE(overflow.data);
-    JP_FREE(iov[0].iov_base);
-    JP_FREE(iov[1].iov_base);
-    JP_FREE(iov[2].iov_base);
     jp_queue_finalize(ctx.queue);
     return err;
 }

@@ -394,7 +394,7 @@
 #define JP_ATTR_WEAK __attribute__((weak))
 #else
 #define JP_ATTR_WEAK
-#pragma message("cc: is not debug or attribute not supported (weak)")
+#pragma message("cc: NDEBUG not defined or attribute not supported (weak)")
 #endif
 
 /**

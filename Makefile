@@ -12,15 +12,16 @@ BUILD_DIR   ?= build_$(TAG)
 CMAKE_FLAGS ?= -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=$(CC)
 
 .PHONY: all build clean clean-all help
-.PHONY: debug debug-asan debug-tsan release relwithdeb
+.PHONY: debug debug-asan debug-tsan release relwithdebinfo
 .PHONY: test test-with-asan test-with-tsan coverage format check-and-inform check-and-enforce
+.PHONY: bench-prepare bench-run
 .PHONY: compile compile-ubuntu compile-debian docker-execute $(COMPILE_TARGETS)
 
-debug:      CMAKE_FLAGS = -DCMAKE_C_COMPILER=$(CC) -DCMAKE_BUILD_TYPE=Debug
-debug-asan: CMAKE_FLAGS = -DCMAKE_C_COMPILER=$(CC) -DCMAKE_BUILD_TYPE=Debug          -DENABLE_ASAN=ON
-debug-tsan: CMAKE_FLAGS = -DCMAKE_C_COMPILER=$(CC) -DCMAKE_BUILD_TYPE=Debug          -DENABLE_TSAN=ON
-release:    CMAKE_FLAGS = -DCMAKE_C_COMPILER=$(CC) -DCMAKE_BUILD_TYPE=Release        -DBUILD_TESTING=OFF
-relwithdeb: CMAKE_FLAGS = -DCMAKE_C_COMPILER=$(CC) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_TESTING=OFF
+debug:          CMAKE_FLAGS = -DCMAKE_C_COMPILER=$(CC) -DCMAKE_BUILD_TYPE=Debug
+debug-asan:     CMAKE_FLAGS = -DCMAKE_C_COMPILER=$(CC) -DCMAKE_BUILD_TYPE=Debug          -DENABLE_ASAN=ON
+debug-tsan:     CMAKE_FLAGS = -DCMAKE_C_COMPILER=$(CC) -DCMAKE_BUILD_TYPE=Debug          -DENABLE_TSAN=ON
+release:        CMAKE_FLAGS = -DCMAKE_C_COMPILER=$(CC) -DCMAKE_BUILD_TYPE=Release        -DBUILD_TESTING=OFF
+relwithdebinfo: CMAKE_FLAGS = -DCMAKE_C_COMPILER=$(CC) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_TESTING=OFF
 
 all: help
 
@@ -32,7 +33,7 @@ build: clean
 	$(CMAKE) -B $(BUILD_DIR) $(CMAKE_FLAGS)
 	$(CMAKE) --build $(BUILD_DIR) -j $(NPROC) -- --output-sync=target
 
-debug debug-asan debug-tsan release relwithdeb: build
+debug debug-asan debug-tsan release relwithdebinfo: build
 
 test: debug
 	@echo "🧪 Testing: [target=debug]"
@@ -49,6 +50,14 @@ test-with-tsan: debug-tsan
 coverage: test
 	@echo "📊 Reporting: [target=debug]"
 	$(CMAKE) --build $(BUILD_DIR) --target coverage
+
+bench-prepare: relwithdebinfo
+	@echo "🚅 Benchmarking: [target=bench-prepare]"
+	$(CMAKE) --build $(BUILD_DIR) --target bench-prepare
+
+bench-run:
+	@echo "🚅 Benchmarking: [target=bench-run]"
+	$(CMAKE) --build $(BUILD_DIR) --target bench-run
 
 format:
 	@echo "🔬 Formatting: [target=all]"
@@ -87,11 +96,11 @@ help:
 	@echo "⚙️ Build Targets:"
 	@echo "  make debug                  : Standard debug build (default)"
 	@echo "  make release                : Optimized release build"
-	@echo "  make relwithdeb             : Optimized release build with debug symbols"
+	@echo "  make relwithdebinfo         : Optimized release build with debug symbols"
 	@echo "  make debug-asan             : Debug build with Address Sanitizer"
 	@echo "  make debug-tsan             : Debug build with Thread Sanitizer"
 	@echo ""
-	@echo "🧪 Test & Analysis:"
+	@echo "🧪 Test & Analysis: (build=Debug)"
 	@echo "  make test                   : Run all tests"
 	@echo "  make test-with-asan         : Run all tests with Memory Sanitizer"
 	@echo "  make test-with-tsan         : Run all tests with Thread Sanitizer"
@@ -99,6 +108,10 @@ help:
 	@echo "  make format                 : Run clang-format"
 	@echo "  make check-and-inform       : Run cppcheck w/style,performance,portability,warning,information"
 	@echo "  make check-end-enforce      : Run cppcheck w/performance,portability,warning"
+	@echo ""
+	@echo "🚅 Benchmarking: (build=RelWithDebInfo)"
+	@echo "  make bench-prepare          : Prepare micro benchmarking data"
+	@echo "  make bench-run              : Run all benchmarks"
 	@echo ""
 	@echo "🐳 Docker & Multi-Compiler:"
 	@echo "  make compile                : Build all OS (Ubuntu & Debian) and GCC versions [10-13]"
@@ -117,4 +130,4 @@ help:
 	@echo ""
 	@echo "📌️ Example:"
 	@echo "  make release TAG=v1 CC=clang"
-	@echo "  make relwithdeb TAG=pre-release CC=gcc"
+	@echo "  make relwithdebinfo TAG=pre-release CC=gcc"

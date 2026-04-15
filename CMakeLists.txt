@@ -63,8 +63,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     if (ENABLE_TSAN)
         init_tsan_flags(jpipe_settings)
     endif ()
-else ()
-    set(BUILD_TESTING OFF CACHE BOOL "[testing]: disabled" FORCE)
 endif ()
 
 ###############################################
@@ -75,7 +73,13 @@ add_subdirectory(src)
 ###############################################
 # JPipe: Testing & Coverage
 ###############################################
-if (BUILD_TESTING)
-    init_coverage_flags(jpipe_settings)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_subdirectory(test)
+endif ()
+
+###############################################
+# JPipe: Micro Benchmarking
+###############################################
+if (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    add_subdirectory(bench)
 endif ()

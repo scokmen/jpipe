@@ -135,6 +135,16 @@ function(init_cppcheck)
     endif ()
 endfunction()
 
+function(init_test LABEL SOURCE LIBRARIES)
+    get_filename_component(raw_name ${SOURCE} NAME_WE)
+    set(test_target "${LABEL}_test_${raw_name}")
+    add_executable(${test_target} ${SOURCE})
+    target_link_libraries(${test_target} PRIVATE ${LIBRARIES})
+    add_test(NAME ${test_target} COMMAND ${test_target})
+    set_tests_properties(${test_target} PROPERTIES LABELS ${LABEL})
+    message(STATUS "[test]: ${test_target}")
+endfunction()
+
 function(init_coverage_flags TARGET)
     find_program(LCOV_BINARY NAMES "lcov")
     if (LCOV_BINARY)
@@ -192,14 +202,91 @@ function(init_coverage_flags TARGET)
     endif ()
 endfunction()
 
-function(init_test LABEL SOURCE LIBRARIES)
-    get_filename_component(raw_name ${SOURCE} NAME_WE)
-    set(test_target "${LABEL}_test_${raw_name}")
+function(init_benchmark_data DATA_DIR)
+    find_program(NODEJS_BINARY node)
+    if (NODEJS_BINARY)
+        __get_binary_version(
+                ${NODEJS_BINARY}
+                "--version"
+                NODEJS_VERSION
+        )
+        message(STATUS "[nodejs]: found >> version=v${NODEJS_VERSION}, path='${NODEJS_BINARY}'")
 
-    add_executable(${test_target} ${SOURCE})
-    target_link_libraries(${test_target} PRIVATE ${LIBRARIES})
-    
-    add_test(NAME ${test_target} COMMAND ${test_target})
-    set_tests_properties(${test_target} PROPERTIES LABELS ${LABEL})
-    message(STATUS "[test]: ${test_target}")
+        set(ROW_COUNT 100)
+        set(SHORT_LOG 64)
+        set(MEDIUM_LOG 256)
+        set(LONG_LOG 1024)
+        set(PLAIN 0)
+        set(ESCAPED 10)
+        set(HIGHLY_ESCAPED 25)
+        set(BENCH_GEN_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/data-generator.js")
+
+        if (NOT TARGET bench-prepare)
+            add_custom_target(bench-prepare
+                    COMMAND ${CMAKE_COMMAND} -E rm -rf "${DATA_DIR}"
+                    COMMAND ${CMAKE_COMMAND} -E make_directory "${DATA_DIR}"
+                    COMMAND ${NODEJS_BINARY} "${BENCH_GEN_SCRIPT}"
+                    "${DATA_DIR}/short_plain_input.bin" ${ROW_COUNT} ${SHORT_LOG} ${PLAIN}
+                    COMMAND ${NODEJS_BINARY} "${BENCH_GEN_SCRIPT}"
+                    "${DATA_DIR}/medium_plain_input.bin" ${ROW_COUNT} ${MEDIUM_LOG} ${PLAIN}
+                    COMMAND ${NODEJS_BINARY} "${BENCH_GEN_SCRIPT}"
+                    "${DATA_DIR}/long_plain_input.bin" ${ROW_COUNT} ${LONG_LOG} ${PLAIN}
+                    COMMAND ${NODEJS_BINARY} "${BENCH_GEN_SCRIPT}"
+                    "${DATA_DIR}/short_escaped_input.bin" ${ROW_COUNT} ${SHORT_LOG} ${ESCAPED}
+                    COMMAND ${NODEJS_BINARY} "${BENCH_GEN_SCRIPT}"
+                    "${DATA_DIR}/medium_escaped_input.bin" ${ROW_COUNT} ${MEDIUM_LOG} ${ESCAPED}
+                    COMMAND ${NODEJS_BINARY} "${BENCH_GEN_SCRIPT}"
+                    "${DATA_DIR}/long_escaped_input.bin" ${ROW_COUNT} ${LONG_LOG} ${ESCAPED}
+                    COMMAND ${NODEJS_BINARY} "${BENCH_GEN_SCRIPT}"
+                    "${DATA_DIR}/short_highly_escaped_input.bin" ${ROW_COUNT} ${SHORT_LOG} ${HIGHLY_ESCAPED}
+                    COMMAND ${NODEJS_BINARY} "${BENCH_GEN_SCRIPT}"
+                    "${DATA_DIR}/medium_highly_escaped_input.bin" ${ROW_COUNT} ${MEDIUM_LOG} ${HIGHLY_ESCAPED}
+                    COMMAND ${NODEJS_BINARY} "${BENCH_GEN_SCRIPT}"
+                    "${DATA_DIR}/long_highly_escaped_input.bin" ${ROW_COUNT} ${LONG_LOG} ${HIGHLY_ESCAPED}
+                    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                    COMMENT "[nodejs]: generating..."
+            )
+            message(STATUS "[nodejs]: targeted >> [target=bench-generate]")
+        endif ()
+    else ()
+        if (NOT TARGET bench-prepare)
+            add_custom_target(bench-prepare
+                    COMMAND ${CMAKE_COMMAND} -E echo "[nodejs]: skipped >> [not found]"
+                    COMMENT "[nodejs]: skipping..."
+            )
+        endif ()
+        message(WARNING "[nodejs]: skipped >> [not found]")
+    endif ()
+endfunction()
+
+function(init_bench SOURCE LIBRARIES)
+    get_filename_component(raw_name ${SOURCE} NAME_WE)
+    set(bench_target "bench_${raw_name}")
+    add_executable(${bench_target} ${SOURCE})
+    target_link_libraries(${bench_target} PRIVATE ${LIBRARIES})
+    set_property(GLOBAL APPEND PROPERTY BENCH_TARGETS ${bench_target})
+    message(STATUS "[bench]: ${bench_target}")
+endfunction()
+
+function(init_bench_run_all)
+    get_property(ALL_BENCH_TARGETS GLOBAL PROPERTY BENCH_TARGETS)
+
+    if (NOT ALL_BENCH_TARGETS)
+        return()
+    endif ()
+
+    if (NOT TARGET bench-run)
+        add_custom_target(bench-run
+                COMMAND ${CMAKE_COMMAND} -E echo "Running all benchmarks..."
+                COMMENT "Running all benchmarks..."
+                USES_TERMINAL
+        )
+        foreach (BENCH_TARGET ${ALL_BENCH_TARGETS})
+            add_custom_command(TARGET bench-run POST_BUILD
+                    COMMAND $<TARGET_FILE:${BENCH_TARGET}>
+                    COMMENT "[bench] Running: ${BENCH_TARGET}"
+            )
+        endforeach ()
+        message(STATUS "[bench]: targeted >> [target=bench-run]")
+    endif ()
 endfunction()

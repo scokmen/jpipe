@@ -13,10 +13,14 @@ typedef struct {
     const char* name;
 } jp_bench_t;
 
+JP_ATTR_NONNULL(1, 2)
+JP_ATTR_READ_ONLY(2)
 void jp_bench_start(jp_bench_t* bench, const char* name, uint64_t iterations);
 
+JP_ATTR_NONNULL(1)
 void jp_bench_stop(jp_bench_t* bench);
 
+JP_ATTR_NONNULL(1)
 void jp_bench_report(jp_bench_t* bench);
 
 typedef struct {
@@ -33,6 +37,7 @@ typedef struct {
 } jp_bench_data_t;
 
 JP_ATTR_NONNULL(1)
+JP_ATTR_READ_ONLY(1)
 JP_ATTR_ALLOCATED
 JP_ATTR_USE_RETURN
 jp_bench_data_t* jp_bench_data_prepare(const char* filename);

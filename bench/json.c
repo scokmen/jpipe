@@ -15,7 +15,7 @@ static void bench_json_value_encoder(const char* name, const char* filename, uin
 
     const size_t dest_buffer_length = bench_data->max_chunk_size * 6;
     unsigned char* dest_buffer      = jp_mem_malloc(dest_buffer_length);
-
+    
     for (uint64_t i = 0; i < 1000; i++) {
         const jp_bench_chunk_t chunk = bench_data->chunks[i % (uint64_t) bench_data->chunk_size];
         jp_json_value_encoder(chunk.buffer, chunk.length, dest_buffer, dest_buffer_length);

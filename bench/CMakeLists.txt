@@ -28,6 +28,7 @@ SET(BENCH_DEPENDENCIES
         bench_utils
         jpipe_settings)
 
-init_bench(json_encoding.c "${BENCH_DEPENDENCIES}")
+init_bench(json.c "${BENCH_DEPENDENCIES}")
+init_bench(queue.c "${BENCH_DEPENDENCIES}")
 
 target_benchmark_run_command()

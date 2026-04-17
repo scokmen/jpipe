@@ -1,6 +1,8 @@
 #include <fcntl.h>
+#include <inttypes.h>
 #include <jp_bench.h>
 #include <jp_memory.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,8 +37,10 @@ void jp_bench_report(jp_bench_t* bench) {
     const double avg_ns   = (double) bench->total_ns / (double) bench->iterations;
     const double ops_sec  = (double) bench->iterations * 1000000000.0 / (double) bench->total_ns;
 
+    fprintf(stdout, "-------------------------------\n");
     fprintf(stdout, "Benchmark              : %.128s\n", bench->name);
-    fprintf(stdout, " - Iterations          : %llu\n", bench->iterations);
+    fprintf(stdout, "-------------------------------\n");
+    fprintf(stdout, " - Iterations          : %" PRIu64 "\n", bench->iterations);
     fprintf(stdout, " - Elapsed Time (ms)   : %.3f\n", total_ms);
     fprintf(stdout, " - Average (ns/op)     : %.2f\n", avg_ns);
     fprintf(stdout, " - Operation (ops/sec) : %.2f\n", ops_sec);

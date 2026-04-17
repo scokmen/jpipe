@@ -1,16 +1,6 @@
 ###############################################
 # JPipe: Core Library
 ###############################################
-set(NON_PORTABLE_C_FILES "")
-
-if (APPLE)
-    list(APPEND NON_PORTABLE_C_FILES "poller/kqueue.c")
-elseif (UNIX)
-    list(APPEND NON_PORTABLE_C_FILES "poller/epoll.c")
-else ()
-    message(FATAL_ERROR "Unsupported platform!")
-endif ()
-
 add_library(jpipe_core STATIC
         worker.c
         queue.c
@@ -23,8 +13,10 @@ add_library(jpipe_core STATIC
         json.c
         memory.c
         file.c
-        ${NON_PORTABLE_C_FILES}
 )
+
+target_supported_sources("sys/epoll.h" jpipe_core PRIVATE poller/epoll.c)
+target_supported_sources("sys/event.h" jpipe_core PRIVATE poller/kqueue.c)
 
 target_include_directories(jpipe_core
         PUBLIC

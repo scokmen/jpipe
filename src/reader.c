@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-JP_ATTR_WEAK
+JP_ATTR_MOCKABLE
 jp_errno_t jp_reader_consume(jp_reader_ctx_t ctx) {
     jp_errno_t err = 0, queue_err = 0;
     ssize_t read_len      = 0;

@@ -7,35 +7,45 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-message(STATUS "Compiler Properties:")
-message(STATUS "- C Compiler ID:  ${CMAKE_C_COMPILER_ID}")
-message(STATUS "- C Compiler:     ${CMAKE_C_COMPILER}")
-message(STATUS "- C Compiler Ver: ${CMAKE_C_COMPILER_VERSION}")
+# Print compiler information.
+message(STATUS "[cc][compiler]: Compiler ID     : ${CMAKE_C_COMPILER_ID}")
+message(STATUS "[cc][compiler]: Compiler Name   : ${CMAKE_C_COMPILER}")
+message(STATUS "[cc][compiler]: Compiler Version: ${CMAKE_C_COMPILER_VERSION}")
 
 # Extend the CMake module path.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 # Include sub-modules.
 include(CTest)
+include(CheckIncludeFile)
+include(CheckCCompilerFlag)
+include(CheckCSourceCompiles)
 include(quality)
 include(compilers)
 include(sanitizers)
+include(compatibility)
+
+# Test compatibilities of;
+# - Operating system.
+# - Compiler attribute.
+# - Standard library.
+test_system_compatibility()
 
 # Dependencies
 find_package(Threads REQUIRED)
 
 # ENABLE_TSAN:
-# Enables ThreadSanitizer to detect data races and deadlocks.
+# Enables 'Thread Sanitizer' to detect data races and deadlocks.
 # Incompatible with ENABLE_ASAN. Heavily impacts performance; use for tests only.
-option(ENABLE_TSAN "Enable ThreadSanitizer" OFF)
+option(ENABLE_TSAN "Enable Thread Sanitizer" OFF)
 
 # ENABLE_ASAN:
-# Enables AddressSanitizer to detect memory leaks, buffer overflows and use-after-free bugs. 
+# Enables 'Address Sanitizer' to detect memory leaks, buffer overflows and use-after-free bugs. 
 # Incompatible with ENABLE_TSAN. Heavily impacts performance; use for tests only.
-option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
+option(ENABLE_ASAN "Enable Address Sanitizer" OFF)
 
 ###############################################
-# JPipe: Generated Headers
+# JPipe: Code Generation
 ###############################################
 configure_file(
         "${CMAKE_SOURCE_DIR}/include/jp_config.h.in"
@@ -48,7 +58,6 @@ configure_file(
 ###############################################
 add_library(jpipe_settings INTERFACE)
 init_compiler_flags(jpipe_settings)
-message(STATUS "[build]: ${CMAKE_BUILD_TYPE}")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     if (ENABLE_ASAN AND ENABLE_TSAN)

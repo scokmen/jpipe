@@ -3,7 +3,7 @@
 ###############################################
 set(BENCH_DATA_DIR "${CMAKE_CURRENT_BINARY_DIR}/data")
 
-init_benchmark_data("${BENCH_DATA_DIR}")
+target_benchmark_prepare_command("${BENCH_DATA_DIR}")
 
 add_library(bench_utils STATIC
         lib/bench.c
@@ -30,4 +30,4 @@ SET(BENCH_DEPENDENCIES
 
 init_bench(json_encoding.c "${BENCH_DEPENDENCIES}")
 
-init_bench_run_all()
+target_benchmark_run_command()

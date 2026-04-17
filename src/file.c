@@ -1,7 +1,7 @@
 #include <jp_file.h>
 #include <unistd.h>
 
-JP_ATTR_WEAK
+JP_ATTR_MOCKABLE
 jp_errno_t jp_file_writev(JP_ATTR_UNUSED jp_file_handler_t* handler, struct iovec* iov, int count) {
     const int fd = STDOUT_FILENO;
 

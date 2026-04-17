@@ -21,7 +21,6 @@
 #define HAS_BUILTIN(built_in) __has_builtin(built_in)
 #else
 #define HAS_BUILTIN(built_in) (0)
-#pragma message("cc: not supported (__has_builtin)")
 #endif
 
 #ifdef __has_attribute
@@ -41,7 +40,6 @@
 #define HAS_ATTRIBUTE(attr) __has_attribute(attr)
 #else
 #define HAS_ATTRIBUTE(attr) (0)
-#pragma message("cc: not supported (__has_attribute)")
 #endif
 
 #if HAS_BUILTIN(__builtin_assume)
@@ -80,7 +78,6 @@
     } while (0)
 #else
 #define JP_ATTR_ASSUME(cond) ((void) 0)
-#pragma message("cc: not supported (__builtin_assume || __builtin_unreachable)")
 #endif
 
 #if HAS_BUILTIN(__builtin_expect)
@@ -106,7 +103,6 @@
 #else
 #define JP_ATTR_LIKELY(cond)   (cond)
 #define JP_ATTR_UNLIKELY(cond) (cond)
-#pragma message("cc: not supported (__builtin_expect)")
 #endif
 
 #if HAS_ATTRIBUTE(malloc)
@@ -125,7 +121,6 @@
 #define JP_ATTR_ALLOCATED __attribute__((malloc))
 #else
 #define JP_ATTR_ALLOCATED
-#pragma message("cc: attribute not supported (malloc)")
 #endif
 
 #if HAS_ATTRIBUTE(warn_unused_result)
@@ -139,7 +134,6 @@
 #define JP_ATTR_USE_RETURN __attribute__((warn_unused_result))
 #else
 #define JP_ATTR_USE_RETURN
-#pragma message("cc: attribute not supported (warn_unused_result)")
 #endif
 
 #if HAS_ATTRIBUTE(const)
@@ -159,7 +153,6 @@
 #define JP_ATTR_CONST __attribute__((const))
 #else
 #define JP_ATTR_CONST
-#pragma message("cc: attribute not supported (const)")
 #endif
 
 #if HAS_ATTRIBUTE(format)
@@ -175,7 +168,6 @@
 #define JP_ATTR_FORMAT(fmt) __attribute__((format(printf, fmt, (fmt) + 1)))
 #else
 #define JP_ATTR_FORMAT(fmt)
-#pragma message("cc: attribute not supported (format)")
 #endif
 
 #if HAS_ATTRIBUTE(unused)
@@ -191,7 +183,6 @@
 #define JP_ATTR_UNUSED __attribute__((unused))
 #else
 #define JP_ATTR_UNUSED
-#pragma message("cc: attribute not supported (unused)")
 #endif
 
 #if HAS_ATTRIBUTE(nonnull)
@@ -208,7 +199,6 @@
 #define JP_ATTR_NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
 #else
 #define JP_ATTR_NONNULL(...)
-#pragma message("cc: attribute not supported (nonnull)")
 #endif
 
 #if HAS_ATTRIBUTE(access)
@@ -261,7 +251,6 @@
 #define JP_ATTR_READ_ONLY_N(ptr_idx, size_idx)
 #define JP_ATTR_WRITE_ONLY(ptr_idx)
 #define JP_ATTR_WRITE_ONLY_N(ptr_idx, size_idx)
-#pragma message("cc: attribute not supported (access)")
 #endif
 
 #if HAS_ATTRIBUTE(fallthrough)
@@ -274,7 +263,6 @@
 #define JP_ATTR_FALLTHROUGH __attribute__((fallthrough))
 #else
 #define JP_ATTR_FALLTHROUGH
-#pragma message("cc: attribute not supported (fallthrough)")
 #endif
 
 #if HAS_ATTRIBUTE(nonstring)
@@ -295,7 +283,6 @@
 #define JP_ATTR_BUFFER __attribute__((nonstring))
 #else
 #define JP_ATTR_BUFFER
-#pragma message("cc: attribute not supported (nonstring)")
 #endif
 
 #if HAS_ATTRIBUTE(hot)
@@ -314,7 +301,6 @@
 #define JP_ATTR_HOT __attribute__((hot))
 #else
 #define JP_ATTR_HOT
-#pragma message("cc: attribute not supported (hot)")
 #endif
 
 #if HAS_ATTRIBUTE(leaf)
@@ -335,7 +321,6 @@
 #define JP_ATTR_LEAF __attribute__((leaf))
 #else
 #define JP_ATTR_LEAF
-#pragma message("cc: attribute not supported (leaf)")
 #endif
 
 #if HAS_ATTRIBUTE(returns_nonnull)
@@ -355,7 +340,6 @@
 #define JP_ATTR_RET_NONNULL __attribute__((returns_nonnull))
 #else
 #define JP_ATTR_RET_NONNULL
-#pragma message("cc: attribute not supported (returns_nonnull)")
 #endif
 
 #if HAS_ATTRIBUTE(alloc_size)
@@ -375,26 +359,24 @@
 #define JP_ATTR_ALLOCS(...) __attribute__((alloc_size(__VA_ARGS__)))
 #else
 #define JP_ATTR_ALLOCS(...)
-#pragma message("cc: attribute not supported (alloc_size)")
 #endif
 
-#if !defined(NDEBUG) && HAS_ATTRIBUTE(weak)
+#if !defined(NMOCK)
 /**
- * @brief Marks a function as "weak" to allow mocking in test environments.
+ * @brief Marks a function as "mockable" by leveraging compiler attributes.
  *
- * This macro enables the 'weak' compiler attribute only when NOT in a Release
- * build (i.e., NDEBUG is not defined) and if the compiler supports it.
+ * When mocking is enabled, this macro applies 'weak' and 'noinline' attributes:
+ * - 'weak': Allows the linker to override this implementation with a "strong"
+ * definition (e.g., a mock function) found in test suites.
+ * - 'noinline': Prevents the compiler from optimizing the function away via
+ * inlining, which would otherwise bypass the weak linkage mechanism.
  *
- * - In Debug/Test: The function is marked as weak, meaning the linker will
- * prioritize any other "strong" definition of the same function (e.g., a Mock).
- * - In Release (NDEBUG): The macro expands to nothing. This ensures that
- * duplicate function definitions trigger a "multiple definition" linker error,
- * preventing accidental test code leakage into production.
+ * @note Attribute support is strictly enforced during the CMake configuration phase. If the compiler does not support
+ * these attributes, the build process will terminate before reaching this point.
  */
-#define JP_ATTR_WEAK __attribute__((weak))
+#define JP_ATTR_MOCKABLE __attribute__((weak, noinline))
 #else
-#define JP_ATTR_WEAK
-#pragma message("cc: NDEBUG not defined or attribute not supported (weak)")
+#define JP_ATTR_MOCKABLE
 #endif
 
 /**

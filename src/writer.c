@@ -9,7 +9,7 @@
 
 #define IOV_VEC_COUNT 3
 
-JP_ATTR_WEAK
+JP_ATTR_MOCKABLE
 jp_errno_t jp_writer_produce(jp_writer_ctx_t ctx) {
     jp_errno_t err = 0;
     jp_block_t *block, overflow = {0};
